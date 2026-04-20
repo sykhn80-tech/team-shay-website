@@ -3,11 +3,18 @@
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist/public",
   "functions": {
-    "api/[...path].ts": {
-      "includeFiles": ".local-cms-data/cms.json"
+    "api/index.js": {
+      "includeFiles": [
+        "dist/server/app.js",
+        ".local-cms-data/cms.json"
+      ]
     }
   },
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.js"
+    },
     {
       "source": "/((?!api/.*).*)",
       "destination": "/index.html"
