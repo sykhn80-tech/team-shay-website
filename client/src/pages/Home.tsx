@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, type FormEvent } from "react";
+import React, { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 
 import { Link } from "wouter";
 import {
@@ -21,6 +21,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  type CarouselApi,
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 import { trpc } from "@/lib/trpc";
 import {
   agents as fallbackAgents,
@@ -264,6 +270,9 @@ export default function Home() {
   const [typedText, setTypedText] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [leadStep, setLeadStep] = useState<1 | 2>(1);
+  const [propertyCarouselApi, setPropertyCarouselApi] = useState<CarouselApi | null>(null);
+  const [selectedPropertySlide, setSelectedPropertySlide] = useState(0);
+  const [isPropertyCarouselPaused, setIsPropertyCarouselPaused] = useState(false);
   const [formData, setFormData] = useState({
     neighborhood: "",
     rooms: "",
@@ -341,6 +350,48 @@ export default function Home() {
     () => featuredProperties,
     [featuredProperties],
   );
+
+  const selectPropertySlide = useCallback((index: number) => {
+    propertyCarouselApi?.scrollTo(index);
+  }, [propertyCarouselApi]);
+
+  const scrollPropertyCarousel = useCallback((direction: "prev" | "next") => {
+    if (!propertyCarouselApi) return;
+
+    if (direction === "prev") {
+      propertyCarouselApi.scrollPrev();
+      return;
+    }
+
+    propertyCarouselApi.scrollNext();
+  }, [propertyCarouselApi]);
+
+  useEffect(() => {
+    if (!propertyCarouselApi) return;
+
+    const updateSelectedSlide = () => {
+      setSelectedPropertySlide(propertyCarouselApi.selectedScrollSnap());
+    };
+
+    updateSelectedSlide();
+    propertyCarouselApi.on("select", updateSelectedSlide);
+    propertyCarouselApi.on("reInit", updateSelectedSlide);
+
+    return () => {
+      propertyCarouselApi.off("select", updateSelectedSlide);
+      propertyCarouselApi.off("reInit", updateSelectedSlide);
+    };
+  }, [propertyCarouselApi]);
+
+  useEffect(() => {
+    if (!propertyCarouselApi || isPropertyCarouselPaused || featuredPropertyTrack.length <= 1) return;
+
+    const autoplay = window.setInterval(() => {
+      propertyCarouselApi.scrollNext();
+    }, 5000);
+
+    return () => window.clearInterval(autoplay);
+  }, [featuredPropertyTrack.length, isPropertyCarouselPaused, propertyCarouselApi]);
 
   const heroPlaybackRate = useMemo(
     () => Math.max(0.25, Math.min(1, (HERO_LOOP_END_SECONDS - HERO_LOOP_START_SECONDS) / HERO_LOOP_TARGET_SECONDS)),
@@ -722,8 +773,8 @@ export default function Home() {
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: '24px'}}>מחפשים נכס ? הגעתם למקום הנכון</p>
-                <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]" style={{fontSize: '70px'}}>הנכסים המובחרים שלנו</h2>
+                <p className="text-lg font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c] md:text-2xl">מחפשים נכס ? הגעתם למקום הנכון</p>
+                <h2 className="mt-4 text-4xl font-extrabold leading-tight md:text-[3.35rem]">הנכסים המובחרים שלנו</h2>
               </div>
               <Link href="/properties" className="inline-flex items-center gap-2 text-base font-black text-[#d9ae4c]">
                 לכל הנכסים
@@ -731,39 +782,106 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="mt-12 overflow-hidden [mask-image:linear-gradient(to_left,transparent,black_10%,black_90%,transparent)]">
+            <div
+              className="mt-12"
+              onMouseEnter={() => setIsPropertyCarouselPaused(true)}
+              onMouseLeave={() => setIsPropertyCarouselPaused(false)}
+              onTouchStart={() => setIsPropertyCarouselPaused(true)}
+              onTouchEnd={() => setIsPropertyCarouselPaused(false)}
+            >
               {featuredPropertyTrack.length ? (
-                <div className="cms-marquee-track flex w-max">
-                  {[0, 1].map((setIndex) => (
-                    <div key={setIndex} className="flex shrink-0 gap-6 pl-6" aria-hidden={setIndex === 1}>
-                      {featuredPropertyTrack.map((property, index) => (
-                        <article key={`${setIndex}-${property.id}-${index}`} className="w-[20rem] shrink-0 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_36px_rgba(15,23,42,0.06)]">
-                          <img src={property.image} alt={property.title} className="h-56 w-full object-cover" loading="lazy" />
-                          <div className="p-5">
+                <Carousel
+                  setApi={setPropertyCarouselApi}
+                  opts={{
+                    align: "start",
+                    direction: "rtl",
+                    loop: true,
+                  }}
+                  className="relative"
+                >
+                  <CarouselContent className="-ml-3 md:-ml-5">
+                    {featuredPropertyTrack.map((property) => (
+                      <CarouselItem key={property.id} className="basis-[84%] pl-3 sm:basis-[58%] md:pl-5 lg:basis-1/3">
+                        <article className="h-full overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_36px_rgba(15,23,42,0.06)]">
+                          <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                            <img
+                              src={property.image}
+                              alt={property.title}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                          <div className="flex h-full flex-col p-5">
                             <div className="flex items-center justify-between gap-3">
                               <p className="text-2xl font-black text-slate-950">₪{property.price.toLocaleString("he-IL")}</p>
                               <span className="rounded-full bg-[#d9ae4c] px-3 py-1 text-xs font-black text-white shadow-[0_8px_18px_rgba(217,174,76,0.22)]">{property.status}</span>
                             </div>
-                            <h3 className="mt-3 text-[1.38rem] font-extrabold text-slate-950">{property.title}</h3>
+                            <h3 className="mt-3 text-[1.38rem] font-extrabold leading-snug text-slate-950">{property.title}</h3>
                             <p className="mt-3 text-base font-semibold text-slate-600">
                               {property.neighborhood}, {property.city}
                             </p>
                             <div className="mt-4 grid grid-cols-2 gap-3 text-sm font-bold text-slate-700">
-                              <div className="flex items-center gap-2 rounded-2xl bg-white px-3 py-3">
+                              <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3">
                                 <BedDouble className="size-4 text-[#d9ae4c]" />
                                 <span>{property.rooms} חדרים</span>
                               </div>
-                              <div className="flex items-center gap-2 rounded-2xl bg-white px-3 py-3">
+                              <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3">
                                 <Ruler className="size-4 text-[#d9ae4c]" />
                                 <span>{property.sqm} מ״ר</span>
                               </div>
                             </div>
+                            <Link href="/properties" className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-[#d9ae4c]" aria-label={`View Details ${property.title}`}>
+                              View Details
+                              <ChevronLeft className="size-4" />
+                            </Link>
                           </div>
                         </article>
-                      ))}
-                    </div>
-                  ))}
-                </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+
+                  {featuredPropertyTrack.length > 1 ? (
+                    <>
+                      <div className="pointer-events-none absolute inset-y-0 left-0 right-0 hidden items-center justify-between md:flex">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="pointer-events-auto -mr-5 size-11 rounded-full border-slate-200 bg-white text-slate-950 shadow-[0_14px_30px_rgba(15,23,42,0.14)] hover:bg-[#d9ae4c] hover:text-white"
+                          onClick={() => scrollPropertyCarousel("next")}
+                          aria-label="Next property"
+                        >
+                          <ArrowRight className="size-5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="pointer-events-auto -ml-5 size-11 rounded-full border-slate-200 bg-white text-slate-950 shadow-[0_14px_30px_rgba(15,23,42,0.14)] hover:bg-[#d9ae4c] hover:text-white"
+                          onClick={() => scrollPropertyCarousel("prev")}
+                          aria-label="Previous property"
+                        >
+                          <ArrowLeft className="size-5" />
+                        </Button>
+                      </div>
+
+                      <div className="mt-7 flex items-center justify-center gap-2">
+                        {featuredPropertyTrack.map((property, index) => (
+                          <button
+                            key={`property-dot-${property.id}`}
+                            type="button"
+                            className={`h-2.5 rounded-full transition-all ${
+                              selectedPropertySlide === index ? "w-8 bg-[#d9ae4c]" : "w-2.5 bg-slate-300"
+                            }`}
+                            onClick={() => selectPropertySlide(index)}
+                            aria-label={`Go to property ${index + 1}`}
+                            aria-current={selectedPropertySlide === index ? "true" : undefined}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
+                </Carousel>
               ) : (
                 <div className="rounded-[28px] border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
                   עדיין לא פורסמו נכסים להצגה בדף הבית.
