@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { storeAgentSessionToken } from "@/lib/agentSession";
 import { trpc } from "@/lib/trpc";
 import { AlertCircle, ChevronLeft, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
@@ -93,9 +94,7 @@ export default function AgentLogin() {
         password,
       });
 
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem("team_shay_agent_session_token", loginResult.sessionToken);
-      }
+      storeAgentSessionToken(loginResult.sessionToken);
 
       const sessionReady = await verifySessionAfterLogin(loginResult.sessionToken);
       if (!sessionReady) {

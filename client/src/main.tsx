@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { getLoginUrl } from "./const";
+import { getStoredAgentSessionToken } from "./lib/agentSession";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -46,7 +47,7 @@ const trpcClient = trpc.createClient({
         const headers = new Headers(init?.headers ?? undefined);
 
         if (typeof window !== "undefined") {
-          const fallbackSessionToken = window.localStorage.getItem("team_shay_agent_session_token");
+          const fallbackSessionToken = getStoredAgentSessionToken();
           if (fallbackSessionToken) {
             headers.set("x-team-shay-agent-session", fallbackSessionToken);
           }
