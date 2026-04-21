@@ -113,3 +113,4 @@ temp/
 # Manus browser-debug files (auto-generated, not part of source)
 client/public/__manus__/
 .vercel
+.env*.local

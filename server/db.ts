@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { get as blobGet, list as blobList, put as blobPut } from "@vercel/blob";
 import path from "node:path";
 import { and, asc, desc, eq, like, lte, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
@@ -205,6 +206,11 @@ type LocalCmsData = {
 };
 
 const localCmsDataPath = path.join(process.cwd(), ".local-cms-data", "cms.json");
+const blobCmsDataPrefix = "cms/team-shay/cms-";
+
+function hasBlobStorage() {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+}
 
 function createEmptyLocalCmsData(): LocalCmsData {
   return {
@@ -219,24 +225,64 @@ function parseDate(value: unknown) {
   return value ? new Date(String(value)) : new Date();
 }
 
+async function streamToText(stream: ReadableStream<Uint8Array>) {
+  const response = new Response(stream);
+  return response.text();
+}
+
+function normalizeLocalCmsData(parsed: Partial<LocalCmsData>): LocalCmsData {
+  return {
+    nextPropertyId: parsed.nextPropertyId || 1,
+    nextPropertyImageId: parsed.nextPropertyImageId || 1,
+    properties: (parsed.properties ?? []).map((property) => ({
+      ...property,
+      createdAt: parseDate(property.createdAt),
+      updatedAt: parseDate(property.updatedAt),
+    })) as Property[],
+    propertyImages: (parsed.propertyImages ?? []).map((image) => ({
+      ...image,
+      createdAt: parseDate(image.createdAt),
+    })) as LocalPropertyImage[],
+  };
+}
+
+async function readBlobCmsData(): Promise<LocalCmsData | null> {
+  if (!hasBlobStorage()) return null;
+
+  const { blobs } = await blobList({
+    prefix: blobCmsDataPrefix,
+    limit: 1000,
+  });
+  const latestBlob = blobs.sort((left, right) => right.uploadedAt.getTime() - left.uploadedAt.getTime())[0];
+  if (!latestBlob) return null;
+
+  const result = await blobGet(latestBlob.url, { access: "public" });
+  if (!result || result.statusCode !== 200 || !result.stream) return null;
+
+  const rawData = await streamToText(result.stream);
+  return normalizeLocalCmsData(JSON.parse(rawData) as LocalCmsData);
+}
+
+async function writeBlobCmsData(data: LocalCmsData) {
+  if (!hasBlobStorage()) return false;
+
+  await blobPut(`${blobCmsDataPrefix}${Date.now()}.json`, `${JSON.stringify(data, null, 2)}\n`, {
+    access: "public",
+    addRandomSuffix: true,
+    contentType: "application/json",
+    cacheControlMaxAge: 60,
+  });
+
+  return true;
+}
+
 async function readLocalCmsData(): Promise<LocalCmsData> {
+  const blobData = await readBlobCmsData();
+  if (blobData) return blobData;
+
   try {
     const rawData = await readFile(localCmsDataPath, "utf8");
-    const parsed = JSON.parse(rawData) as LocalCmsData;
-
-    return {
-      nextPropertyId: parsed.nextPropertyId || 1,
-      nextPropertyImageId: parsed.nextPropertyImageId || 1,
-      properties: (parsed.properties ?? []).map((property) => ({
-        ...property,
-        createdAt: parseDate(property.createdAt),
-        updatedAt: parseDate(property.updatedAt),
-      })),
-      propertyImages: (parsed.propertyImages ?? []).map((image) => ({
-        ...image,
-        createdAt: parseDate(image.createdAt),
-      })),
-    };
+    return normalizeLocalCmsData(JSON.parse(rawData) as LocalCmsData);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       return createEmptyLocalCmsData();
@@ -247,6 +293,8 @@ async function readLocalCmsData(): Promise<LocalCmsData> {
 }
 
 async function writeLocalCmsData(data: LocalCmsData) {
+  if (await writeBlobCmsData(data)) return;
+
   await mkdir(path.dirname(localCmsDataPath), { recursive: true });
   await writeFile(localCmsDataPath, `${JSON.stringify(data, null, 2)}\n`);
 }

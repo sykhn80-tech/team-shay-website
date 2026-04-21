@@ -2,6 +2,7 @@
 // Uses the Biz-provided storage proxy when configured, with a local dev fallback.
 
 import { mkdir, writeFile } from "node:fs/promises";
+import { put } from "@vercel/blob";
 import path from "node:path";
 import { ENV } from './_core/env';
 
@@ -88,8 +89,25 @@ function toBuffer(data: Buffer | Uint8Array | string) {
   return Buffer.from(data);
 }
 
+function hasBlobStorage() {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+}
+
 function buildLocalPublicUrl(key: string) {
   return `/uploads/${key.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+async function storagePutBlob(
+  key: string,
+  data: Buffer | Uint8Array | string,
+  contentType: string,
+): Promise<{ key: string; url: string }> {
+  const blob = await put(key, toBuffer(data), {
+    access: "public",
+    contentType,
+  });
+
+  return { key: blob.pathname, url: blob.url };
 }
 
 async function storagePutLocal(
@@ -118,6 +136,10 @@ export async function storagePut(
   const config = getStorageConfig();
 
   if (!config) {
+    if (hasBlobStorage()) {
+      return storagePutBlob(key, data, contentType);
+    }
+
     return storagePutLocal(key, data);
   }
 
