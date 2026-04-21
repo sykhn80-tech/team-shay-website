@@ -31,8 +31,21 @@ type PropertyFormState = {
   isPublished: boolean;
 };
 
+type UploadImagePayload = {
+  name: string;
+  mimeType: "image/jpeg" | "image/png" | "image/webp";
+  dataBase64: string;
+};
+
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 const MAX_IMAGES = 12;
+const MAX_UPLOAD_PAYLOAD_BYTES = 3.6 * 1024 * 1024;
+const BASE64_SIZE_MULTIPLIER = 1.38;
+const MAX_COMPRESSED_IMAGE_BYTES = 480 * 1024;
+const MIN_COMPRESSED_IMAGE_BYTES = 180 * 1024;
+const MAX_UPLOAD_IMAGE_DIMENSION = 1800;
+const MIN_UPLOAD_IMAGE_DIMENSION = 900;
+const JPEG_QUALITY_STEPS = [0.82, 0.74, 0.66, 0.58, 0.5, 0.42];
 
 const initialState: PropertyFormState = {
   title: "",
@@ -58,6 +71,127 @@ async function fileToBase64(file: File) {
     reader.onerror = () => reject(new Error(`קריאת הקובץ ${file.name} נכשלה.`));
     reader.readAsDataURL(file);
   });
+}
+
+async function blobToBase64(blob: Blob, fileName: string) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error(`קריאת הקובץ ${fileName} נכשלה.`));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function getTargetImageBytes(fileCount: number) {
+  const imageBudget = Math.floor(MAX_UPLOAD_PAYLOAD_BYTES / Math.max(fileCount, 1) / BASE64_SIZE_MULTIPLIER);
+  return Math.min(MAX_COMPRESSED_IMAGE_BYTES, Math.max(MIN_COMPRESSED_IMAGE_BYTES, imageBudget));
+}
+
+function replaceFileExtension(fileName: string, extension: string) {
+  return fileName.replace(/\.[^.]+$/, "") + extension;
+}
+
+function loadImage(blob: Blob) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(blob);
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("לא הצלחנו להכין אחת מהתמונות להעלאה. נסו לבחור תמונות JPG או PNG."));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function canvasToJpeg(canvas: HTMLCanvasElement, quality: number) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          resolve(blob);
+          return;
+        }
+
+        reject(new Error("כיווץ אחת התמונות נכשל. נסו לבחור תמונה אחרת."));
+      },
+      "image/jpeg",
+      quality,
+    );
+  });
+}
+
+async function compressImageForUpload(file: File, targetBytes: number) {
+  const image = await loadImage(file);
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("הדפדפן לא הצליח להכין את התמונות להעלאה.");
+  }
+
+  const largestSide = Math.max(image.naturalWidth, image.naturalHeight);
+  const initialScale = Math.min(1, MAX_UPLOAD_IMAGE_DIMENSION / Math.max(largestSide, 1));
+  let maxDimension = Math.max(MIN_UPLOAD_IMAGE_DIMENSION, Math.floor(largestSide * initialScale));
+  let bestBlob: Blob | null = null;
+
+  while (maxDimension >= MIN_UPLOAD_IMAGE_DIMENSION) {
+    const scale = Math.min(1, maxDimension / Math.max(largestSide, 1));
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    for (const quality of JPEG_QUALITY_STEPS) {
+      const blob = await canvasToJpeg(canvas, quality);
+      bestBlob = !bestBlob || blob.size < bestBlob.size ? blob : bestBlob;
+
+      if (blob.size <= targetBytes) {
+        canvas.width = 1;
+        canvas.height = 1;
+        return blob;
+      }
+    }
+
+    maxDimension = Math.floor(maxDimension * 0.82);
+  }
+
+  canvas.width = 1;
+  canvas.height = 1;
+
+  if (!bestBlob) {
+    throw new Error("כיווץ אחת התמונות נכשל. נסו לבחור תמונה אחרת.");
+  }
+
+  return bestBlob;
+}
+
+async function prepareImageForUpload(file: File, fileCount: number): Promise<UploadImagePayload> {
+  const supportedMimeType =
+    file.type === "image/png" || file.type === "image/webp" || file.type === "image/jpeg"
+      ? (file.type as UploadImagePayload["mimeType"])
+      : null;
+  const targetBytes = getTargetImageBytes(fileCount);
+
+  if (supportedMimeType && file.size <= targetBytes) {
+    return {
+      name: file.name,
+      mimeType: supportedMimeType,
+      dataBase64: await fileToBase64(file),
+    };
+  }
+
+  const compressedImage = await compressImageForUpload(file, targetBytes);
+
+  return {
+    name: replaceFileExtension(file.name, ".jpg"),
+    mimeType: "image/jpeg" as const,
+    dataBase64: await blobToBase64(compressedImage, file.name),
+  };
 }
 
 function parsePositiveInteger(value: string) {
@@ -181,21 +315,16 @@ export default function AddProperty() {
   };
 
   const buildPayload = async () => {
-     const nextImages = await Promise.all(
-      files.map(async (file) => {
-        const mimeType: "image/jpeg" | "image/png" | "image/webp" =
-          file.type === "image/png" || file.type === "image/webp" || file.type === "image/jpeg"
-            ? file.type
-            : "image/jpeg";
+    const nextImages: UploadImagePayload[] = [];
 
-        return {
-          name: file.name,
-          mimeType,
-          dataBase64: await fileToBase64(file),
-        };
-      }),
-    );
+    for (const file of files) {
+      nextImages.push(await prepareImageForUpload(file, files.length));
+    }
 
+    const estimatedPayloadBytes = nextImages.reduce((total, image) => total + image.dataBase64.length, 0);
+    if (estimatedPayloadBytes > MAX_UPLOAD_PAYLOAD_BYTES) {
+      throw new Error("התמונות שבחרתם עדיין גדולות מדי להעלאה. נסו לבחור פחות תמונות בפעם אחת.");
+    }
 
     return {
       title: form.title.trim(),
