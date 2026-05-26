@@ -1022,7 +1022,12 @@ function buildStreetSuggestions(
     new Set([
       ...deals.map((deal) => deal.street).filter((street) => street && street !== "ללא רחוב"),
       ...(pageData?.otherNeighborhoodStreets ?? [])
-        .map((street) => street.title?.trim() ?? "")
+        .map((street) => {
+          const title = street.title;
+          if (typeof title === "string") return title.trim();
+          if (typeof title === "number") return String(title).trim();
+          return "";
+        })
         .filter(Boolean),
     ]),
   );
