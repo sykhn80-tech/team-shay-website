@@ -207,9 +207,19 @@ type LocalCmsData = {
 
 const localCmsDataPath = path.join(process.cwd(), ".local-cms-data", "cms.json");
 const blobCmsDataPrefix = "cms/team-shay/cms-";
+const blobCmsCurrentPath = "cms/team-shay/current.json";
+const blobCmsCacheTtlMs = 30_000;
+
+let cachedBlobCmsData: LocalCmsData | null = null;
+let cachedBlobCmsEtag: string | null = null;
+let cachedBlobCmsFetchedAt = 0;
 
 function hasBlobStorage() {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+}
+
+function canWriteLocalCmsBackup() {
+  return !ENV.isProduction;
 }
 
 function createEmptyLocalCmsData(): LocalCmsData {
@@ -246,34 +256,110 @@ function normalizeLocalCmsData(parsed: Partial<LocalCmsData>): LocalCmsData {
   };
 }
 
-async function readBlobCmsData(): Promise<LocalCmsData | null> {
-  if (!hasBlobStorage()) return null;
+function updateBlobCmsCache(data: LocalCmsData, etag?: string | null) {
+  cachedBlobCmsData = data;
+  cachedBlobCmsEtag = etag ?? null;
+  cachedBlobCmsFetchedAt = Date.now();
+}
 
-  const { blobs } = await blobList({
-    prefix: blobCmsDataPrefix,
-    limit: 1000,
+async function persistLocalCmsBackup(data: LocalCmsData) {
+  if (!canWriteLocalCmsBackup()) return false;
+
+  try {
+    await mkdir(path.dirname(localCmsDataPath), { recursive: true });
+    await writeFile(localCmsDataPath, `${JSON.stringify(data, null, 2)}\n`);
+    return true;
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "EROFS" || code === "EPERM" || code === "EACCES") {
+      console.warn("[CMS] Local backup write skipped: filesystem is not writable in this environment.");
+      return false;
+    }
+
+    throw error;
+  }
+}
+
+async function readBlobCmsFile(pathname: string, ifNoneMatch?: string | null): Promise<LocalCmsData | null> {
+  const result = await blobGet(pathname, {
+    access: "public",
+    ifNoneMatch: ifNoneMatch ?? undefined,
   });
-  const latestBlob = blobs.sort((left, right) => right.uploadedAt.getTime() - left.uploadedAt.getTime())[0];
-  if (!latestBlob) return null;
 
-  const result = await blobGet(latestBlob.url, { access: "public" });
-  if (!result || result.statusCode !== 200 || !result.stream) return null;
+  if (!result) return null;
+  if (result.statusCode === 304 && cachedBlobCmsData) {
+    cachedBlobCmsFetchedAt = Date.now();
+    return cachedBlobCmsData;
+  }
+  if (!result.stream) return null;
 
   const rawData = await streamToText(result.stream);
-  return normalizeLocalCmsData(JSON.parse(rawData) as LocalCmsData);
+  const data = normalizeLocalCmsData(JSON.parse(rawData) as LocalCmsData);
+  updateBlobCmsCache(data, result.blob.etag);
+  return data;
+}
+
+async function readBlobCmsData(): Promise<LocalCmsData | null> {
+  if (!hasBlobStorage()) return null;
+  if (cachedBlobCmsData && Date.now() - cachedBlobCmsFetchedAt < blobCmsCacheTtlMs) {
+    return cachedBlobCmsData;
+  }
+
+  try {
+    const currentData = await readBlobCmsFile(blobCmsCurrentPath, cachedBlobCmsEtag);
+    if (currentData) {
+      await persistLocalCmsBackup(currentData);
+      return currentData;
+    }
+
+    const { blobs } = await blobList({
+      prefix: blobCmsDataPrefix,
+      limit: 1000,
+    });
+    const latestBlob = blobs.sort((left, right) => right.uploadedAt.getTime() - left.uploadedAt.getTime())[0];
+    if (!latestBlob) return null;
+
+    const result = await blobGet(latestBlob.url, { access: "public" });
+    if (!result || result.statusCode !== 200 || !result.stream) return null;
+
+    const rawData = await streamToText(result.stream);
+    const data = normalizeLocalCmsData(JSON.parse(rawData) as LocalCmsData);
+
+    await blobPut(blobCmsCurrentPath, `${JSON.stringify(data, null, 2)}\n`, {
+      access: "public",
+      allowOverwrite: true,
+      addRandomSuffix: false,
+      contentType: "application/json",
+      cacheControlMaxAge: 60,
+    });
+
+    updateBlobCmsCache(data, result.blob.etag);
+    await persistLocalCmsBackup(data);
+    return data;
+  } catch (error) {
+    console.warn("[CMS] Falling back from Blob storage to local CMS data:", error);
+    return null;
+  }
 }
 
 async function writeBlobCmsData(data: LocalCmsData) {
   if (!hasBlobStorage()) return false;
 
-  await blobPut(`${blobCmsDataPrefix}${Date.now()}.json`, `${JSON.stringify(data, null, 2)}\n`, {
-    access: "public",
-    addRandomSuffix: true,
-    contentType: "application/json",
-    cacheControlMaxAge: 60,
-  });
+  try {
+    await blobPut(blobCmsCurrentPath, `${JSON.stringify(data, null, 2)}\n`, {
+      access: "public",
+      allowOverwrite: true,
+      addRandomSuffix: false,
+      contentType: "application/json",
+      cacheControlMaxAge: 60,
+    });
 
-  return true;
+    updateBlobCmsCache(data);
+    return true;
+  } catch (error) {
+    console.warn("[CMS] Blob write unavailable, falling back to local CMS data:", error);
+    return false;
+  }
 }
 
 async function readLocalCmsData(): Promise<LocalCmsData> {
@@ -293,10 +379,11 @@ async function readLocalCmsData(): Promise<LocalCmsData> {
 }
 
 async function writeLocalCmsData(data: LocalCmsData) {
-  if (await writeBlobCmsData(data)) return;
+  const blobSaved = await writeBlobCmsData(data);
+  const localSaved = await persistLocalCmsBackup(data);
+  if (blobSaved || localSaved) return;
 
-  await mkdir(path.dirname(localCmsDataPath), { recursive: true });
-  await writeFile(localCmsDataPath, `${JSON.stringify(data, null, 2)}\n`);
+  throw new Error("CMS write failed: Blob is unavailable and local filesystem is read-only.");
 }
 
 function sortByNewestProperty(left: Property, right: Property) {

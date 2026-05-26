@@ -37,6 +37,12 @@ type UploadImagePayload = {
   dataBase64: string;
 };
 
+function getFeaturedImageIndex(previewUrls: string[], featuredImageUrl?: string | null) {
+  if (!previewUrls.length || !featuredImageUrl) return 0;
+  const index = previewUrls.findIndex((imageUrl) => imageUrl === featuredImageUrl);
+  return index >= 0 ? index : 0;
+}
+
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 const MAX_IMAGES = 12;
 const MAX_UPLOAD_PAYLOAD_BYTES = 3.6 * 1024 * 1024;
@@ -219,6 +225,7 @@ export default function AddProperty() {
 
   const [form, setForm] = useState<PropertyFormState>(initialState);
   const [files, setFiles] = useState<File[]>([]);
+  const [featuredImageIndex, setFeaturedImageIndex] = useState(0);
 
   useEffect(() => {
     if (!isAgentLoading && !agent) {
@@ -245,6 +252,10 @@ export default function AddProperty() {
       status: existingProperty.status,
       isPublished: existingProperty.isPublished,
     });
+    setFeaturedImageIndex(getFeaturedImageIndex(
+      existingProperty.images?.map((image) => image.imageUrl) ?? [],
+      existingProperty.featuredImageUrl,
+    ));
   }, [existingProperty]);
 
   const invalidatePropertyViews = async () => {
@@ -312,6 +323,7 @@ export default function AddProperty() {
     }
 
     setFiles(selectedFiles);
+    setFeaturedImageIndex(0);
   };
 
   const buildPayload = async () => {
@@ -342,6 +354,8 @@ export default function AddProperty() {
       description: form.description.trim(),
       descriptionHtml: null,
       isPublished: form.isPublished,
+      featuredImageIndex: previewImages.length ? featuredImageIndex : null,
+      featuredImageUrl: files.length ? null : previewImages[featuredImageIndex] ?? existingProperty?.featuredImageUrl ?? null,
       images: nextImages,
     };
   };
@@ -386,6 +400,17 @@ export default function AddProperty() {
   const existingImageUrls = existingProperty?.images?.map((image) => image.imageUrl) ?? [];
   const previewImages = previews.length ? previews : existingImageUrls;
   const formattedPrice = parsePositiveInteger(form.price)?.toLocaleString("he-IL") ?? form.price;
+
+  useEffect(() => {
+    if (!previewImages.length) {
+      setFeaturedImageIndex(0);
+      return;
+    }
+
+    if (featuredImageIndex >= previewImages.length) {
+      setFeaturedImageIndex(0);
+    }
+  }, [featuredImageIndex, previewImages]);
 
   return (
     <div className="min-h-screen bg-[#fff8e6] text-black" dir="rtl">
@@ -605,6 +630,9 @@ export default function AddProperty() {
                       className="cursor-pointer rounded-2xl border-slate-200 bg-white"
 
                   />
+                  <p className="text-sm font-semibold text-slate-500">
+                    לאחר בחירת התמונות תוכלו לסמן בגלריה איזו מהן תוצג כתמונה הראשית של הנכס.
+                  </p>
                 </div>
 
                 <label className="inline-flex items-center gap-3 rounded-[24px] border border-slate-200 bg-[#fbfdff] px-5 py-4 text-sm font-semibold text-slate-700">
@@ -673,15 +701,35 @@ export default function AddProperty() {
                 <ImagePlus className="size-5" />
                 <h3 className="text-xl font-black text-black">גלריית תמונות</h3>
               </div>
+              <div className="mt-3 rounded-[20px] bg-[#fff8e6] px-4 py-3 text-sm font-semibold text-slate-600">
+                לחצו על אחת התמונות כדי להגדיר אותה כתמונה הראשית.
+              </div>
               <div className="mt-5 grid grid-cols-2 gap-3">
                 {previewImages.length ? (
                   previewImages.map((imageUrl, index) => (
-                    <img
+                    <button
                       key={`${imageUrl}-${index}`}
-                      src={imageUrl}
-                      alt={`תמונת נכס ${index + 1}`}
-                      className="h-28 w-full rounded-2xl object-cover"
-                    />
+                      type="button"
+                      onClick={() => setFeaturedImageIndex(index)}
+                      className={`relative overflow-hidden rounded-2xl border-2 text-right transition ${
+                        featuredImageIndex === index
+                          ? "border-[#d9ae4c] shadow-[0_10px_24px_rgba(217,174,76,0.22)]"
+                          : "border-transparent"
+                      }`}
+                    >
+                      <img
+                        src={imageUrl}
+                        alt={`תמונת נכס ${index + 1}`}
+                        className="h-28 w-full object-cover"
+                      />
+                      <span className={`absolute right-2 top-2 rounded-full px-3 py-1 text-xs font-black ${
+                        featuredImageIndex === index
+                          ? "bg-[#d9ae4c] text-white"
+                          : "bg-white/90 text-slate-700"
+                      }`}>
+                        {featuredImageIndex === index ? "תמונה ראשית" : "הגדר כראשית"}
+                      </span>
+                    </button>
                   ))
                 ) : (
                   <div className="col-span-2 rounded-[24px] bg-[#fff8e6] p-5 text-sm leading-7 text-slate-500">

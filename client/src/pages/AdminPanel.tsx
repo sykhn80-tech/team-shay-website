@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
+  BarChart2,
   Building2,
   ChevronLeft,
   ImagePlus,
+  LayoutDashboard,
   Loader2,
+  Megaphone,
   MessageSquareQuote,
   Pencil,
   Plus,
@@ -12,6 +15,7 @@ import {
   ShieldCheck,
   Trash2,
   Upload,
+  UserCircle2,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -77,6 +81,7 @@ type SiteSettingsFormState = {
 type PropertyGalleryDraft = {
   previewUrls: string[];
   uploads: UploadImagePayload[];
+  featuredImageIndex: number;
 };
 
 const allowedMimeTypes: UploadMimeType[] = ["image/jpeg", "image/png", "image/webp"];
@@ -154,6 +159,12 @@ function serializeImageField(field: ImageFieldState) {
   if (field.upload) return field.upload;
   if (field.storedUrl) return field.storedUrl;
   return null;
+}
+
+function getFeaturedImageIndex(previewUrls: string[], featuredImageUrl?: string | null) {
+  if (!previewUrls.length || !featuredImageUrl) return 0;
+  const index = previewUrls.findIndex((imageUrl) => imageUrl === featuredImageUrl);
+  return index >= 0 ? index : 0;
 }
 
 function ImageUploadField({
@@ -339,6 +350,10 @@ export default function AdminPanel() {
           {
             previewUrls: (property.images ?? []).map((image) => image.imageUrl),
             uploads: [],
+            featuredImageIndex: getFeaturedImageIndex(
+              (property.images ?? []).map((image) => image.imageUrl),
+              property.featuredImageUrl,
+            ),
           },
         ]),
       ),
@@ -441,13 +456,19 @@ export default function AdminPanel() {
       [propertyId]: {
         previewUrls,
         uploads,
+        featuredImageIndex: 0,
       },
     }));
   };
 
   const handleSavePropertyGallery = async (property: (typeof properties)[number]) => {
     const draft = propertyGalleryDrafts[property.id];
-    if (!draft?.uploads.length) {
+    const previewUrls = draft?.previewUrls.length
+      ? draft.previewUrls
+      : (property.images ?? []).map((image) => image.imageUrl);
+    const featuredImageIndex = draft?.featuredImageIndex ?? getFeaturedImageIndex(previewUrls, property.featuredImageUrl);
+
+    if (!previewUrls.length) {
       toast.error("כדי לעדכן גלריה יש לבחור קודם תמונה אחת לפחות.");
       return;
     }
@@ -471,7 +492,9 @@ export default function AdminPanel() {
         description: property.description,
         descriptionHtml: property.descriptionHtml ?? null,
         isPublished: property.isPublished,
-        images: draft.uploads,
+        featuredImageIndex: draft?.uploads.length ? featuredImageIndex : null,
+        featuredImageUrl: previewUrls[featuredImageIndex] ?? property.featuredImageUrl ?? null,
+        images: draft?.uploads ?? [],
       },
     });
   };
@@ -491,9 +514,71 @@ export default function AdminPanel() {
     return null;
   }
 
+  const sidebarItems = [
+    { label: "סקירה כללית", icon: LayoutDashboard, href: "/agent-dashboard", active: false },
+    { label: "הנכסים שלי", icon: Building2, href: "/agent-dashboard", active: false },
+    { label: "שיווק נכסים", icon: Megaphone, href: "/agent-dashboard/marketing", active: false },
+    { label: "הערכת שווי CMA", icon: BarChart2, href: "/agent-dashboard/cma", active: false },
+    { label: "פרופיל סוכן", icon: UserCircle2, href: "/agent-dashboard", active: false },
+  ];
+
+  const handleGoBack = () => {
+    if (typeof window !== "undefined") {
+      window.history.back();
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#fffdf7] px-4 py-8" dir="rtl">
-      <div className="mx-auto max-w-7xl space-y-8">
+    <div className="min-h-screen bg-[#fffdf7] py-8" dir="rtl">
+      <div className="mx-auto max-w-[1440px] px-4">
+        <aside className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_20px_40px_rgba(15,23,42,0.06)] lg:fixed lg:right-4 lg:top-6 lg:w-[280px] lg:overflow-y-auto">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Agent Area</p>
+            <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-[#d9ae4c]">
+              <ChevronLeft className="size-4" />
+              לאתר
+            </Link>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGoBack}
+            className="mt-4 w-full rounded-full border-slate-200 text-slate-700 hover:bg-slate-50"
+          >
+            <ChevronLeft className="size-4" />
+            חזרה אחורה
+          </Button>
+
+          <div className="mt-6 rounded-[28px] bg-[#d9ae4c] p-5 text-white">
+            <p className="text-sm font-bold text-white/80">שלום {agentSessionQuery.data.name ?? "סוכן"}</p>
+            <h1 className="mt-2 text-2xl font-black">אזור הסוכנים</h1>
+            <p className="mt-3 text-sm leading-7 text-white/85">ניווט קבוע ומהיר לכל כלי העבודה של הסוכן.</p>
+          </div>
+
+          <nav className="mt-6 space-y-2">
+            {sidebarItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link key={item.label} href={item.href}>
+                  <button
+                    type="button"
+                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right text-sm font-bold transition ${
+                      item.active
+                        ? "bg-[#fff4d8] text-[#b98b2f] shadow-[0_12px_24px_rgba(217,174,76,0.14)]"
+                        : "text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Icon className="size-4" />
+                    {item.label}
+                  </button>
+                </Link>
+              );
+            })}
+          </nav>
+        </aside>
+
+        <div className="mt-6 space-y-8 lg:mt-0 lg:mr-[304px]" dir="rtl">
         <header className="rounded-[32px] bg-[#d9ae4c] px-6 py-6 text-white shadow-[0_20px_50px_rgba(217,174,76,0.25)] md:px-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -506,7 +591,7 @@ export default function AdminPanel() {
                 מחובר כעת: {agentSessionQuery.data.name} · {agentSessionQuery.data.email}
               </p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link href="/agent-dashboard/new-property">
                 <Button className="rounded-full bg-[#fff2a8] text-black hover:bg-[#ffe97a]">
                   <Plus className="size-4" />
@@ -539,7 +624,7 @@ export default function AdminPanel() {
         </section>
 
         <section className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
-          <form onSubmit={handleSaveSettings} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
+          <form id="admin-site-settings" onSubmit={handleSaveSettings} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center gap-3">
               <Settings className="size-5 text-[#d9ae4c]" />
               <div>
@@ -647,7 +732,7 @@ export default function AdminPanel() {
             </Button>
           </form>
 
-          <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
+          <section id="admin-leads" className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center gap-3">
               <ShieldCheck className="size-5 text-[#d9ae4c]" />
               <div>
@@ -679,7 +764,7 @@ export default function AdminPanel() {
         </section>
 
         <section className="grid gap-8 xl:grid-cols-2">
-          <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
+          <section id="admin-staff" className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center gap-3">
               <Users className="size-5 text-[#d9ae4c]" />
               <div>
@@ -808,7 +893,7 @@ export default function AdminPanel() {
             </div>
           </section>
 
-          <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
+          <section id="admin-testimonials" className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center gap-3">
               <MessageSquareQuote className="size-5 text-[#d9ae4c]" />
               <div>
@@ -920,7 +1005,7 @@ export default function AdminPanel() {
         </section>
 
         <section className="grid gap-8 xl:grid-cols-[1.15fr_0.85fr]">
-          <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
+          <section id="admin-properties" className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <Building2 className="size-5 text-[#d9ae4c]" />
@@ -944,6 +1029,15 @@ export default function AdminPanel() {
             <div className="mt-6 space-y-4">
               {properties.map((property) => (
                 <article key={property.id} className="rounded-[24px] border border-slate-200 p-5">
+                  {(() => {
+                    const draft = propertyGalleryDrafts[property.id];
+                    const previewUrls = draft?.previewUrls.length
+                      ? draft.previewUrls
+                      : (property.images ?? []).map((image) => image.imageUrl);
+                    const featuredImageIndex = draft?.featuredImageIndex ?? getFeaturedImageIndex(previewUrls, property.featuredImageUrl);
+
+                    return (
+                      <>
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex items-start gap-4">
                       {property.featuredImageUrl ? <img src={property.featuredImageUrl} alt={property.title} className="h-20 w-20 rounded-2xl object-cover" /> : null}
@@ -974,7 +1068,7 @@ export default function AdminPanel() {
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                       <div>
                         <p className="text-sm font-black text-slate-950">גלריית תמונות הנכס</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">בחירת תמונות לגלריה מתוך המחשב תחליף את גלריית הנכס הנוכחית לאחר השמירה.</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">בחירת תמונות לגלריה מתוך המחשב תחליף את גלריית הנכס הנוכחית לאחר השמירה. אפשר גם לבחור איזו תמונה תופיע כתמונה הראשית.</p>
                       </div>
                       <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[#d9ae4c]/35 bg-white px-4 text-sm font-bold text-[#b98b2f] transition hover:bg-[#fff4d8]">
                         <Upload className="size-4" />
@@ -993,9 +1087,36 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-                      {(propertyGalleryDrafts[property.id]?.previewUrls ?? []).length ? (
-                        (propertyGalleryDrafts[property.id]?.previewUrls ?? []).map((imageUrl, index) => (
-                          <img key={`${property.id}-${imageUrl}-${index}`} src={imageUrl} alt={`${property.title} ${index + 1}`} className="h-24 w-full rounded-2xl object-cover" />
+                      {previewUrls.length ? (
+                        previewUrls.map((imageUrl, index) => (
+                          <button
+                            key={`${property.id}-${imageUrl}-${index}`}
+                            type="button"
+                            onClick={() =>
+                              setPropertyGalleryDrafts((previous) => ({
+                                ...previous,
+                                [property.id]: {
+                                  ...(previous[property.id] ?? { previewUrls, uploads: [], featuredImageIndex: 0 }),
+                                  previewUrls,
+                                  featuredImageIndex: index,
+                                },
+                              }))
+                            }
+                            className={`relative overflow-hidden rounded-2xl border-2 text-right transition ${
+                              featuredImageIndex === index
+                                ? "border-[#d9ae4c] shadow-[0_10px_24px_rgba(217,174,76,0.22)]"
+                                : "border-transparent"
+                            }`}
+                          >
+                            <img src={imageUrl} alt={`${property.title} ${index + 1}`} className="h-24 w-full object-cover" />
+                            <span className={`absolute right-2 top-2 rounded-full px-3 py-1 text-[11px] font-black ${
+                              featuredImageIndex === index
+                                ? "bg-[#d9ae4c] text-white"
+                                : "bg-white/90 text-slate-700"
+                            }`}>
+                              {featuredImageIndex === index ? "תמונה ראשית" : "הגדר כראשית"}
+                            </span>
+                          </button>
                         ))
                       ) : (
                         <div className="col-span-full rounded-[20px] border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-400">
@@ -1017,42 +1138,16 @@ export default function AdminPanel() {
                       <span className="text-xs font-semibold text-slate-500">הקבצים נשמרים באחסון הקבוע ומקושרים אוטומטית למסד הנתונים של הנכס.</span>
                     </div>
                   </div>
+                      </>
+                    );
+                  })()}
                 </article>
               ))}
             </div>
           </section>
 
-          <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
-            <p className="text-sm font-black uppercase tracking-[0.06em] text-[#d9ae4c]">Quick Links</p>
-            <h2 className="mt-2 text-2xl font-black text-slate-950">קיצורי ניהול מהירים</h2>
-            <div className="mt-6 grid gap-4">
-              <Link href="/properties">
-                <Button variant="outline" className="h-14 justify-between rounded-2xl border-slate-200 text-slate-700 hover:bg-slate-50">
-                  צפייה בקטלוג הציבורי
-                  <ChevronLeft className="size-4" />
-                </Button>
-              </Link>
-              <Link href="/agent-dashboard/new-property">
-                <Button variant="outline" className="h-14 justify-between rounded-2xl border-slate-200 text-slate-700 hover:bg-slate-50">
-                  ניהול נכסים וגלריות תמונות
-                  <ChevronLeft className="size-4" />
-                </Button>
-              </Link>
-              <Link href="/agent-dashboard">
-                <Button variant="outline" className="h-14 justify-between rounded-2xl border-slate-200 text-slate-700 hover:bg-slate-50">
-                  מעבר לדשבורד הסוכנים
-                  <ChevronLeft className="size-4" />
-                </Button>
-              </Link>
-              <Link href="/">
-                <Button variant="outline" className="h-14 justify-between rounded-2xl border-slate-200 text-slate-700 hover:bg-slate-50">
-                  חזרה לאתר הציבורי
-                  <ChevronLeft className="size-4" />
-                </Button>
-              </Link>
-            </div>
-          </section>
         </section>
+        </div>
       </div>
     </div>
   );

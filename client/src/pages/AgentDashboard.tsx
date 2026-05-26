@@ -3,12 +3,14 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import {
+  BarChart2,
   Building2,
   ChevronLeft,
   CirclePlus,
   Eye,
   LayoutDashboard,
   LogOut,
+  Megaphone,
   Pencil,
   Plus,
   Trash2,
@@ -20,6 +22,8 @@ import { toast } from "sonner";
 const sidebarItems = [
   { label: "סקירה כללית", icon: LayoutDashboard, active: true },
   { label: "הנכסים שלי", icon: Building2, active: false },
+  { label: "שיווק נכסים", icon: Megaphone, href: "/agent-dashboard/marketing", active: false },
+  { label: "הערכת שווי CMA", icon: BarChart2, href: "/agent-dashboard/cma", active: false },
   { label: "פרופיל סוכן", icon: UserCircle2, active: false },
 ];
 
@@ -86,10 +90,16 @@ export default function AgentDashboard() {
     await deleteMutation.mutateAsync({ propertyId });
   };
 
+  const handleGoBack = () => {
+    if (typeof window !== "undefined") {
+      window.history.back();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#fff8e6] text-black" dir="rtl">
-      <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
-        <aside className="border-l border-[#f3dfb0] bg-white px-5 py-6 shadow-[0_20px_50px_rgba(15,23,42,0.04)]">
+      <div className="min-h-screen">
+        <aside className="border-l border-[#f3dfb0] bg-white px-5 py-6 shadow-[0_20px_50px_rgba(15,23,42,0.04)] lg:fixed lg:right-0 lg:top-0 lg:h-screen lg:w-[280px] lg:overflow-y-auto">
           <div className="flex items-center justify-between gap-3">
             <img src={TEAM_LOGO} alt="Team Shay" className="h-14 w-auto object-contain" />
             <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-[#d9ae4c]">
@@ -97,6 +107,15 @@ export default function AgentDashboard() {
               לאתר
             </Link>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGoBack}
+            className="mt-4 w-full rounded-full border-slate-200 text-slate-700 hover:bg-slate-50"
+          >
+            <ChevronLeft className="size-4" />
+            חזרה אחורה
+          </Button>
 
           <div className="mt-8 rounded-[28px] bg-[#d9ae4c] p-5 text-white">
             <p className="text-sm font-bold text-white/80">שלום {agent?.name ?? "סוכן"}</p>
@@ -109,16 +128,25 @@ export default function AgentDashboard() {
           <nav className="mt-8 space-y-2">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
+              const itemClassName = `flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right text-sm font-bold transition ${
+                item.active
+                  ? "bg-[#fff4d8] text-[#b98b2f] shadow-[0_12px_24px_rgba(217,174,76,0.14)]"
+                  : "text-slate-600 hover:bg-slate-50"
+              }`;
+
+              if (item.href) {
+                return (
+                  <Link key={item.label} href={item.href}>
+                    <span className={itemClassName}>
+                      <Icon className="size-4" />
+                      {item.label}
+                    </span>
+                  </Link>
+                );
+              }
+
               return (
-                <button
-                  key={item.label}
-                  type="button"
-                  className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right text-sm font-bold transition ${
-                    item.active
-                      ? "bg-[#fff4d8] text-[#b98b2f] shadow-[0_12px_24px_rgba(217,174,76,0.14)]"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
-                >
+                <button key={item.label} type="button" className={itemClassName}>
                   <Icon className="size-4" />
                   {item.label}
                 </button>
@@ -141,7 +169,7 @@ export default function AgentDashboard() {
           </Button>
         </aside>
 
-        <main className="px-4 py-6 md:px-8 md:py-8">
+        <main className="px-4 py-6 md:px-8 md:py-8 lg:mr-[280px]">
           <div className="mx-auto max-w-6xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>

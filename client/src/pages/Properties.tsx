@@ -256,16 +256,10 @@ export default function Properties() {
 
                         <p className="mt-4 text-sm leading-7 text-slate-600">{property.description}</p>
 
-                        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                          <Button
-                            onClick={() => window.open(homeQuery.data?.settings?.whatsappLink || WHATSAPP_LINK, "_blank", "noopener,noreferrer")}
-                            className="flex-1 rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]"
-                          >
-                            לפרטים נוספים
-                          </Button>
-                          <Link href="/agent-login" className="flex-1">
-                            <Button variant="outline" className="w-full rounded-full border-slate-200 text-slate-700 hover:bg-slate-50">
-                              אזור סוכנים
+                        <div className="mt-5">
+                          <Link href={`/properties/${property.id}`} className="block">
+                            <Button className="w-full rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">
+                              לפרטים נוספים
                             </Button>
                           </Link>
                         </div>

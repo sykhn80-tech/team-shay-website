@@ -830,8 +830,8 @@ export default function Home() {
                                 <span>{property.sqm} מ״ר</span>
                               </div>
                             </div>
-                            <Link href="/properties" className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-[#d9ae4c]" aria-label={`View Details ${property.title}`}>
-                              View Details
+                            <Link href={`/properties/${property.id}`} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-[#d9ae4c]" aria-label={`פרטים נוספים ${property.title}`}>
+                              פרטים נוספים
                               <ChevronLeft className="size-4" />
                             </Link>
                           </div>

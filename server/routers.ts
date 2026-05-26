@@ -61,6 +61,8 @@ const propertyInputSchema = z.object({
   description: z.string().min(10),
   descriptionHtml: z.string().optional().nullable(),
   isPublished: z.boolean().default(true),
+  featuredImageIndex: z.number().int().min(0).optional().nullable(),
+  featuredImageUrl: z.string().min(1).optional().nullable(),
   images: z.array(imageInputSchema).max(12).default([]),
 });
 
@@ -115,6 +117,940 @@ const leadInputSchema = z.object({
   notes: z.string().optional().nullable(),
 });
 
+const marketingInputSchema = z.object({
+  neighborhood: z.string().trim().default(""),
+  street: z.string().trim().default(""),
+  floor: z.string().trim().default(""),
+  rooms: z.string().trim().default(""),
+  sqm: z.string().trim().default(""),
+  balcony: z.string().trim().default(""),
+  elevator: z.boolean().default(false),
+  parking: z.boolean().default(false),
+  storage: z.boolean().default(false),
+  renovated: z.boolean().default(false),
+  price: z.string().trim().default(""),
+  exclusive: z.boolean().default(false),
+  notes: z.string().trim().default(""),
+});
+
+const cmaInputSchema = z.object({
+  neighborhood: z.string().trim().min(2),
+  street: z.string().trim().default(""),
+  rooms: z.string().trim().min(1),
+  minSqm: z.string().trim().default(""),
+  maxSqm: z.string().trim().default(""),
+  notes: z.string().trim().default(""),
+});
+
+const cmaAiSummarySchema = z.object({
+  marketAnalysis: z.string().min(20),
+  recommendedRange: z.object({
+    min: z.number().positive(),
+    max: z.number().positive(),
+  }),
+  averagePricePerSqm: z.number().positive(),
+  sellerRecommendation: z.string().min(20),
+});
+
+const CMA_CITY_NAME = "ירושלים";
+const NADLAN_NEIGHBORHOOD_INDEX_TTL_MS = 1000 * 60 * 60 * 6;
+
+type GovmapAutocompletePayload = {
+  results?: Array<{
+    id?: string;
+    text?: string;
+    type?: string;
+    shape?: string;
+  }>;
+};
+
+type GovmapDealLocator = {
+  dealscount?: string;
+  settlementNameHeb?: string | null;
+  streetNameHeb?: string | null;
+  houseNum?: number | null;
+  polygon_id?: string;
+};
+
+type GovmapNeighborhoodDealsPayload = {
+  totalCount?: string;
+  data?: Array<{
+    dealId?: number;
+    dealAmount?: number;
+    dealDate?: string;
+    settlementNameHeb?: string;
+    streetNameHeb?: string | null;
+    houseNum?: number | null;
+    floorNo?: string | null;
+    assetArea?: number | null;
+    assetRoomNum?: number | null;
+    propertyTypeDescription?: string | null;
+    dealNatureDescription?: string | null;
+    neighborhood?: string | null;
+  }>;
+};
+
+type NadlanNeighborhoodIndexEntry = {
+  UNIQ_ID_OLD?: number;
+};
+
+type NadlanNeighborhoodPage = {
+  neighborhoodId?: number;
+  neighborhoodName?: string;
+  settlementID?: number;
+  settlementName?: string;
+  otherNeighborhoodStreets?: Array<{
+    id?: number;
+    title?: string;
+  }>;
+  trends?: {
+    rooms?: Array<{
+      numRooms?: number;
+      summary?: {
+        lastYearAvgPrice?: number | null;
+        priceDifferencePercentage?: number | null;
+      };
+    }>;
+    indexes?: {
+      SquareMeter?: number | null;
+    };
+  };
+};
+
+type CmaComparableDeal = {
+  dealId: number;
+  address: string;
+  street: string;
+  neighborhood: string;
+  rooms: number | null;
+  sqm: number | null;
+  floor: string | null;
+  nonBuiltSqm: number | null;
+  price: number;
+  pricePerSqm: number | null;
+  matchScore: number;
+  matchLevel: "high" | "medium" | "low";
+  matchLabel: string;
+  matchReason: string;
+  dealDate: string;
+  propertyType: string;
+};
+
+type CmaStreetSuggestion = {
+  street: string;
+  searchUrl: string;
+  searchQuery: string;
+};
+
+type CmaAiSummary = z.infer<typeof cmaAiSummarySchema>;
+
+const CMA_MAX_PRICE_PER_SQM_SPREAD = 15_000;
+const CMA_MIN_DEAL_PRICE = 850_000;
+const CMA_MATCH_MIN_QUALITY_SCORE = 58;
+
+let cachedNadlanNeighborhoodIndex: Record<string, NadlanNeighborhoodIndexEntry> | null = null;
+let cachedNadlanNeighborhoodIndexFetchedAt = 0;
+
+function extractMarketingSection(raw: string, pattern: RegExp) {
+  const match = raw.match(pattern);
+  return match ? match[1].trim() : "";
+}
+
+function buildMarketingPrompt(input: z.infer<typeof marketingInputSchema>) {
+  const details = [
+    "עיר: ירושלים",
+    input.neighborhood && `שכונה: ${input.neighborhood}`,
+    input.street && `רחוב: ${input.street}`,
+    input.floor && `קומה: ${input.floor}`,
+    input.rooms && `חדרים: ${input.rooms}`,
+    input.sqm && `מ"ר בנוי: ${input.sqm}`,
+    input.balcony && `מרפסת/גינה: ${input.balcony}`,
+    input.elevator && "מעלית: יש",
+    input.parking && "חניה: יש",
+    input.storage && "מחסן: יש",
+    input.renovated && "מצב שיפוץ: משופץ",
+    input.price && `מחיר: ${Number(input.price).toLocaleString("he-IL")} ₪`,
+    input.exclusive && "בלעדיות: כן",
+    input.notes && `הערות: ${input.notes}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return `אתה מומחה קופירייטינג נדל"ן ישראלי של צוות שי, לנדסמן ירושלים — אחד הצוותים המובילים בעיר.
+המשימה: לכתוב תוכן שיווקי שמוכר חלום, לא רק דירה. הטקסט גורם לאנשים לעצור בפיד, לקרוא עד הסוף, וליצור קשר.
+
+עקרונות ברזל (חובה בכל הפלט):
+1) פתיחה שמייצרת FOMO או רגש — לעולם לא לפתוח ב"דירה למכירה".
+2) פנייה לקונה ספציפי לפי ההקשר: משפחה / משקיע / זוג צעיר.
+3) למכור את החוויה והתחושה של החיים בנכס, לא רק מפרט.
+4) שפה חיה, טבעית וישראלית.
+5) לייצר דחיפות אמיתית, במיוחד כשיש בלעדיות.
+6) לא להמציא פרטים שלא ניתנו.
+7) כל פוסט חייב להסתיים בדיוק במשפט: "בלעדיות צוות שי | לנדסמן ירושלים"
+8) אין לציין חיסרון או מה שאין בנכס (לדוגמה: "ללא מעלית", "אין חניה", "אין מחסן") אלא אם נכתב מפורשות בהערות.
+9) הדגש המרכזי הוא הנתונים הקיימים של הנכס. תיאור האזור צריך להיות כללי, קצר ואמין — בלי שמות מוסדות/רחובות/נתונים שלא נמסרו.
+10) אם נתון מסוים לא סופק, פשוט מדלגים עליו ולא משלימים לבד.
+
+פרטי הנכס:
+${details}
+
+כללי פורמט:
+- עברית בלבד.
+- שמור בדיוק על כותרות הסקשנים הבאות.
+- ללא הקדמות מחוץ לסקשנים.
+
+פלט נדרש:
+
+─── פייסבוק ───
+פתיחה חזקה שעוצרת גלילה (שאלה / עובדה מפתיעה / תמונת מצב רגשית).
+תיאור שמוכר את החיים בדירה ולא רק את המפרט.
+פרטים טכניים בשורה אחת קצרה.
+CTA ברור עם תחושת דחיפות.
+5-7 האשטאגים ממוקדים ירושלים.
+אורך יעד: 150-200 מילים.
+
+─── אינסטגרם ───
+קפשן שמתאים לתמונה יפה — קצר, אימפקטי, עם נשימה.
+מקסימום 5-6 שורות.
+CTA ל-DM.
+10 האשטאגים (מיקום + נדל"ן + ירושלים).
+
+─── יד2 ───
+כותרת חזקה לנכס (לא גנרית).
+תיאור מקצועי שמדגיש יתרון תחרותי.
+פרטים טכניים מסודרים וברורים.
+ללא האשטאגים.`;
+}
+
+function parseNumericInput(value: string) {
+  const normalized = value.replace(/[^\d.]/g, "");
+  if (!normalized) return null;
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseGovmapPointShape(shape: string) {
+  const match = shape.match(/^POINT\(([-\d.]+)\s+([-\d.]+)\)$/);
+  if (!match) {
+    throw new Error("לא הצלחנו לקרוא את המיקום של השכונה ממקור העסקאות.");
+  }
+
+  return {
+    x: Number(match[1]),
+    y: Number(match[2]),
+  };
+}
+
+function roundCurrency(value: number) {
+  return Math.round(value / 1000) * 1000;
+}
+
+function buildComparableAddress(streetName: string | null | undefined, houseNum: number | null | undefined) {
+  if (streetName && houseNum) return `${streetName} ${houseNum}`;
+  if (streetName) return streetName;
+  return "כתובת לא זמינה";
+}
+
+function formatComparableDealDate(dateValue: string) {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return dateValue;
+
+  return new Intl.DateTimeFormat("he-IL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+function buildYad2StreetSearchUrl(street: string, neighborhood: string, rooms: string) {
+  const query = `site:yad2.co.il/realestate/forsale ${street} ${neighborhood} ${CMA_CITY_NAME} ${rooms} חדרים`;
+  return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+}
+
+function normalizeHebrewToken(value: string | null | undefined) {
+  return (value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/["'׳״]/g, "")
+    .toLowerCase();
+}
+
+function buildCmaPrompt(
+  input: z.infer<typeof cmaInputSchema>,
+  deals: CmaComparableDeal[],
+  pageData: NadlanNeighborhoodPage | null,
+  fallbackSummary: CmaAiSummary,
+) {
+  return `אתה אנליסט נדל"ן ירושלמי בכיר של צוות שי | לנדסמן ירושלים.
+המטרה: להפיק סיכום CMA קצר, מדויק, אמין ומכירתי לבעל נכס.
+
+חובה:
+1) להסתמך רק על הנתונים שניתנו.
+2) לא להמציא רחובות, מוסדות, תשואות או מגמות שלא מופיעות בנתונים.
+3) לכתוב עברית טבעית, מקצועית וקצרה.
+4) אם חסר ודאות, להיות שמרן.
+5) להחזיר JSON בלבד, בלי markdown ובלי טקסט נוסף.
+
+נתוני קלט:
+- עיר: ${CMA_CITY_NAME}
+- שכונה: ${input.neighborhood}
+- רחוב יעד (אם קיים): ${input.street || "לא הוזן"}
+- חדרים מבוקשים: ${input.rooms}
+- טווח מ"ר: ${input.minSqm || "לא הוזן"} - ${input.maxSqm || "לא הוזן"}
+- דגשים מהסוכן: ${input.notes || "ללא"}
+- ממוצע מחיר למ"ר שחושב מהעסקאות: ${fallbackSummary.averagePricePerSqm}
+- טווח מחיר התחלתי שחושב מהעסקאות: ${fallbackSummary.recommendedRange.min} - ${fallbackSummary.recommendedRange.max}
+- מחיר ממוצע שנתי אחרון לחדרים דומים בשכונה: ${pageData?.trends?.rooms?.find((room) => room.numRooms === Number(input.rooms))?.summary?.lastYearAvgPrice ?? "לא זמין"}
+- שינוי מחירים שנתי באחוזים: ${pageData?.trends?.rooms?.find((room) => room.numRooms === Number(input.rooms))?.summary?.priceDifferencePercentage ?? "לא זמין"}
+
+עסקאות השוואה:
+${JSON.stringify(deals, null, 2)}
+
+החזר JSON בדיוק בפורמט:
+{
+  "marketAnalysis": "3-4 משפטים",
+  "recommendedRange": { "min": 0, "max": 0 },
+  "averagePricePerSqm": 0,
+  "sellerRecommendation": "2-3 משפטים"
+}`;
+}
+
+function parseCmaAiResponse(raw: string, fallbackSummary: CmaAiSummary) {
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return fallbackSummary;
+
+  try {
+    const parsed = JSON.parse(jsonMatch[0]) as unknown;
+    return cmaAiSummarySchema.parse(parsed);
+  } catch {
+    return fallbackSummary;
+  }
+}
+
+function buildFallbackCmaSummary(
+  input: z.infer<typeof cmaInputSchema>,
+  deals: CmaComparableDeal[],
+  pageData: NadlanNeighborhoodPage | null,
+): CmaAiSummary {
+  const pricePerSqmValues = deals.map((deal) => deal.pricePerSqm).filter((value): value is number => typeof value === "number");
+  const avgPricePerSqm = pricePerSqmValues.length
+    ? Math.round(pricePerSqmValues.reduce((sum, value) => sum + value, 0) / pricePerSqmValues.length)
+    : Math.round(
+        pageData?.trends?.indexes?.SquareMeter ??
+          deals.reduce((sum, deal) => sum + deal.price, 0) / Math.max(deals.length, 1) / Math.max(parseNumericInput(input.rooms) ?? 1, 1),
+      );
+
+  const dealPrices = deals.map((deal) => deal.price).sort((left, right) => left - right);
+  const minSqm = parseNumericInput(input.minSqm);
+  const maxSqm = parseNumericInput(input.maxSqm);
+
+  const recommendedMin = minSqm
+    ? roundCurrency(avgPricePerSqm * minSqm)
+    : roundCurrency(dealPrices[0] ?? avgPricePerSqm * 75);
+  const recommendedMax = maxSqm
+    ? roundCurrency(avgPricePerSqm * maxSqm)
+    : roundCurrency(dealPrices[dealPrices.length - 1] ?? avgPricePerSqm * 95);
+
+  const roomTrend = pageData?.trends?.rooms?.find((room) => room.numRooms === Number(input.rooms));
+  const annualDelta = roomTrend?.summary?.priceDifferencePercentage;
+  const marketAnalysisParts = [
+    `בדיקת העסקאות האחרונות ב${input.neighborhood} מצביעה על שוק פעיל בנכסים בני ${input.rooms} חדרים.`,
+    pricePerSqmValues.length
+      ? `ממוצע העסקאות שנבחרו עומד על כ-${avgPricePerSqm.toLocaleString("he-IL")} ש"ח למ"ר, וזה נותן עוגן תמחורי ברור לשיחה עם המוכר.`
+      : `גם בלי סט מלא של מחירי מ"ר, העסקאות הזמינות מספקות בסיס סביר להערכת שווי שמרנית.`,
+    typeof annualDelta === "number"
+      ? `בחתך השנתי נרשמה תנועה של כ-${annualDelta.toFixed(1)}% במחירי השכונה לחדרים דומים.`
+      : `המגמה המקומית דורשת הצגה מדויקת של היתרונות כדי להבליט את הנכס מול ההיצע הפעיל.`,
+    input.notes ? `דגשים מקומיים מהסוכן: ${input.notes}.` : "",
+  ];
+
+  return {
+    marketAnalysis: marketAnalysisParts.join(" "),
+    recommendedRange: {
+      min: Math.min(recommendedMin, recommendedMax),
+      max: Math.max(recommendedMin, recommendedMax),
+    },
+    averagePricePerSqm: avgPricePerSqm,
+    sellerRecommendation:
+      "מומלץ לצאת לשוק עם מחיר פתיחה מדויק שמגובה בעסקאות ההשוואה, ולהצליב מול נכסים פעילים ברחובות הדומים כדי לחדד את מיצוב הנכס כבר בתחילת התהליך.",
+  };
+}
+
+async function fetchNeighborhoodReference(neighborhood: string) {
+  const normalizedNeighborhood = neighborhood.trim().replace(/\s+/g, " ");
+
+  const lookupNeighborhood = async (searchTerm: string) => {
+    const encodedNeighborhood = encodeURIComponent(searchTerm);
+    const response = await fetch("https://www.govmap.gov.il/api/search-service/autocomplete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        searchText: `${encodedNeighborhood} ${CMA_CITY_NAME}`,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("לא הצלחנו לאתר את השכונה במאגר הממשלתי.");
+    }
+
+    const payload = (await response.json()) as GovmapAutocompletePayload;
+    const results = payload.results ?? [];
+    const match =
+      results.find((result) => result.type === "neighborhood" && result.text?.includes(searchTerm)) ??
+      results.find((result) => result.type === "neighborhood") ??
+      results[0];
+
+    if (!match?.id || !match.shape) {
+      return null;
+    }
+
+    return {
+      label: match.text ?? searchTerm,
+      govmapNeighborhoodId: Number(String(match.id).split("|").pop()),
+      point: parseGovmapPointShape(match.shape),
+    };
+  };
+
+  const primaryMatch = await lookupNeighborhood(normalizedNeighborhood);
+  if (primaryMatch) {
+    return primaryMatch;
+  }
+
+  const parts = normalizedNeighborhood.split(" ");
+  if (parts.length > 1) {
+    const retryResult = await lookupNeighborhood(parts[0]);
+    if (retryResult) return retryResult;
+  }
+
+  throw new Error("לא נמצאה שכונה תואמת עבור דוח ה-CMA.");
+}
+
+async function getLegacyNeighborhoodId(govmapNeighborhoodId: number) {
+  if (!cachedNadlanNeighborhoodIndex || Date.now() - cachedNadlanNeighborhoodIndexFetchedAt > NADLAN_NEIGHBORHOOD_INDEX_TTL_MS) {
+    const response = await fetch("https://data.nadlan.gov.il/api/index/neigh.json", {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("לא הצלחנו למשוך את אינדקס השכונות של נדל\"ן Gov.");
+    }
+
+    cachedNadlanNeighborhoodIndex = (await response.json()) as Record<string, NadlanNeighborhoodIndexEntry>;
+    cachedNadlanNeighborhoodIndexFetchedAt = Date.now();
+  }
+
+  const legacyId = cachedNadlanNeighborhoodIndex?.[String(govmapNeighborhoodId)]?.UNIQ_ID_OLD;
+  if (!legacyId) {
+    throw new Error("לא הצלחנו להתאים את השכונה לנתוני נדל\"ן Gov.");
+  }
+
+  return legacyId;
+}
+
+async function fetchNadlanNeighborhoodPage(legacyNeighborhoodId: number) {
+  const response = await fetch(`https://data.nadlan.gov.il/api/pages/neighborhood/buy/${legacyNeighborhoodId}.json`, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("לא הצלחנו לטעון את נתוני השכונה מנדל\"ן Gov.");
+  }
+
+  return (await response.json()) as NadlanNeighborhoodPage;
+}
+
+async function fetchNeighborhoodDealsPolygonId(point: { x: number; y: number }) {
+  const response = await fetch(`https://www.govmap.gov.il/api/real-estate/deals/${point.x},${point.y}/350`, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("לא הצלחנו למשוך עסקאות אחרונות מאתר המידע הממשלתי.");
+  }
+
+  const results = (await response.json()) as GovmapDealLocator[];
+  const candidate =
+    results
+      .filter((item) => item.polygon_id)
+      .sort((left, right) => Number(right.dealscount ?? 0) - Number(left.dealscount ?? 0))
+      .find((item) => item.streetNameHeb) ??
+    results.find((item) => item.polygon_id);
+
+  if (!candidate?.polygon_id) {
+    throw new Error("לא נמצאו עסקאות השוואה באזור המבוקש.");
+  }
+
+  return candidate.polygon_id;
+}
+
+async function fetchGovmapNeighborhoodDeals(polygonId: string, limit = 80) {
+  const response = await fetch(`https://www.govmap.gov.il/api/real-estate/neighborhood-deals/${polygonId}?limit=${limit}&offset=0`, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("לא הצלחנו לטעון את רשימת העסקאות מהמאגר הממשלתי.");
+  }
+
+  const payload = (await response.json()) as GovmapNeighborhoodDealsPayload;
+  return payload.data ?? [];
+}
+
+function pickDealsWithinPricePerSqmSpread<T extends { pricePerSqm: number | null; score: number }>(
+  entries: T[],
+  maxSpread: number,
+  limit: number,
+) {
+  const entriesWithPrice = entries
+    .filter((entry): entry is T & { pricePerSqm: number } => typeof entry.pricePerSqm === "number" && Number.isFinite(entry.pricePerSqm))
+    .sort((left, right) => left.pricePerSqm - right.pricePerSqm);
+
+  if (!entriesWithPrice.length) {
+    return entries.slice(0, limit);
+  }
+
+  let left = 0;
+  let bestWindow = { start: 0, end: 0 };
+
+  for (let right = 0; right < entriesWithPrice.length; right += 1) {
+    while (entriesWithPrice[right].pricePerSqm - entriesWithPrice[left].pricePerSqm > maxSpread && left < right) {
+      left += 1;
+    }
+
+    const currentWindowSize = right - left + 1;
+    const bestWindowSize = bestWindow.end - bestWindow.start + 1;
+
+    if (currentWindowSize > bestWindowSize) {
+      bestWindow = { start: left, end: right };
+    }
+  }
+
+  const windowEntries = entriesWithPrice
+    .slice(bestWindow.start, bestWindow.end + 1)
+    .sort((leftEntry, rightEntry) => leftEntry.score - rightEntry.score)
+    .slice(0, limit);
+
+  return windowEntries.length ? windowEntries : entries.slice(0, limit);
+}
+
+function selectComparableDeals(
+  deals: NonNullable<GovmapNeighborhoodDealsPayload["data"]>,
+  input: z.infer<typeof cmaInputSchema>,
+) {
+  type StreetRelation = "same" | "near" | "neighborhood";
+  type ScoredEntry = {
+    deal: NonNullable<GovmapNeighborhoodDealsPayload["data"]>[number];
+    score: number;
+    isRecent: boolean;
+    strictNeighborhoodMatch: boolean;
+    pricePerSqm: number | null;
+    roomDelta: number | null;
+    sqmDeltaPercent: number | null;
+    recencyDays: number;
+    streetRelation: StreetRelation;
+    dataCompleteness: number;
+    pricePerSqmSpread: number | null;
+  };
+
+  const normalizedNeighborhood = normalizeHebrewToken(input.neighborhood);
+  const normalizedStreet = normalizeHebrewToken(input.street);
+  const targetRooms = parseNumericInput(input.rooms);
+  const minSqm = parseNumericInput(input.minSqm);
+  const maxSqm = parseNumericInput(input.maxSqm);
+  const targetSqmAnchor =
+    minSqm != null && maxSqm != null
+      ? (minSqm + maxSqm) / 2
+      : (minSqm ?? maxSqm ?? null);
+  const fromDate = new Date();
+  fromDate.setFullYear(fromDate.getFullYear() - 4);
+
+  const allScoredDeals = deals
+    .filter((deal) => typeof deal.dealId === "number" && typeof deal.dealAmount === "number" && Boolean(deal.dealDate))
+    .map((deal) => {
+      const normalizedDealNeighborhood = normalizeHebrewToken(deal.neighborhood);
+      const normalizedDealStreet = normalizeHebrewToken(deal.streetNameHeb);
+      const roomDelta = targetRooms == null || deal.assetRoomNum == null ? null : Math.abs(deal.assetRoomNum - targetRooms);
+      const sqmPenalty =
+        typeof deal.assetArea !== "number"
+          ? 0
+          : (minSqm != null && deal.assetArea < minSqm ? minSqm - deal.assetArea : 0) +
+            (maxSqm != null && deal.assetArea > maxSqm ? deal.assetArea - maxSqm : 0);
+      const sqmDeltaPercent =
+        targetSqmAnchor != null && typeof deal.assetArea === "number" && targetSqmAnchor > 0
+          ? Math.abs(deal.assetArea - targetSqmAnchor) / targetSqmAnchor
+          : null;
+      const dealDate = new Date(deal.dealDate ?? "");
+      const recencyDays = Number.isNaN(dealDate.getTime())
+        ? 3650
+        : Math.max(0, (Date.now() - dealDate.getTime()) / (1000 * 60 * 60 * 24));
+      const neighborhoodMatchScore =
+        normalizedNeighborhood &&
+        (normalizedDealNeighborhood.includes(normalizedNeighborhood) || normalizedNeighborhood.includes(normalizedDealNeighborhood))
+          ? 0
+          : 10000;
+      const streetRelation: StreetRelation =
+        normalizedStreet && normalizedDealStreet
+          ? normalizedDealStreet === normalizedStreet
+            ? "same"
+            : normalizedDealStreet.includes(normalizedStreet) || normalizedStreet.includes(normalizedDealStreet)
+              ? "near"
+              : "neighborhood"
+          : "neighborhood";
+      const streetMatchScore =
+        streetRelation === "same"
+          ? -2000
+          : streetRelation === "near"
+            ? -1000
+            : normalizedStreet
+              ? 1200
+              : 0;
+      const dataPoints = [
+        typeof deal.assetRoomNum === "number",
+        typeof deal.assetArea === "number" && deal.assetArea > 0,
+        typeof deal.floorNo === "string" && deal.floorNo.trim().length > 0,
+        typeof deal.streetNameHeb === "string" && deal.streetNameHeb.trim().length > 0,
+      ];
+      const dataCompleteness = dataPoints.filter(Boolean).length / dataPoints.length;
+
+      return {
+        deal,
+        score: neighborhoodMatchScore + streetMatchScore + (roomDelta ?? 0) * 1000 + sqmPenalty * 5 + recencyDays,
+        isRecent: !Number.isNaN(dealDate.getTime()) && dealDate >= fromDate,
+        strictNeighborhoodMatch:
+          Boolean(normalizedNeighborhood) &&
+          (normalizedDealNeighborhood.includes(normalizedNeighborhood) || normalizedNeighborhood.includes(normalizedDealNeighborhood)),
+        pricePerSqm:
+          typeof deal.assetArea === "number" && deal.assetArea > 0
+            ? Math.round((deal.dealAmount as number) / deal.assetArea)
+            : null,
+        roomDelta,
+        sqmDeltaPercent,
+        recencyDays,
+        streetRelation,
+        dataCompleteness,
+        pricePerSqmSpread: null,
+      } satisfies ScoredEntry;
+    });
+
+  const scoredDeals = allScoredDeals
+    .filter((entry) => entry.isRecent && entry.strictNeighborhoodMatch && (entry.deal.dealAmount as number) >= CMA_MIN_DEAL_PRICE)
+    .sort((left, right) => left.score - right.score);
+
+  const topRankedForReference = scoredDeals.slice(0, 25);
+  const pricePerSqmReferencePool = topRankedForReference
+    .map((entry) => entry.pricePerSqm)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value))
+    .sort((left, right) => left - right);
+
+  const referencePricePerSqm = pricePerSqmReferencePool.length
+    ? pricePerSqmReferencePool[Math.floor(pricePerSqmReferencePool.length / 2)]
+    : null;
+
+  const filteredBySpread = scoredDeals
+    .map((entry) => ({
+      ...entry,
+      pricePerSqmSpread:
+        referencePricePerSqm && entry.pricePerSqm
+          ? Math.abs(entry.pricePerSqm - referencePricePerSqm)
+          : null,
+    }))
+    .filter((entry) => {
+      if (!referencePricePerSqm || !entry.pricePerSqmSpread) return true;
+      return entry.pricePerSqmSpread <= CMA_MAX_PRICE_PER_SQM_SPREAD;
+    });
+
+  const topSpreadScopedDeals = filteredBySpread.slice(0, 30);
+  const tightDeals = pickDealsWithinPricePerSqmSpread(
+    topSpreadScopedDeals,
+    CMA_MAX_PRICE_PER_SQM_SPREAD,
+    5,
+  );
+
+  const fallbackScopedDeals: ScoredEntry[] =
+    tightDeals.length > 0
+      ? tightDeals
+      : allScoredDeals
+          .filter((entry) => entry.isRecent && (entry.deal.dealAmount as number) >= CMA_MIN_DEAL_PRICE)
+          .sort((left, right) => left.score - right.score)
+          .slice(0, 8);
+
+  const assessedDeals = fallbackScopedDeals.map((entry) => {
+    let matchScore = 0;
+
+    if (entry.streetRelation === "same") matchScore += 40;
+    else if (entry.streetRelation === "near") matchScore += 26;
+    else matchScore += normalizedStreet ? 12 : 18;
+
+    if (entry.roomDelta == null) matchScore += 7;
+    else if (entry.roomDelta === 0) matchScore += 15;
+    else if (entry.roomDelta === 1) matchScore += 11;
+    else if (entry.roomDelta === 2) matchScore += 5;
+
+    if (entry.sqmDeltaPercent == null) matchScore += 8;
+    else if (entry.sqmDeltaPercent <= 0.1) matchScore += 15;
+    else if (entry.sqmDeltaPercent <= 0.2) matchScore += 11;
+    else if (entry.sqmDeltaPercent <= 0.35) matchScore += 6;
+    else matchScore += 2;
+
+    if (entry.recencyDays <= 365) matchScore += 20;
+    else if (entry.recencyDays <= 730) matchScore += 15;
+    else if (entry.recencyDays <= 1095) matchScore += 10;
+    else matchScore += 5;
+
+    matchScore += Math.round(entry.dataCompleteness * 10);
+
+    if (typeof entry.pricePerSqmSpread === "number") {
+      if (entry.pricePerSqmSpread > 12000) matchScore -= 8;
+      else if (entry.pricePerSqmSpread > 8000) matchScore -= 5;
+      else if (entry.pricePerSqmSpread > 5000) matchScore -= 2;
+    }
+
+    const boundedScore = Math.max(0, Math.min(100, matchScore));
+
+    const strengths: string[] = [];
+    if (entry.streetRelation === "same") strengths.push("רחוב זהה");
+    else if (entry.streetRelation === "near") strengths.push("רחוב סמוך");
+    else strengths.push("שכונה זהה");
+
+    if (entry.roomDelta === 0) strengths.push("חדרים זהים");
+    else if (entry.roomDelta === 1) strengths.push("חדרים דומים");
+
+    if (entry.sqmDeltaPercent != null) {
+      if (entry.sqmDeltaPercent <= 0.12) strengths.push("שטח דומה");
+      else if (entry.sqmDeltaPercent <= 0.25) strengths.push("שטח קרוב");
+    }
+
+    if (entry.recencyDays <= 365) strengths.push("עסקה עדכנית");
+    else if (entry.recencyDays <= 730) strengths.push("עסקה מהשנתיים האחרונות");
+
+    const weaknesses: string[] = [];
+    if (entry.recencyDays > 730) weaknesses.push("עסקה ישנה יחסית");
+    if (entry.dataCompleteness < 0.7) weaknesses.push("נתונים חלקיים");
+    if (typeof entry.pricePerSqmSpread === "number" && entry.pricePerSqmSpread > 9000) {
+      weaknesses.push("פער מחיר למ\"ר יחסית לקבוצה");
+    }
+    if (entry.roomDelta != null && entry.roomDelta > 1) weaknesses.push("פער חדרים ביחס לנכס");
+    if (entry.sqmDeltaPercent != null && entry.sqmDeltaPercent > 0.25) weaknesses.push("פער שטח מורגש");
+
+    return {
+      ...entry,
+      matchScore: boundedScore,
+      matchReasonBase: strengths.slice(0, 3),
+      matchWeaknesses: weaknesses,
+    };
+  });
+
+  const qualityScopedDeals = assessedDeals
+    .filter((entry) => entry.matchScore >= CMA_MATCH_MIN_QUALITY_SCORE)
+    .sort((left, right) => right.matchScore - left.matchScore);
+
+  const limitedDeals =
+    qualityScopedDeals.length >= 5 && qualityScopedDeals[4].matchScore >= 86
+      ? qualityScopedDeals.slice(0, 5)
+      : qualityScopedDeals.slice(0, 4);
+
+  const topScore = limitedDeals[0]?.matchScore ?? 0;
+
+  return limitedDeals.map((entry) => {
+    const matchLevel: "high" | "medium" | "low" =
+      topScore >= 84 && entry.matchScore >= 84 && entry.matchScore >= topScore - 6
+        ? "high"
+        : entry.matchScore >= 66 && entry.matchScore >= topScore - 20
+          ? "medium"
+          : "low";
+    const matchLabel =
+      matchLevel === "high" ? "התאמה גבוהה" : matchLevel === "medium" ? "התאמה בינונית" : "התאמה חלקית";
+    const baseReason = entry.matchReasonBase.length ? entry.matchReasonBase.slice(0, 2).join(" + ") : "שכונה דומה";
+    const firstWeakness = entry.matchWeaknesses[0];
+    const matchReason =
+      matchLevel === "low"
+        ? firstWeakness
+          ? `${baseReason}, אך ${firstWeakness}`
+          : "עסקה להשוואת מגמת שוק"
+        : firstWeakness
+          ? `${baseReason}, אך ${firstWeakness}`
+          : baseReason;
+
+    const { deal } = entry;
+    return {
+    dealId: deal.dealId as number,
+    address: buildComparableAddress(deal.streetNameHeb, deal.houseNum),
+    street: deal.streetNameHeb ?? "ללא רחוב",
+    neighborhood: deal.neighborhood ?? input.neighborhood,
+    rooms: deal.assetRoomNum ?? null,
+    sqm: deal.assetArea ?? null,
+    floor: deal.floorNo ?? null,
+    nonBuiltSqm: null,
+    price: deal.dealAmount as number,
+    pricePerSqm: deal.assetArea ? Math.round((deal.dealAmount as number) / deal.assetArea) : null,
+    matchScore: entry.matchScore,
+    matchLevel,
+    matchLabel,
+    matchReason,
+    dealDate: formatComparableDealDate(deal.dealDate as string),
+    propertyType: deal.propertyTypeDescription ?? deal.dealNatureDescription ?? "דירה",
+    };
+  });
+}
+
+function buildStreetSuggestions(
+  deals: CmaComparableDeal[],
+  pageData: NadlanNeighborhoodPage | null,
+  input: z.infer<typeof cmaInputSchema>,
+) {
+  const allCandidateStreets = Array.from(
+    new Set([
+      ...deals.map((deal) => deal.street).filter((street) => street && street !== "ללא רחוב"),
+      ...(pageData?.otherNeighborhoodStreets ?? [])
+        .map((street) => street.title?.trim() ?? "")
+        .filter(Boolean),
+    ]),
+  );
+
+  const filteredByStreet = allCandidateStreets
+    .filter((street) => {
+      const normalizedStreet = normalizeHebrewToken(street);
+      const normalizedInputStreet = normalizeHebrewToken(input.street);
+      if (!normalizedInputStreet) return true;
+      return (
+        normalizedStreet === normalizedInputStreet ||
+        normalizedStreet.includes(normalizedInputStreet) ||
+        normalizedInputStreet.includes(normalizedStreet)
+      );
+    })
+    .slice(0, 8);
+
+  const streets = filteredByStreet.length ? filteredByStreet : allCandidateStreets.slice(0, 8);
+
+  return streets.map((street) => ({
+    street,
+    searchQuery: `${street}, ${input.neighborhood}, ${CMA_CITY_NAME}, ${input.rooms} חדרים`,
+    searchUrl: buildYad2StreetSearchUrl(street, input.neighborhood, input.rooms),
+  })) satisfies CmaStreetSuggestion[];
+}
+
+type AnthropicErrorPayload = {
+  error?: {
+    type?: string;
+    message?: string;
+  };
+};
+
+type AnthropicModelListPayload = {
+  data?: Array<{
+    id?: string;
+  }>;
+};
+
+async function fetchAnthropicModelIds(apiKey: string): Promise<string[]> {
+  const response = await fetch("https://api.anthropic.com/v1/models", {
+    method: "GET",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+  });
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const payload = (await response.json()) as AnthropicModelListPayload;
+  return (payload.data ?? [])
+    .map((model) => model.id ?? "")
+    .filter(Boolean);
+}
+
+async function requestAnthropicMarketing(prompt: string, apiKey: string) {
+  const preferredModels = [
+    "claude-sonnet-4-20250514",
+    "claude-sonnet-4-6",
+    "claude-sonnet-4-5",
+    "claude-3-7-sonnet-latest",
+    "claude-3-7-sonnet-20250219",
+    "claude-3-5-sonnet-latest",
+    "claude-3-5-sonnet-20241022",
+  ];
+  let availableModels: string[] = [];
+  try {
+    availableModels = await fetchAnthropicModelIds(apiKey);
+  } catch {
+    availableModels = [];
+  }
+
+  const models = availableModels.length
+    ? Array.from(
+        new Set([
+          ...preferredModels.filter((model) => availableModels.includes(model)),
+          ...availableModels.filter((model) => model.includes("sonnet")),
+          ...availableModels,
+        ]),
+      )
+    : preferredModels;
+
+  let lastErrorMessage = "שגיאה בקריאה ל-Claude API";
+
+  for (let index = 0; index < models.length; index += 1) {
+    const model = models[index];
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1500,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+
+    if (response.ok) {
+      const data = (await response.json()) as {
+        content?: Array<{ text?: string }>;
+      };
+      return data.content?.[0]?.text ?? "";
+    }
+
+    let payload: AnthropicErrorPayload | null = null;
+    try {
+      payload = (await response.json()) as AnthropicErrorPayload;
+    } catch {
+      payload = null;
+    }
+
+    const errorType = payload?.error?.type ?? "";
+    const errorMessage = payload?.error?.message ?? response.statusText;
+    lastErrorMessage = errorMessage || "שגיאה בקריאה ל-Claude API";
+
+    const canTryFallback =
+      response.status === 404 ||
+      errorType === "not_found_error" ||
+      errorType === "invalid_request_error" ||
+      response.status === 400 ||
+      /model|pattern|not found/i.test(lastErrorMessage);
+
+    if (!canTryFallback || index === models.length - 1) {
+      throw new Error(lastErrorMessage);
+    }
+  }
+
+  throw new Error(lastErrorMessage);
+}
+
 function decodeBase64File(dataBase64: string) {
   const normalized = dataBase64.includes(",") ? dataBase64.split(",").pop() ?? "" : dataBase64;
   return Buffer.from(normalized, "base64");
@@ -165,6 +1101,17 @@ async function uploadImagesForProperty(ownerId: number, images: Array<z.infer<ty
   );
 }
 
+function resolveFeaturedUploadUrl(
+  uploadedImages: Awaited<ReturnType<typeof uploadImagesForProperty>>,
+  featuredImageIndex?: number | null,
+) {
+  if (featuredImageIndex == null) {
+    return uploadedImages[0]?.imageUrl ?? null;
+  }
+
+  return uploadedImages[featuredImageIndex]?.imageUrl ?? uploadedImages[0]?.imageUrl ?? null;
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -193,6 +1140,16 @@ export const appRouter = router({
           .optional(),
       )
       .query(async ({ input }) => listPublishedProperties(input)),
+    propertyById: publicProcedure
+      .input(z.object({ propertyId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const property = await getPropertyById(input.propertyId);
+        if (!property?.isPublished) {
+          return null;
+        }
+
+        return property;
+      }),
     submitLead: publicProcedure.input(leadInputSchema).mutation(async ({ input }) => {
       const leadId = await createLeadSubmission({
         fullName: input.fullName,
@@ -266,6 +1223,7 @@ export const appRouter = router({
       .input(propertyInputSchema)
       .mutation(async ({ ctx, input }) => {
         const uploadedImages = await uploadImagesForProperty(ctx.agentSession.id, input.images);
+        const featuredImageUrl = resolveFeaturedUploadUrl(uploadedImages, input.featuredImageIndex);
 
         const propertyId = await createAgentProperty(
           {
@@ -284,7 +1242,7 @@ export const appRouter = router({
             status: input.status,
             description: input.description,
             descriptionHtml: input.descriptionHtml ?? null,
-            featuredImageUrl: uploadedImages[0]?.imageUrl ?? null,
+            featuredImageUrl,
             isPublished: input.isPublished,
           },
           uploadedImages,
@@ -303,6 +1261,9 @@ export const appRouter = router({
         if (!existingProperty) {
           throw new Error("הנכס המבוקש לא נמצא.");
         }
+        const featuredImageUrl = uploadedImages.length
+          ? resolveFeaturedUploadUrl(uploadedImages, input.data.featuredImageIndex)
+          : input.data.featuredImageUrl ?? existingProperty.featuredImageUrl;
 
         await updateAgentProperty(
           ctx.agentSession.id,
@@ -322,7 +1283,7 @@ export const appRouter = router({
             status: input.data.status,
             description: input.data.description,
             descriptionHtml: input.data.descriptionHtml ?? null,
-            featuredImageUrl: uploadedImages[0]?.imageUrl ?? existingProperty.featuredImageUrl,
+            featuredImageUrl,
             isPublished: input.data.isPublished,
           },
           uploadedImages,
@@ -335,6 +1296,72 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         await deleteAgentProperty(ctx.agentSession.id, input.propertyId);
         return { success: true } as const;
+      }),
+    generateMarketing: agentProcedure
+      .input(marketingInputSchema)
+      .mutation(async ({ input }) => {
+        if (!input.neighborhood && !input.street) {
+          throw new Error("יש למלא לפחות שכונה או רחוב");
+        }
+
+        const apiKey = process.env.VITE_ANTHROPIC_KEY;
+        if (!apiKey) {
+          throw new Error("מפתח Anthropic לא מוגדר בסביבת השרת.");
+        }
+
+        const raw = await requestAnthropicMarketing(buildMarketingPrompt(input), apiKey);
+
+        return {
+          facebook: extractMarketingSection(raw, /─── פייסבוק ───\n([\s\S]*?)(?=─── אינסטגרם ───|$)/),
+          instagram: extractMarketingSection(raw, /─── אינסטגרם ───\n([\s\S]*?)(?=─── יד2 ───|$)/),
+          yad2: extractMarketingSection(raw, /─── יד2 ───\n([\s\S]*?)$/),
+        };
+      }),
+    generateCma: agentProcedure
+      .input(cmaInputSchema)
+      .mutation(async ({ input }) => {
+        const neighborhoodRef = await fetchNeighborhoodReference(input.neighborhood.trim());
+        const legacyNeighborhoodId = await getLegacyNeighborhoodId(neighborhoodRef.govmapNeighborhoodId);
+        const [pageData, polygonId] = await Promise.all([
+          fetchNadlanNeighborhoodPage(legacyNeighborhoodId),
+          fetchNeighborhoodDealsPolygonId(neighborhoodRef.point),
+        ]);
+
+        const rawDeals = await fetchGovmapNeighborhoodDeals(polygonId, 100);
+        const deals = selectComparableDeals(rawDeals, input);
+        if (deals.length === 0) {
+          throw new Error("לא נמצאו עסקאות השוואה מתאימות עבור השכונה והחדרים שבחרת.");
+        }
+
+        const streetSuggestions = buildStreetSuggestions(deals, pageData, input);
+        const fallbackSummary = buildFallbackCmaSummary(input, deals, pageData);
+        const apiKey = process.env.VITE_ANTHROPIC_KEY;
+
+        let aiSummary = fallbackSummary;
+        if (apiKey) {
+          try {
+            const rawSummary = await requestAnthropicMarketing(buildCmaPrompt(input, deals, pageData, fallbackSummary), apiKey);
+            aiSummary = parseCmaAiResponse(rawSummary, fallbackSummary);
+          } catch {
+            aiSummary = fallbackSummary;
+          }
+        }
+
+        const broadSearchQuery = `site:yad2.co.il/realestate/forsale ${input.street || ""} ${input.neighborhood} ${CMA_CITY_NAME} ${input.rooms} חדרים`;
+
+        return {
+          neighborhoodLabel: pageData?.neighborhoodName ?? neighborhoodRef.label,
+          settlementName: pageData?.settlementName ?? CMA_CITY_NAME,
+          deals,
+          streetSuggestions,
+          broadSearchUrl: `https://www.google.com/search?q=${encodeURIComponent(broadSearchQuery)}`,
+          aiSummary,
+          stats: {
+            averagePricePerSqm: aiSummary.averagePricePerSqm,
+            averageDealPrice: Math.round(deals.reduce((sum, deal) => sum + deal.price, 0) / deals.length),
+            matchingDealsCount: deals.length,
+          },
+        };
       }),
   }),
   admin: router({
@@ -505,6 +1532,7 @@ export const appRouter = router({
       .input(propertyInputSchema.extend({ agentId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         const uploadedImages = await uploadImagesForProperty(ctx.agentSession?.id ?? input.agentId, input.images);
+        const featuredImageUrl = resolveFeaturedUploadUrl(uploadedImages, input.featuredImageIndex);
         const propertyId = await createAgentProperty(
           {
             agentId: input.agentId,
@@ -522,7 +1550,7 @@ export const appRouter = router({
             status: input.status,
             description: input.description,
             descriptionHtml: input.descriptionHtml ?? null,
-            featuredImageUrl: uploadedImages[0]?.imageUrl ?? null,
+            featuredImageUrl,
             isPublished: input.isPublished,
           },
           uploadedImages,
@@ -542,6 +1570,9 @@ export const appRouter = router({
           ctx.agentSession?.id ?? existing.agentId,
           input.data.images,
         );
+        const featuredImageUrl = uploadedImages.length
+          ? resolveFeaturedUploadUrl(uploadedImages, input.data.featuredImageIndex)
+          : input.data.featuredImageUrl ?? existing.featuredImageUrl;
 
         await updatePropertyById(
           input.propertyId,
@@ -561,7 +1592,7 @@ export const appRouter = router({
             status: input.data.status,
             description: input.data.description,
             descriptionHtml: input.data.descriptionHtml ?? null,
-            featuredImageUrl: uploadedImages[0]?.imageUrl ?? existing.featuredImageUrl,
+            featuredImageUrl,
             isPublished: input.data.isPublished,
           },
           uploadedImages,

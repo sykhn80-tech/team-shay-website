@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const queryState = {
   homeData: undefined as any,
   propertiesData: undefined as any,
+  publicPropertyData: undefined as any,
   adminMeData: undefined as any,
   adminDashboardData: undefined as any,
   agentMeData: undefined as any,
@@ -60,6 +61,13 @@ vi.mock("@/lib/trpc", () => ({
           isFetching: false,
         }),
       },
+      propertyById: {
+        useQuery: () => ({
+          data: queryState.publicPropertyData,
+          isLoading: false,
+          isFetching: false,
+        }),
+      },
       submitLead: {
         useMutation: () => mutationStub,
       },
@@ -107,11 +115,13 @@ import AddProperty from "./AddProperty";
 import AdminPanel from "./AdminPanel";
 import AgentLogin from "./AgentLogin";
 import Home from "./Home";
+import PropertyDetails from "./PropertyDetails";
 import Properties from "./Properties";
 
 beforeEach(() => {
   queryState.homeData = undefined;
   queryState.propertiesData = undefined;
+  queryState.publicPropertyData = undefined;
   queryState.adminMeData = undefined;
   queryState.adminDashboardData = undefined;
   queryState.agentMeData = undefined;
@@ -301,6 +311,7 @@ describe("frontend CMS rendering", () => {
     expect(markup).not.toContain("cms-marquee-track-slow");
     expect(markup).toContain("נכס 8");
     expect(markup).not.toContain("נכס 9");
+    expect(markup).toContain("/properties/8");
   });
 
   it("renders the public properties catalog from CMS property data", () => {
@@ -346,6 +357,49 @@ describe("frontend CMS rendering", () => {
     expect(markup).toContain("פנטהאוז דינמי");
     expect(markup).toContain("נכס יוקרתי מתוך ה-CMS");
     expect(markup).toContain("https://cdn.example.com/penthouse.png");
+    expect(markup).toContain("/properties/12");
+    expect(markup).not.toContain("אזור סוכנים");
+  });
+
+  it("renders a dedicated public property page with the full gallery and property facts", () => {
+    queryState.homeData = {
+      settings: {
+        siteName: "Team Shay CMS",
+        headerLogoUrl: "https://cdn.example.com/header.png",
+        whatsappLink: "https://wa.me/972500000000",
+      },
+    };
+    queryState.publicPropertyData = {
+      id: 55,
+      title: "וילה יוקרתית לדוגמה",
+      address: "רחוב הדוגמה 55",
+      street: "הדוגמה",
+      neighborhood: "ארנונה",
+      city: "ירושלים",
+      price: 7200000,
+      rooms: 7,
+      sqm: 260,
+      builtSqm: 220,
+      outdoorSpace: "גינה 140 מ״ר",
+      floor: 1,
+      status: "בלעדי",
+      description: "תיאור מלא של הנכס בעמוד הייעודי.",
+      descriptionHtml: null,
+      featuredImageUrl: "https://cdn.example.com/villa-cover.png",
+      images: [
+        { imageUrl: "https://cdn.example.com/villa-cover.png" },
+        { imageUrl: "https://cdn.example.com/villa-2.png" },
+      ],
+    };
+
+    const markup = renderToStaticMarkup(React.createElement(PropertyDetails, { params: { propertyId: "55" } }));
+
+    expect(markup).toContain("וילה יוקרתית לדוגמה");
+    expect(markup).toContain("רחוב הדוגמה 55");
+    expect(markup).toContain("גינה 140 מ״ר");
+    expect(markup).toContain("תיאור מלא של הנכס בעמוד הייעודי.");
+    expect(markup).toContain("https://cdn.example.com/villa-cover.png");
+    expect(markup).toContain("https://cdn.example.com/villa-2.png");
   });
 
   it("renders the secured admin dashboard for an authenticated agent and exposes direct image upload fields", () => {
@@ -434,6 +488,7 @@ describe("frontend CMS rendering", () => {
     expect(markup).toContain("בחירת קובץ מהמחשב");
     expect(markup).toContain("בחירת תמונות לגלריה");
     expect(markup).toContain("שמירת גלריה לאתר");
+    expect(markup).toContain("תמונה ראשית");
   });
 
   it("renders the expanded property editor with full fields, direct uploads, and live publish controls in RTL", () => {
@@ -477,6 +532,7 @@ describe("frontend CMS rendering", () => {
     expect(markup).toContain("accept=\"image/jpeg,image/png,image/webp\"");
     expect(markup).toContain("לפרסם את הנכס באתר הציבורי מיד לאחר השמירה");
     expect(markup).toContain("בחירת תמונות לגלריה");
+    expect(markup).toContain("תמונה ראשית");
   });
 
   it("renders the secured admin property manager in card/grid style with edit entry points and Hebrew property fields", () => {
