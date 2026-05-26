@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 
 interface CmaFormState {
+  city: string;
   neighborhood: string;
   street: string;
   rooms: string;
@@ -82,6 +83,7 @@ interface CmaResult {
 }
 
 const EMPTY_FORM: CmaFormState = {
+  city: "",
   neighborhood: "",
   street: "",
   rooms: "",
@@ -394,7 +396,7 @@ export default function CmaAgent() {
                 <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">CMA</p>
                 <h2 className="mt-3 text-3xl font-black text-black md:text-4xl">הערכת שווי CMA</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
-                  מזינים שכונה, רחוב, חדרים וטווח מ"ר, ומקבלים דוח שאפשר לערוך ידנית לפני שליחה ללקוח.
+                  מזינים עיר, שכונה, רחוב, חדרים וטווח מ"ר, ומקבלים דוח שאפשר לערוך ידנית לפני שליחה ללקוח.
                 </p>
               </div>
 
@@ -415,6 +417,16 @@ export default function CmaAgent() {
                 </div>
 
                 <div className="mt-6 grid gap-4">
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-slate-700">עיר (רשות)</span>
+                    <input
+                      value={form.city}
+                      onChange={(event) => setField("city", event.target.value)}
+                      placeholder="למשל: ירושלים"
+                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                    />
+                  </label>
+
                   <label className="grid gap-2">
                     <span className="text-sm font-bold text-slate-700">שכונה</span>
                     <input

@@ -134,6 +134,7 @@ const marketingInputSchema = z.object({
 });
 
 const cmaInputSchema = z.object({
+  city: z.string().trim().default(""),
   neighborhood: z.string().trim().min(2),
   street: z.string().trim().default(""),
   rooms: z.string().trim().min(1),
@@ -152,7 +153,7 @@ const cmaAiSummarySchema = z.object({
   sellerRecommendation: z.string().min(20),
 });
 
-const CMA_CITY_NAME = "ירושלים";
+const CMA_DEFAULT_CITY_NAME = "ישראל";
 const NADLAN_NEIGHBORHOOD_INDEX_TTL_MS = 1000 * 60 * 60 * 6;
 
 type GovmapAutocompletePayload = {
@@ -163,6 +164,8 @@ type GovmapAutocompletePayload = {
     shape?: string;
   }>;
 };
+
+type GovmapAutocompleteResult = NonNullable<GovmapAutocompletePayload["results"]>[number];
 
 type GovmapDealLocator = {
   dealscount?: string;
@@ -331,15 +334,25 @@ function parseNumericInput(value: string) {
 }
 
 function parseGovmapPointShape(shape: string) {
-  const match = shape.match(/^POINT\(([-\d.]+)\s+([-\d.]+)\)$/);
-  if (!match) {
-    throw new Error("לא הצלחנו לקרוא את המיקום של השכונה ממקור העסקאות.");
+  const pointMatch = shape.match(/^POINT\(([-\d.]+)\s+([-\d.]+)\)$/i);
+  if (pointMatch) {
+    return {
+      x: Number(pointMatch[1]),
+      y: Number(pointMatch[2]),
+    };
   }
 
-  return {
-    x: Number(match[1]),
-    y: Number(match[2]),
-  };
+  // Fallback for shapes like POLYGON / MULTIPOLYGON / LINESTRING:
+  // pick the first coordinate pair we can find.
+  const coordinateMatch = shape.match(/([-\d.]+)\s+([-\d.]+)/);
+  if (coordinateMatch) {
+    return {
+      x: Number(coordinateMatch[1]),
+      y: Number(coordinateMatch[2]),
+    };
+  }
+
+  throw new Error("לא הצלחנו לקרוא את המיקום של השכונה ממקור העסקאות.");
 }
 
 function roundCurrency(value: number) {
@@ -363,8 +376,8 @@ function formatComparableDealDate(dateValue: string) {
   }).format(date);
 }
 
-function buildYad2StreetSearchUrl(street: string, neighborhood: string, rooms: string) {
-  const query = `site:yad2.co.il/realestate/forsale ${street} ${neighborhood} ${CMA_CITY_NAME} ${rooms} חדרים`;
+function buildYad2StreetSearchUrl(street: string, neighborhood: string, rooms: string, city: string) {
+  const query = `site:yad2.co.il/realestate/forsale ${street} ${neighborhood} ${city} ${rooms} חדרים`;
   return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
 }
 
@@ -376,10 +389,35 @@ function normalizeHebrewToken(value: string | null | undefined) {
     .toLowerCase();
 }
 
+function sanitizeNeighborhoodInput(value: string) {
+  return value
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/^(שכונה|שכונת)\s+/i, "")
+    .trim();
+}
+
+function sanitizeStreetInput(value: string) {
+  return value
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/^(רחוב|רח׳|רח)\s+/i, "")
+    .trim();
+}
+
+function sanitizeCityInput(value: string) {
+  return value
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/^עיר\s+/i, "")
+    .trim();
+}
+
 function buildCmaPrompt(
   input: z.infer<typeof cmaInputSchema>,
   deals: CmaComparableDeal[],
   pageData: NadlanNeighborhoodPage | null,
+  cityName: string,
   fallbackSummary: CmaAiSummary,
 ) {
   return `אתה אנליסט נדל"ן ירושלמי בכיר של צוות שי | לנדסמן ירושלים.
@@ -393,7 +431,7 @@ function buildCmaPrompt(
 5) להחזיר JSON בלבד, בלי markdown ובלי טקסט נוסף.
 
 נתוני קלט:
-- עיר: ${CMA_CITY_NAME}
+- עיר: ${cityName}
 - שכונה: ${input.neighborhood}
 - רחוב יעד (אם קיים): ${input.street || "לא הוזן"}
 - חדרים מבוקשים: ${input.rooms}
@@ -477,11 +515,43 @@ function buildFallbackCmaSummary(
   };
 }
 
-async function fetchNeighborhoodReference(neighborhood: string) {
-  const normalizedNeighborhood = neighborhood.trim().replace(/\s+/g, " ");
+async function fetchNeighborhoodReference(neighborhood: string, city?: string, street?: string) {
+  const normalizedNeighborhood = sanitizeNeighborhoodInput(neighborhood.trim().replace(/\s+/g, " "));
+  const normalizedCity = sanitizeCityInput((city ?? "").trim().replace(/\s+/g, " "));
+  const normalizedStreet = sanitizeStreetInput((street ?? "").trim().replace(/\s+/g, " "));
+
+  const neighborhoodAliases: Record<string, string[]> = {
+    "גבעת קנדה": ["גילה"],
+    גילה: ["גבעת קנדה"],
+  };
+
+  const getNeighborhoodReferenceFromResult = (
+    result: GovmapAutocompleteResult,
+    searchTerm: string,
+  ) => {
+    if (!result?.id || !result.shape) {
+      return null;
+    }
+
+    const parsedNeighborhoodId = Number(String(result.id).split("|").pop());
+    const govmapNeighborhoodId = Number.isFinite(parsedNeighborhoodId) ? parsedNeighborhoodId : null;
+
+    let point: { x: number; y: number } | null = null;
+    try {
+      point = parseGovmapPointShape(result.shape);
+    } catch {
+      point = null;
+    }
+    if (!point) return null;
+
+    return {
+      label: result.text ?? searchTerm,
+      govmapNeighborhoodId,
+      point,
+    };
+  };
 
   const lookupNeighborhood = async (searchTerm: string) => {
-    const encodedNeighborhood = encodeURIComponent(searchTerm);
     const response = await fetch("https://www.govmap.gov.il/api/search-service/autocomplete", {
       method: "POST",
       headers: {
@@ -489,7 +559,7 @@ async function fetchNeighborhoodReference(neighborhood: string) {
         Accept: "application/json",
       },
       body: JSON.stringify({
-        searchText: `${encodedNeighborhood} ${CMA_CITY_NAME}`,
+        searchText: searchTerm,
       }),
     });
 
@@ -499,25 +569,62 @@ async function fetchNeighborhoodReference(neighborhood: string) {
 
     const payload = (await response.json()) as GovmapAutocompletePayload;
     const results = payload.results ?? [];
-    const match =
-      results.find((result) => result.type === "neighborhood" && result.text?.includes(searchTerm)) ??
-      results.find((result) => result.type === "neighborhood") ??
-      results[0];
-
-    if (!match?.id || !match.shape) {
+    if (!results.length) {
       return null;
     }
 
-    return {
-      label: match.text ?? searchTerm,
-      govmapNeighborhoodId: Number(String(match.id).split("|").pop()),
-      point: parseGovmapPointShape(match.shape),
-    };
+    const normalizedSearch = normalizeHebrewToken(searchTerm);
+    const normalizedTargetNeighborhood = normalizeHebrewToken(normalizedNeighborhood);
+
+    const ranked = results
+      .map((result) => {
+        const text = result.text ?? "";
+        const normalizedText = normalizeHebrewToken(text);
+        let score = 0;
+
+        if (result.type === "neighborhood") score += 50;
+        if (normalizedText.includes(normalizedTargetNeighborhood)) score += 30;
+        if (normalizedTargetNeighborhood.includes(normalizedText)) score += 20;
+        if (normalizedSearch && normalizedText.includes(normalizedSearch)) score += 10;
+        if (normalizedCity && normalizedText.includes(normalizeHebrewToken(normalizedCity))) score += 10;
+
+        return { result, score };
+      })
+      .sort((left, right) => right.score - left.score);
+
+    for (const item of ranked) {
+      const mapped = getNeighborhoodReferenceFromResult(item.result, searchTerm);
+      if (mapped) {
+        return mapped;
+      }
+    }
+
+    return null;
   };
 
-  const primaryMatch = await lookupNeighborhood(normalizedNeighborhood);
-  if (primaryMatch) {
-    return primaryMatch;
+  const candidateTerms = new Set<string>();
+  const addTerm = (value: string) => {
+    const normalized = value.trim().replace(/\s+/g, " ");
+    if (normalized) candidateTerms.add(normalized);
+  };
+
+  addTerm(normalizedNeighborhood);
+  addTerm(`${normalizedNeighborhood} ${normalizedCity}`);
+  addTerm(`${normalizedCity} ${normalizedNeighborhood}`);
+  addTerm(`${normalizedStreet} ${normalizedNeighborhood} ${normalizedCity}`);
+  addTerm(`${normalizedStreet} ${normalizedNeighborhood}`);
+  addTerm(`${normalizedNeighborhood} ${CMA_DEFAULT_CITY_NAME}`);
+
+  for (const alias of neighborhoodAliases[normalizedNeighborhood] ?? []) {
+    addTerm(`${alias} ${normalizedCity}`);
+    addTerm(alias);
+  }
+
+  for (const term of Array.from(candidateTerms)) {
+    const match = await lookupNeighborhood(term);
+    if (match) {
+      return match;
+    }
   }
 
   const parts = normalizedNeighborhood.split(" ");
@@ -526,7 +633,7 @@ async function fetchNeighborhoodReference(neighborhood: string) {
     if (retryResult) return retryResult;
   }
 
-  throw new Error("לא נמצאה שכונה תואמת עבור דוח ה-CMA.");
+  throw new Error("לא נמצאה שכונה תואמת עבור דוח ה-CMA. נסה להוסיף עיר או להשתמש בשם שכונה מלא.");
 }
 
 async function getLegacyNeighborhoodId(govmapNeighborhoodId: number) {
@@ -909,6 +1016,7 @@ function buildStreetSuggestions(
   deals: CmaComparableDeal[],
   pageData: NadlanNeighborhoodPage | null,
   input: z.infer<typeof cmaInputSchema>,
+  cityName: string,
 ) {
   const allCandidateStreets = Array.from(
     new Set([
@@ -936,8 +1044,8 @@ function buildStreetSuggestions(
 
   return streets.map((street) => ({
     street,
-    searchQuery: `${street}, ${input.neighborhood}, ${CMA_CITY_NAME}, ${input.rooms} חדרים`,
-    searchUrl: buildYad2StreetSearchUrl(street, input.neighborhood, input.rooms),
+    searchQuery: `${street}, ${input.neighborhood}, ${cityName}, ${input.rooms} חדרים`,
+    searchUrl: buildYad2StreetSearchUrl(street, input.neighborhood, input.rooms, cityName),
   })) satisfies CmaStreetSuggestion[];
 }
 
@@ -1320,12 +1428,18 @@ export const appRouter = router({
     generateCma: agentProcedure
       .input(cmaInputSchema)
       .mutation(async ({ input }) => {
-        const neighborhoodRef = await fetchNeighborhoodReference(input.neighborhood.trim());
-        const legacyNeighborhoodId = await getLegacyNeighborhoodId(neighborhoodRef.govmapNeighborhoodId);
-        const [pageData, polygonId] = await Promise.all([
-          fetchNadlanNeighborhoodPage(legacyNeighborhoodId),
-          fetchNeighborhoodDealsPolygonId(neighborhoodRef.point),
-        ]);
+        const neighborhoodRef = await fetchNeighborhoodReference(input.neighborhood.trim(), input.city.trim(), input.street.trim());
+        const polygonId = await fetchNeighborhoodDealsPolygonId(neighborhoodRef.point);
+
+        let pageData: NadlanNeighborhoodPage | null = null;
+        if (typeof neighborhoodRef.govmapNeighborhoodId === "number" && Number.isFinite(neighborhoodRef.govmapNeighborhoodId)) {
+          try {
+            const legacyNeighborhoodId = await getLegacyNeighborhoodId(neighborhoodRef.govmapNeighborhoodId);
+            pageData = await fetchNadlanNeighborhoodPage(legacyNeighborhoodId);
+          } catch {
+            pageData = null;
+          }
+        }
 
         const rawDeals = await fetchGovmapNeighborhoodDeals(polygonId, 100);
         const deals = selectComparableDeals(rawDeals, input);
@@ -1333,25 +1447,26 @@ export const appRouter = router({
           throw new Error("לא נמצאו עסקאות השוואה מתאימות עבור השכונה והחדרים שבחרת.");
         }
 
-        const streetSuggestions = buildStreetSuggestions(deals, pageData, input);
+        const cityName = (pageData?.settlementName ?? input.city.trim() ?? "").trim() || CMA_DEFAULT_CITY_NAME;
+        const streetSuggestions = buildStreetSuggestions(deals, pageData, input, cityName);
         const fallbackSummary = buildFallbackCmaSummary(input, deals, pageData);
         const apiKey = process.env.VITE_ANTHROPIC_KEY;
 
         let aiSummary = fallbackSummary;
         if (apiKey) {
           try {
-            const rawSummary = await requestAnthropicMarketing(buildCmaPrompt(input, deals, pageData, fallbackSummary), apiKey);
+            const rawSummary = await requestAnthropicMarketing(buildCmaPrompt(input, deals, pageData, cityName, fallbackSummary), apiKey);
             aiSummary = parseCmaAiResponse(rawSummary, fallbackSummary);
           } catch {
             aiSummary = fallbackSummary;
           }
         }
 
-        const broadSearchQuery = `site:yad2.co.il/realestate/forsale ${input.street || ""} ${input.neighborhood} ${CMA_CITY_NAME} ${input.rooms} חדרים`;
+        const broadSearchQuery = `site:yad2.co.il/realestate/forsale ${input.street || ""} ${input.neighborhood} ${cityName} ${input.rooms} חדרים`;
 
         return {
           neighborhoodLabel: pageData?.neighborhoodName ?? neighborhoodRef.label,
-          settlementName: pageData?.settlementName ?? CMA_CITY_NAME,
+          settlementName: cityName,
           deals,
           streetSuggestions,
           broadSearchUrl: `https://www.google.com/search?q=${encodeURIComponent(broadSearchQuery)}`,
