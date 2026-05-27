@@ -524,9 +524,7 @@ export default function AdminPanel() {
   ];
 
   const handleGoBack = () => {
-    if (typeof window !== "undefined") {
-      window.history.back();
-    }
+    navigate("/agent-dashboard/crm");
   };
 
   return (
