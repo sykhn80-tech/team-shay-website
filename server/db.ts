@@ -1216,68 +1216,153 @@ export async function getAgentDemoCredentials(): Promise<Pick<AgentAccount, "ema
     .map((account) => ({ email: account.email, name: account.name }));
 }
 
-// ─── CRM Leads ────────────────────────────────────────────────────────────────
+// ─── CRM Leads (Blob Storage) ─────────────────────────────────────────────────
+
+export type CrmLeadData = {
+  id: number;
+  agentId: number | null;
+  name: string;
+  phone: string;
+  email: string | null;
+  neighborhood: string | null;
+  notes: string | null;
+  tags: string;
+  leadStatus: "חדש" | "פעיל" | "סגור" | "לא רלוונטי";
+  source: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type CrmBlobData = {
+  nextId: number;
+  leads: CrmLeadData[];
+};
+
+const blobCrmPath = "crm/team-shay/leads.json";
+const localCrmPath = path.join(process.cwd(), ".local-cms-data", "crm.json");
+
+let cachedCrmData: CrmBlobData | null = null;
+let cachedCrmEtag: string | null = null;
+let cachedCrmFetchedAt = 0;
+const crmCacheTtlMs = 15_000;
+
+function createEmptyCrmData(): CrmBlobData {
+  return { nextId: 1, leads: [] };
+}
+
+async function readCrmData(): Promise<CrmBlobData> {
+  if (hasBlobStorage()) {
+    if (cachedCrmData && Date.now() - cachedCrmFetchedAt < crmCacheTtlMs) {
+      return cachedCrmData;
+    }
+    try {
+      const result = await blobGet(blobCrmPath, {
+        access: "public",
+        ifNoneMatch: cachedCrmEtag ?? undefined,
+      });
+      if (result?.statusCode === 304 && cachedCrmData) {
+        cachedCrmFetchedAt = Date.now();
+        return cachedCrmData;
+      }
+      if (result?.stream) {
+        const raw = await streamToText(result.stream);
+        const data = JSON.parse(raw) as CrmBlobData;
+        cachedCrmData = data;
+        cachedCrmEtag = result.blob.etag ?? null;
+        cachedCrmFetchedAt = Date.now();
+        return data;
+      }
+    } catch {
+      // fall through to local
+    }
+  }
+
+  try {
+    const raw = await readFile(localCrmPath, "utf8");
+    return JSON.parse(raw) as CrmBlobData;
+  } catch {
+    return createEmptyCrmData();
+  }
+}
+
+async function writeCrmData(data: CrmBlobData): Promise<void> {
+  const json = `${JSON.stringify(data, null, 2)}\n`;
+  if (hasBlobStorage()) {
+    await blobPut(blobCrmPath, json, {
+      access: "public",
+      allowOverwrite: true,
+      addRandomSuffix: false,
+      contentType: "application/json",
+      cacheControlMaxAge: 0,
+    });
+    cachedCrmData = data;
+    cachedCrmFetchedAt = Date.now();
+    return;
+  }
+  await mkdir(path.dirname(localCrmPath), { recursive: true });
+  await writeFile(localCrmPath, json);
+}
 
 export async function listCrmLeads(options?: {
   agentId?: number | null;
   search?: string;
-}) {
-  const db = await getDb();
-  if (!db) return [];
-
-  const conditions = [];
+}): Promise<CrmLeadData[]> {
+  const data = await readCrmData();
+  let leads = [...data.leads].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
   if (options?.agentId != null) {
-    conditions.push(eq(crmLeads.agentId, options.agentId));
+    leads = leads.filter((l) => l.agentId === options.agentId);
   }
 
   if (options?.search) {
-    const term = `%${options.search}%`;
-    conditions.push(
-      or(
-        like(crmLeads.name, term),
-        like(crmLeads.phone, term),
-        like(crmLeads.neighborhood, term),
-      )
+    const term = options.search.toLowerCase();
+    leads = leads.filter(
+      (l) =>
+        l.name.toLowerCase().includes(term) ||
+        l.phone.includes(term) ||
+        (l.neighborhood ?? "").toLowerCase().includes(term)
     );
   }
 
-  return db
-    .select()
-    .from(crmLeads)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(crmLeads.createdAt));
+  return leads;
 }
 
-export async function getCrmLeadById(leadId: number) {
-  const db = await getDb();
-  if (!db) return null;
-
-  const result = await db.select().from(crmLeads).where(eq(crmLeads.id, leadId)).limit(1);
-  return result[0] ?? null;
+export async function getCrmLeadById(leadId: number): Promise<CrmLeadData | null> {
+  const data = await readCrmData();
+  return data.leads.find((l) => l.id === leadId) ?? null;
 }
 
-export async function createCrmLead(input: InsertCrmLead) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const inserted = await db.insert(crmLeads).values(input);
-  return Number(inserted[0].insertId);
+export async function createCrmLead(input: Omit<CrmLeadData, "id" | "createdAt" | "updatedAt">): Promise<number> {
+  const data = await readCrmData();
+  const now = new Date().toISOString();
+  const id = data.nextId++;
+  data.leads.push({ ...input, id, createdAt: now, updatedAt: now });
+  await writeCrmData(data);
+  return id;
 }
 
-export async function updateCrmLead(leadId: number, input: Partial<InsertCrmLead>) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  await db
-    .update(crmLeads)
-    .set({ ...input, updatedAt: new Date() })
-    .where(eq(crmLeads.id, leadId));
+export async function updateCrmLead(leadId: number, input: Partial<Omit<CrmLeadData, "id" | "createdAt">>): Promise<void> {
+  const data = await readCrmData();
+  const index = data.leads.findIndex((l) => l.id === leadId);
+  if (index === -1) return;
+  data.leads[index] = { ...data.leads[index], ...input, updatedAt: new Date().toISOString() };
+  await writeCrmData(data);
 }
 
-export async function deleteCrmLead(leadId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
+export async function deleteCrmLead(leadId: number): Promise<void> {
+  const data = await readCrmData();
+  data.leads = data.leads.filter((l) => l.id !== leadId);
+  await writeCrmData(data);
+}
 
-  await db.delete(crmLeads).where(eq(crmLeads.id, leadId));
+export async function bulkImportCrmLeads(leads: Omit<CrmLeadData, "id" | "createdAt" | "updatedAt">[]): Promise<number> {
+  const data = await readCrmData();
+  const now = new Date().toISOString();
+  for (const lead of leads) {
+    data.leads.push({ ...lead, id: data.nextId++, createdAt: now, updatedAt: now });
+  }
+  await writeCrmData(data);
+  return leads.length;
 }

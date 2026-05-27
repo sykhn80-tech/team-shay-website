@@ -38,6 +38,7 @@ import {
   createCrmLead,
   updateCrmLead,
   deleteCrmLead,
+  bulkImportCrmLeads,
 } from "./db";
 import { storagePut } from "./storage";
 
@@ -1821,6 +1822,39 @@ export const appRouter = router({
         }
         await deleteCrmLead(input.id);
         return { success: true } as const;
+      }),
+
+    bulkImport: agentProcedure
+      .input(
+        z.array(
+          z.object({
+            name: z.string().min(1),
+            phone: z.string().min(1),
+            email: z.string().email().optional().nullable(),
+            neighborhood: z.string().optional().nullable(),
+            notes: z.string().optional().nullable(),
+            tags: z.string().optional().default(""),
+            leadStatus: z.enum(["חדש", "פעיל", "סגור", "לא רלוונטי"]).optional().default("חדש"),
+            source: z.string().optional().nullable(),
+            agentId: z.number().int().positive().optional().nullable(),
+          })
+        )
+      )
+      .mutation(async ({ ctx, input }) => {
+        const isAdmin = ctx.agentSession.accountRole === "admin";
+        const leads = input.map((item) => ({
+          name: item.name,
+          phone: item.phone,
+          email: item.email ?? null,
+          neighborhood: item.neighborhood ?? null,
+          notes: item.notes ?? null,
+          tags: item.tags,
+          leadStatus: item.leadStatus,
+          source: item.source ?? null,
+          agentId: isAdmin ? (item.agentId ?? ctx.agentSession.id) : ctx.agentSession.id,
+        }));
+        const count = await bulkImportCrmLeads(leads);
+        return { count };
       }),
   }),
 });
