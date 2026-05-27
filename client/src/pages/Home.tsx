@@ -550,26 +550,29 @@ export default function Home() {
             />
           )}
 
-          {/* Mobile sidebar drawer (slides from right) — white + gold accents */}
+          {/* Mobile sidebar drawer (slides from right) — clean white */}
           <div
-            className={`lg:hidden fixed top-0 right-0 z-50 h-full w-72 bg-white px-6 py-8 shadow-2xl transition-transform duration-300 ease-in-out border-l border-[#d9ae4c]/20 ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+            className={`lg:hidden fixed top-0 right-0 z-50 h-full w-72 shadow-2xl transition-transform duration-300 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+            style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #d9ae4c" }}
             dir="rtl"
           >
-            <div className="flex items-center justify-between mb-10">
-              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="h-10 w-auto" />
-              <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition rounded-lg" aria-label="סגור">
+            <div className="flex items-center justify-between px-6 pt-7 pb-8">
+              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="h-9 w-auto" />
+              <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#555" }} className="p-2 rounded-lg hover:bg-gray-100 transition" aria-label="סגור">
                 <X className="size-5" />
               </button>
             </div>
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-1 px-4">
               {navItems.map((item) => {
-                const cls = "block rounded-xl px-4 py-3.5 text-base font-black text-slate-800 transition-all duration-150 hover:text-[#d9ae4c] hover:bg-[#fff8e6] border border-transparent hover:border-[#d9ae4c]/30";
+                const itemStyle = { color: "#1a1a1a", fontWeight: 800, fontSize: "1rem", display: "block", borderRadius: "12px", padding: "14px 16px", transition: "background 0.15s" };
                 return item.isRoute ? (
                   <Link
                     key={item.label}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={cls}
+                    style={itemStyle}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#fff8e6"; (e.currentTarget as HTMLElement).style.color = "#d9ae4c"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#1a1a1a"; }}
                   >
                     {item.label}
                   </Link>
@@ -578,22 +581,24 @@ export default function Home() {
                     key={item.label}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={cls}
+                    style={itemStyle}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#fff8e6"; (e.currentTarget as HTMLElement).style.color = "#d9ae4c"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#1a1a1a"; }}
                   >
                     {item.label}
                   </a>
                 );
               })}
             </nav>
-            <div className="mt-10 space-y-3">
-              <Button
+            <div className="px-4 mt-8 space-y-3">
+              <button
                 onClick={() => { window.open(whatsappLink, "_blank", "noopener,noreferrer"); setMobileMenuOpen(false); }}
-                className="w-full rounded-full bg-[#d9ae4c] text-black font-black hover:bg-[#c99a31] h-12 text-base shadow-md shadow-amber-200/60"
+                style={{ width: "100%", background: "#d9ae4c", color: "#000", fontWeight: 900, borderRadius: "999px", height: "48px", fontSize: "1rem", border: "none", cursor: "pointer" }}
               >
                 שלחו הודעה עכשיו
-              </Button>
-              <div className="border-t border-slate-100 pt-4 mt-2">
-                <p className="text-xs text-slate-400 text-center">Team Shay — נדל״ן ירושלים</p>
+              </button>
+              <div style={{ borderTop: "1px solid #eee", paddingTop: "14px", marginTop: "8px", textAlign: "center" }}>
+                <p style={{ fontSize: "11px", color: "#999" }}>Team Shay — נדל״ן ירושלים</p>
               </div>
             </div>
           </div>

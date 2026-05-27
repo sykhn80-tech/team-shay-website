@@ -10,7 +10,7 @@ Claude Code מבצע deployment. Cowork כותב את הקוד.
 rm -f .git/index.lock
 git add -A
 git status
-git commit -m "CRM מלא + תיקון ניווט + תפריט מובייל לבן"
+git commit -m "תיקון ניווט אדמין + תפריט מובייל לבן + CRM מלא"
 git push
 ```
 
@@ -24,17 +24,19 @@ git push
 Cowork כבר כתב את השינויים הבאים — הרץ deploy **עכשיו**:
 
 ### שינויים ממתינים (כל הקבצים האלה שונו):
-1. `client/src/components/AgentLayout.tsx` — sidebar שחור (`#0d0d0d`) עם זהב חזק, mobile drawer
-2. `client/src/pages/AdminPanel.tsx` — לחצן "חזרה אחורה" מנווט ל-`/agent-dashboard/crm` + CRM בסיידבר
-3. `server/db.ts` — הרחבת CrmLeadData עם 15 שדות חדשים
-4. `server/routers.ts` — עדכון zod schemas לכל השדות החדשים
-5. `client/src/pages/CrmPage.tsx` — CRM מלא: טבלה, פאנל פרטים, מודל 4 קטגוריות
-6. `client/src/pages/Home.tsx` — תפריט מובייל: רקע **לבן** + טקסט כהה + hover זהב
+1. `client/src/pages/AgentDashboard.tsx` — הסרת redirect אוטומטי של אדמין לCRM (עכשיו אדמין יכול לנווט חופשי)
+2. `client/src/components/AgentLayout.tsx` — sidebar שחור עם זהב חזק
+3. `client/src/pages/AdminPanel.tsx` — "חזרה אחורה" מנווט ל-/agent-dashboard/crm
+4. `server/db.ts` — הרחבת CrmLeadData עם 15 שדות חדשים
+5. `server/routers.ts` — עדכון zod schemas
+6. `client/src/pages/CrmPage.tsx` — CRM מלא עם פאנל פרטים ומודל 4 קטגוריות
+7. `client/src/pages/Home.tsx` — תפריט מובייל: רקע לבן, טקסט כהה #1a1a1a, hover זהב (style inline)
 
 ### לאחר deploy — בדוק:
-1. `/agent-dashboard/crm` — טבלה עם עמודות סוג/שלב/תקציב, לחיצה על שורה פותחת פאנל
-2. `/admin` — לחצן "חזרה אחורה" מנווט ל-CRM
-3. דף הבית במובייל — תפריט לבן עם hover זהב
+1. `/agent-dashboard` — אדמין רואה דשבורד, יכול ללחוץ CRM מהסיידבר
+2. `/agent-dashboard/crm` — ניווט חופשי בין עמודים
+3. `/admin` — "חזרה אחורה" → CRM
+4. דף הבית במובייל — תפריט פתוח, טקסט כהה נראה על רקע לבן
 
 ## כללי עבודה
 - Cowork כותב קוד ← Claude Code מריץ git
