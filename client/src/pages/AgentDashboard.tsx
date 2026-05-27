@@ -14,6 +14,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Upload,
   UserCircle2,
   Users,
 } from "lucide-react";
@@ -21,16 +22,16 @@ import { TEAM_LOGO } from "@/lib/siteData";
 import { toast } from "sonner";
 
 const sidebarItems = [
-  { label: "סקירה כללית", icon: LayoutDashboard, active: true },
-  { label: "הנכסים שלי", icon: Building2, active: false },
-  { label: "CRM לידים", icon: Users, href: "/agent-dashboard/crm", active: false },
-  { label: "שיווק נכסים", icon: Megaphone, href: "/agent-dashboard/marketing", active: false },
-  { label: "הערכת שווי CMA", icon: BarChart2, href: "/agent-dashboard/cma", active: false },
-  { label: "פרופיל סוכן", icon: UserCircle2, active: false },
+  { label: "סקירה כללית", icon: LayoutDashboard, href: "/agent-dashboard" },
+  { label: "הנכסים שלי", icon: Building2, href: "/agent-dashboard" },
+  { label: "CRM לידים", icon: Users, href: "/agent-dashboard/crm" },
+  { label: "שיווק נכסים", icon: Megaphone, href: "/agent-dashboard/marketing" },
+  { label: "הערכת שווי CMA", icon: BarChart2, href: "/agent-dashboard/cma" },
+  { label: "פרופיל סוכן", icon: UserCircle2, href: "/agent-dashboard" },
 ];
 
 export default function AgentDashboard() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const utils = trpc.useUtils();
   const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
 
@@ -101,7 +102,7 @@ export default function AgentDashboard() {
   return (
     <div className="min-h-screen bg-[#fff8e6] text-black" dir="rtl">
       <div className="min-h-screen">
-        <aside className="border-l border-[#f3dfb0] bg-white px-5 py-6 shadow-[0_20px_50px_rgba(15,23,42,0.04)] lg:fixed lg:right-0 lg:top-0 lg:h-screen lg:w-[280px] lg:overflow-y-auto">
+        <aside className="border-l border-[#f3dfb0] bg-white px-5 py-6 shadow-[0_20px_50px_rgba(15,23,42,0.04)] lg:fixed lg:right-0 lg:top-0 lg:h-screen lg:w-[280px] lg:overflow-y-auto flex flex-col">
           <div className="flex items-center justify-between gap-3">
             <img src={TEAM_LOGO} alt="Team Shay" className="h-14 w-auto object-contain" />
             <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-[#d9ae4c]">
@@ -127,33 +128,37 @@ export default function AgentDashboard() {
             </p>
           </div>
 
-          <nav className="mt-8 space-y-2">
+          <nav className="mt-8 space-y-1">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
+              const isActive = location === item.href || location.startsWith(item.href + "/");
               const itemClassName = `flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right text-sm font-bold transition ${
-                item.active
+                isActive
                   ? "bg-[#fff4d8] text-[#b98b2f] shadow-[0_12px_24px_rgba(217,174,76,0.14)]"
                   : "text-slate-600 hover:bg-slate-50"
               }`;
-
-              if (item.href) {
-                return (
-                  <Link key={item.label} href={item.href}>
-                    <span className={itemClassName}>
-                      <Icon className="size-4" />
-                      {item.label}
-                    </span>
-                  </Link>
-                );
-              }
-
               return (
-                <button key={item.label} type="button" className={itemClassName}>
-                  <Icon className="size-4" />
-                  {item.label}
-                </button>
+                <Link key={item.label} href={item.href}>
+                  <span className={itemClassName}>
+                    <Icon className="size-4" />
+                    {item.label}
+                  </span>
+                </Link>
               );
             })}
+
+            {agent?.accountRole === "admin" && (
+              <Link href="/crm-import">
+                <span className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right text-sm font-bold transition ${
+                  location === "/crm-import"
+                    ? "bg-[#fff4d8] text-[#b98b2f] shadow-[0_12px_24px_rgba(217,174,76,0.14)]"
+                    : "text-blue-600 hover:bg-blue-50"
+                }`}>
+                  <Upload className="size-4" />
+                  ייבוא לידים
+                </span>
+              </Link>
+            )}
           </nav>
 
           <div className="mt-8 rounded-[24px] border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-600">
