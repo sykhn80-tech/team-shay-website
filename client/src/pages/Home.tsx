@@ -550,25 +550,27 @@ export default function Home() {
             />
           )}
 
-          {/* Mobile sidebar drawer (slides from right) */}
+          {/* Mobile sidebar drawer (slides from right) — solid black + gold hover */}
           <div
-            className={`lg:hidden fixed top-0 right-0 z-50 h-full w-72 bg-[#0a0a0a] px-6 py-8 shadow-2xl transition-transform duration-300 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+            className={`lg:hidden fixed top-0 right-0 z-50 h-full w-72 bg-black px-6 py-8 shadow-2xl transition-transform duration-300 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+            style={{ backgroundColor: "#000000" }}
             dir="rtl"
           >
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-10">
               <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="h-10 w-auto" />
-              <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-white/50 hover:text-white transition" aria-label="סגור">
+              <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-white/40 hover:text-white transition rounded-lg" aria-label="סגור">
                 <X className="size-5" />
               </button>
             </div>
             <nav className="flex flex-col gap-1">
-              {navItems.map((item) =>
-                item.isRoute ? (
+              {navItems.map((item) => {
+                const cls = "block rounded-xl px-4 py-3.5 text-base font-black text-white transition-all duration-150 hover:text-[#d9ae4c] hover:border hover:border-[#d9ae4c]/40 hover:bg-[#d9ae4c]/10 border border-transparent";
+                return item.isRoute ? (
                   <Link
                     key={item.label}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="rounded-xl px-4 py-3.5 text-base font-black text-white hover:bg-white/10 transition"
+                    className={cls}
                   >
                     {item.label}
                   </Link>
@@ -577,17 +579,17 @@ export default function Home() {
                     key={item.label}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="rounded-xl px-4 py-3.5 text-base font-black text-white hover:bg-white/10 transition"
+                    className={cls}
                   >
                     {item.label}
                   </a>
-                ),
-              )}
+                );
+              })}
             </nav>
-            <div className="mt-8">
+            <div className="mt-10">
               <Button
                 onClick={() => { window.open(whatsappLink, "_blank", "noopener,noreferrer"); setMobileMenuOpen(false); }}
-                className="w-full rounded-full bg-[#d9ae4c] text-black font-black hover:bg-[#c99a31] h-12"
+                className="w-full rounded-full bg-[#d9ae4c] text-black font-black hover:bg-[#c99a31] h-12 text-base shadow-lg shadow-amber-900/30"
               >
                 שלחו הודעה עכשיו
               </Button>

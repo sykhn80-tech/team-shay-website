@@ -517,6 +517,7 @@ export default function AdminPanel() {
   const sidebarItems = [
     { label: "סקירה כללית", icon: LayoutDashboard, href: "/agent-dashboard", active: false },
     { label: "הנכסים שלי", icon: Building2, href: "/agent-dashboard", active: false },
+    { label: "CRM לידים", icon: Users, href: "/agent-dashboard/crm", active: false, highlight: true },
     { label: "שיווק נכסים", icon: Megaphone, href: "/agent-dashboard/marketing", active: false },
     { label: "הערכת שווי CMA", icon: BarChart2, href: "/agent-dashboard/cma", active: false },
     { label: "פרופיל סוכן", icon: UserCircle2, href: "/agent-dashboard", active: false },
@@ -556,20 +557,23 @@ export default function AdminPanel() {
             <p className="mt-3 text-sm leading-7 text-white/85">ניווט קבוע ומהיר לכל כלי העבודה של הסוכן.</p>
           </div>
 
-          <nav className="mt-6 space-y-2">
+          <nav className="mt-6 space-y-1.5">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
+              const isHighlight = (item as { highlight?: boolean }).highlight;
               return (
                 <Link key={item.label} href={item.href}>
                   <button
                     type="button"
-                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right text-sm font-bold transition ${
-                      item.active
-                        ? "bg-[#fff4d8] text-[#b98b2f] shadow-[0_12px_24px_rgba(217,174,76,0.14)]"
+                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-right text-[15px] font-bold transition ${
+                      isHighlight
+                        ? "bg-[#fff4d8] text-[#b98b2f] hover:bg-[#ffedb0]"
+                        : item.active
+                        ? "bg-[#fff4d8] text-[#b98b2f]"
                         : "text-slate-600 hover:bg-slate-50"
                     }`}
                   >
-                    <Icon className="size-4" />
+                    <Icon className={`size-5 ${isHighlight ? "text-[#d9ae4c]" : "text-slate-400"}`} />
                     {item.label}
                   </button>
                 </Link>

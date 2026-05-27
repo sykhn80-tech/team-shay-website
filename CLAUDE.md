@@ -24,14 +24,12 @@ git push
 Cowork כבר כתב את השינויים הבאים — הרץ deploy:
 
 ### שינויים ממתינים:
-- `client/src/components/AgentLayout.tsx` — קומפוננט sidebar משותף עם hamburger מובייל
-- `client/src/pages/AgentDashboard.tsx` — שימוש ב-AgentLayout + עיצוב חדש
-- `client/src/pages/CrmPage.tsx` — sidebar + עיצוב מקצועי מחדש + כרטיסי מובייל
-- `client/src/pages/Home.tsx` — תפריט מובייל: sidebar drawer במקום dropdown
+- `client/src/pages/AdminPanel.tsx` — הוספת קישור CRM לסיידבר
+- `client/src/pages/Home.tsx` — תפריט מובייל: רקע שחור מלא + hover זהב
 
 ### לאחר deploy:
-1. בדוק `/agent-dashboard/crm` — צריך לראות sidebar + עיצוב חדש
-2. בדוק מובייל — hamburger 3 פסים → sidebar נפתח מהצד
+1. בדוק `/admin` — צריך לראות "CRM לידים" בתפריט
+2. בדוק מובייל באתר הבית — תפריט עם רקע שחור + hover זהב
 
 ## כללי עבודה
 - Cowork כותב קוד ← Claude Code מריץ git
