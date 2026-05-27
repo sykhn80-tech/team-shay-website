@@ -15,6 +15,7 @@ import {
   Plus,
   Trash2,
   UserCircle2,
+  Users,
 } from "lucide-react";
 import { TEAM_LOGO } from "@/lib/siteData";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import { toast } from "sonner";
 const sidebarItems = [
   { label: "סקירה כללית", icon: LayoutDashboard, active: true },
   { label: "הנכסים שלי", icon: Building2, active: false },
+  { label: "CRM לידים", icon: Users, href: "/agent-dashboard/crm", active: false },
   { label: "שיווק נכסים", icon: Megaphone, href: "/agent-dashboard/marketing", active: false },
   { label: "הערכת שווי CMA", icon: BarChart2, href: "/agent-dashboard/cma", active: false },
   { label: "פרופיל סוכן", icon: UserCircle2, active: false },

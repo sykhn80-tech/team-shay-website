@@ -150,6 +150,28 @@ export const propertyImagesRelations = relations(propertyImages, ({ one }) => ({
   }),
 }));
 
+export const crmLeads = mysqlTable("crmLeads", {
+  id: int("id").autoincrement().primaryKey(),
+  agentId: int("agentId").references(() => agentAccounts.id, { onDelete: "set null" }),
+  name: varchar("name", { length: 180 }).notNull(),
+  phone: varchar("phone", { length: 32 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  neighborhood: varchar("neighborhood", { length: 120 }),
+  notes: text("notes"),
+  tags: varchar("tags", { length: 255 }).default("").notNull(),
+  leadStatus: mysqlEnum("leadStatus", ["חדש", "פעיל", "סגור", "לא רלוונטי"]).default("חדש").notNull(),
+  source: varchar("source", { length: 120 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const crmLeadsRelations = relations(crmLeads, ({ one }) => ({
+  agent: one(agentAccounts, {
+    fields: [crmLeads.agentId],
+    references: [agentAccounts.id],
+  }),
+}));
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
@@ -170,3 +192,6 @@ export type InsertProperty = typeof properties.$inferInsert;
 
 export type PropertyImage = typeof propertyImages.$inferSelect;
 export type InsertPropertyImage = typeof propertyImages.$inferInsert;
+
+export type CrmLead = typeof crmLeads.$inferSelect;
+export type InsertCrmLead = typeof crmLeads.$inferInsert;

@@ -2,12 +2,14 @@ import crypto from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { get as blobGet, list as blobList, put as blobPut } from "@vercel/blob";
 import path from "node:path";
-import { and, asc, desc, eq, like, lte, gte } from "drizzle-orm";
+import { and, asc, desc, eq, like, lte, gte, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   agentAccounts,
+  crmLeads,
   type AgentAccount,
   type InsertAgentAccount,
+  type InsertCrmLead,
   type InsertLeadSubmission,
   type InsertProperty,
   type Property,
@@ -1212,4 +1214,70 @@ export async function getAgentDemoCredentials(): Promise<Pick<AgentAccount, "ema
   return defaultStaffAccounts
     .filter((account) => account.accountRole === "agent")
     .map((account) => ({ email: account.email, name: account.name }));
+}
+
+// ─── CRM Leads ────────────────────────────────────────────────────────────────
+
+export async function listCrmLeads(options?: {
+  agentId?: number | null;
+  search?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+
+  if (options?.agentId != null) {
+    conditions.push(eq(crmLeads.agentId, options.agentId));
+  }
+
+  if (options?.search) {
+    const term = `%${options.search}%`;
+    conditions.push(
+      or(
+        like(crmLeads.name, term),
+        like(crmLeads.phone, term),
+        like(crmLeads.neighborhood, term),
+      )
+    );
+  }
+
+  return db
+    .select()
+    .from(crmLeads)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(crmLeads.createdAt));
+}
+
+export async function getCrmLeadById(leadId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(crmLeads).where(eq(crmLeads.id, leadId)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function createCrmLead(input: InsertCrmLead) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const inserted = await db.insert(crmLeads).values(input);
+  return Number(inserted[0].insertId);
+}
+
+export async function updateCrmLead(leadId: number, input: Partial<InsertCrmLead>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(crmLeads)
+    .set({ ...input, updatedAt: new Date() })
+    .where(eq(crmLeads.id, leadId));
+}
+
+export async function deleteCrmLead(leadId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(crmLeads).where(eq(crmLeads.id, leadId));
 }

@@ -33,6 +33,11 @@ import {
   updateStaffAccount,
   updateTestimonial,
   hashAgentPassword,
+  listCrmLeads,
+  getCrmLeadById,
+  createCrmLead,
+  updateCrmLead,
+  deleteCrmLead,
 } from "./db";
 import { storagePut } from "./storage";
 
@@ -1724,6 +1729,97 @@ export const appRouter = router({
       .input(z.object({ propertyId: z.number().int().positive() }))
       .mutation(async ({ input }) => {
         await deletePropertyById(input.propertyId);
+        return { success: true } as const;
+      }),
+  }),
+
+  crm: router({
+    list: agentProcedure
+      .input(
+        z.object({
+          search: z.string().optional(),
+          agentId: z.number().int().positive().optional(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        const isAdmin = ctx.agentSession.accountRole === "admin";
+        const filterAgentId = isAdmin ? (input.agentId ?? null) : ctx.agentSession.id;
+        return listCrmLeads({ agentId: filterAgentId, search: input.search });
+      }),
+
+    getById: agentProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        return getCrmLeadById(input.id);
+      }),
+
+    create: agentProcedure
+      .input(
+        z.object({
+          name: z.string().min(1),
+          phone: z.string().min(1),
+          email: z.string().email().optional().nullable(),
+          neighborhood: z.string().optional().nullable(),
+          notes: z.string().optional().nullable(),
+          tags: z.string().optional().default(""),
+          leadStatus: z.enum(["חדש", "פעיל", "סגור", "לא רלוונטי"]).optional().default("חדש"),
+          source: z.string().optional().nullable(),
+          agentId: z.number().int().positive().optional().nullable(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const isAdmin = ctx.agentSession.accountRole === "admin";
+        const agentId = isAdmin ? (input.agentId ?? ctx.agentSession.id) : ctx.agentSession.id;
+        const id = await createCrmLead({
+          agentId,
+          name: input.name,
+          phone: input.phone,
+          email: input.email ?? null,
+          neighborhood: input.neighborhood ?? null,
+          notes: input.notes ?? null,
+          tags: input.tags,
+          leadStatus: input.leadStatus,
+          source: input.source ?? null,
+        });
+        return { id };
+      }),
+
+    update: agentProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          name: z.string().min(1).optional(),
+          phone: z.string().min(1).optional(),
+          email: z.string().email().optional().nullable(),
+          neighborhood: z.string().optional().nullable(),
+          notes: z.string().optional().nullable(),
+          tags: z.string().optional(),
+          leadStatus: z.enum(["חדש", "פעיל", "סגור", "לא רלוונטי"]).optional(),
+          source: z.string().optional().nullable(),
+          agentId: z.number().int().positive().optional().nullable(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const isAdmin = ctx.agentSession.accountRole === "admin";
+        const { id, ...data } = input;
+        if (!isAdmin) {
+          delete (data as { agentId?: unknown }).agentId;
+        }
+        await updateCrmLead(id, data);
+        return { success: true } as const;
+      }),
+
+    delete: agentProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const isAdmin = ctx.agentSession.accountRole === "admin";
+        if (!isAdmin) {
+          const lead = await getCrmLeadById(input.id);
+          if (!lead || lead.agentId !== ctx.agentSession.id) {
+            throw new Error("אין הרשאה למחוק ליד זה");
+          }
+        }
+        await deleteCrmLead(input.id);
         return { success: true } as const;
       }),
   }),

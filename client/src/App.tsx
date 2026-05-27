@@ -8,6 +8,7 @@ import AdminPanel from "./pages/AdminPanel";
 import AgentDashboard from "./pages/AgentDashboard";
 import AgentLogin from "./pages/AgentLogin";
 import CmaAgent from "./pages/CmaAgent";
+import CrmPage from "./pages/CrmPage";
 import Home from "./pages/Home";
 import MarketingAgent from "./pages/MarketingAgent";
 import NotFound from "./pages/NotFound";
@@ -26,7 +27,7 @@ function Router() {
       <Route path="/agent-dashboard/cma" component={CmaAgent} />
       <Route path="/agent-dashboard/marketing" component={MarketingAgent} />
       <Route path="/agent-dashboard/new-property" component={AddProperty} />
-      <Route path="/agent-dashboard/marketing" component={MarketingAgent} />
+      <Route path="/agent-dashboard/crm" component={CrmPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
