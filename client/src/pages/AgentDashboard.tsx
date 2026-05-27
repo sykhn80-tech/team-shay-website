@@ -48,6 +48,12 @@ export default function AgentDashboard() {
     return null;
   }
 
+  // Admin lands directly on CRM
+  if (!isAgentLoading && agent?.accountRole === "admin") {
+    navigate("/agent-dashboard/crm");
+    return null;
+  }
+
   const totalProperties = properties?.length ?? 0;
   const soldProperties = properties?.filter((p) => p.status === "נמכר").length ?? 0;
   const activeProperties = properties?.filter((p) => p.status !== "נמכר").length ?? 0;
