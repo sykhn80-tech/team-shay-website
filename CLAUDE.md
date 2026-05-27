@@ -24,14 +24,14 @@ git push
 Cowork כבר כתב את השינויים הבאים — הרץ deploy:
 
 ### שינויים ממתינים:
-- `server/db.ts` — פונקציית `deduplicateCrmLeads`
-- `server/routers.ts` — endpoint חדש `crm.deduplicate`
-- `client/src/pages/CrmImport.tsx` — כפתור "מחק כפילויות"
+- `client/src/components/AgentLayout.tsx` — קומפוננט sidebar משותף עם hamburger מובייל
+- `client/src/pages/AgentDashboard.tsx` — שימוש ב-AgentLayout + עיצוב חדש
+- `client/src/pages/CrmPage.tsx` — sidebar + עיצוב מקצועי מחדש + כרטיסי מובייל
+- `client/src/pages/Home.tsx` — תפריט מובייל: sidebar drawer במקום dropdown
 
 ### לאחר deploy:
-1. כנס לאתר → התחבר כשי (admin)
-2. עבור ל `/crm-import`
-3. לחץ "מחק כפילויות"
+1. בדוק `/agent-dashboard/crm` — צריך לראות sidebar + עיצוב חדש
+2. בדוק מובייל — hamburger 3 פסים → sidebar נפתח מהצד
 
 ## כללי עבודה
 - Cowork כותב קוד ← Claude Code מריץ git
