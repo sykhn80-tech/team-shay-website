@@ -39,6 +39,7 @@ import {
   updateCrmLead,
   deleteCrmLead,
   bulkImportCrmLeads,
+  deduplicateCrmLeads,
 } from "./db";
 import { storagePut } from "./storage";
 
@@ -1856,6 +1857,10 @@ export const appRouter = router({
         const count = await bulkImportCrmLeads(leads);
         return { count };
       }),
+
+    deduplicate: adminProcedure.mutation(async () => {
+      return await deduplicateCrmLeads();
+    }),
   }),
 });
 

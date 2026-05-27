@@ -39,6 +39,8 @@ export default function CrmImportPage() {
     retry: false, enabled: false,
   });
   const bulkImport = trpc.crm.bulkImport.useMutation();
+  const deduplicate = trpc.crm.deduplicate.useMutation();
+  const [deduping, setDeduping] = useState(false);
 
   function addLog(msg: string, type = "info") {
     setLog((p) => [...p, { msg, type }]);
@@ -97,6 +99,20 @@ export default function CrmImportPage() {
     }
   }
 
+  async function runDeduplicate() {
+    if (!confirm("למחוק כפילויות לפי מספר טלפון? (תישאר רק הרשומה הראשונה)")) return;
+    setDeduping(true);
+    addLog("🔍 מחפש כפילויות...");
+    try {
+      const res = await deduplicate.mutateAsync();
+      addLog(`✅ הוסרו ${res.removed} כפילויות. נשארו ${res.remaining} לידים.`, "success");
+    } catch (err: unknown) {
+      addLog("❌ " + (err instanceof Error ? err.message : String(err)), "error");
+    } finally {
+      setDeduping(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center pt-16 px-4" dir="rtl">
       <div className="w-full max-w-2xl">
@@ -106,9 +122,12 @@ export default function CrmImportPage() {
         </p>
         <p className="text-amber-600 text-sm mb-6">⚠️ יש להיות מחובר כ-<strong>admin (שי)</strong> לפני הייבוא.</p>
 
-        <div className="flex gap-3 mb-4">
-          <Button onClick={runImport} disabled={running} className="bg-blue-600 hover:bg-blue-700">
+        <div className="flex gap-3 mb-4 flex-wrap">
+          <Button onClick={runImport} disabled={running || deduping} className="bg-blue-600 hover:bg-blue-700">
             {running ? "⏳ מייבא..." : "🚀 ייבא 760 לידים"}
+          </Button>
+          <Button onClick={runDeduplicate} disabled={running || deduping} variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
+            {deduping ? "⏳ מנקה..." : "🗑️ מחק כפילויות"}
           </Button>
           {done && (
             <Button variant="outline" onClick={() => setLocation("/agent-dashboard/crm")}>

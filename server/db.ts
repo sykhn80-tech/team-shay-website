@@ -1366,3 +1366,21 @@ export async function bulkImportCrmLeads(leads: Omit<CrmLeadData, "id" | "create
   await writeCrmData(data);
   return leads.length;
 }
+
+export async function deduplicateCrmLeads(): Promise<{ removed: number; remaining: number }> {
+  const data = await readCrmData();
+  const seen = new Set<string>();
+  const unique: CrmLeadData[] = [];
+  // Sort by id ascending so we keep the earliest import
+  const sorted = [...data.leads].sort((a, b) => a.id - b.id);
+  for (const lead of sorted) {
+    const key = (lead.phone ?? "").trim().replace(/[\s\-]/g, "");
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    unique.push(lead);
+  }
+  const removed = data.leads.length - unique.length;
+  data.leads = unique;
+  await writeCrmData(data);
+  return { removed, remaining: unique.length };
+}
