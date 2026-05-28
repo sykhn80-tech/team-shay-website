@@ -16,9 +16,7 @@ export default function AgentLogin() {
   const [inlineError, setInlineError] = useState<string | null>(null);
 
   const redirectTarget = useMemo(() => {
-    if (typeof window === "undefined") return "/agent-dashboard";
-    const next = new URLSearchParams(window.location.search).get("next");
-    return next && next.startsWith("/") ? next : "/agent-dashboard";
+    return "/agent-dashboard";
   }, []);
 
   const { data: activeAgent, isLoading: isAgentLoading } = trpc.agent.me.useQuery(undefined, {
@@ -229,7 +227,7 @@ export default function AgentLogin() {
                 צריכים לחזור לדף הראשי? <Link href="/" className="font-bold text-[#d9ae4c]">לחצו כאן</Link>
               </p>
               <p>
-                לאחר התחברות תקינה תועברו ישירות אל <Link href="/admin" className="font-bold text-[#d9ae4c]">פאנל הניהול המאובטח</Link>
+                לאחר התחברות תקינה תועברו ישירות אל <Link href="/agent-dashboard" className="font-bold text-[#d9ae4c]">סקירה כללית</Link>
               </p>
             </div>
           </div>

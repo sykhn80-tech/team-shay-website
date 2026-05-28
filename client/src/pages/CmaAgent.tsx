@@ -1,26 +1,20 @@
 import { useMemo, useState } from "react";
-import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { TEAM_LOGO } from "@/lib/siteData";
 import {
   BarChart2,
-  Building2,
-  ChevronLeft,
   CirclePlus,
   ExternalLink,
   FileDown,
-  LayoutDashboard,
   Loader2,
-  LogOut,
-  Megaphone,
   MessageCircle,
   Pencil,
   Plus,
   Save,
   Trash2,
-  UserCircle2,
 } from "lucide-react";
+import AgentLayout from "@/components/AgentLayout";
 import { toast } from "sonner";
 
 interface CmaFormState {
@@ -111,30 +105,12 @@ const EMPTY_COMPETITORS: ManualCompetitor[] = Array.from({ length: 5 }).map(() =
 }));
 
 export default function CmaAgent() {
-  const [, navigate] = useLocation();
-  const utils = trpc.useUtils();
   const { data: agent } = trpc.agent.me.useQuery();
   const generateCmaMutation = trpc.agent.generateCma.useMutation();
   const [form, setForm] = useState<CmaFormState>(EMPTY_FORM);
   const [report, setReport] = useState<CmaResult | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [manualCompetitors, setManualCompetitors] = useState<ManualCompetitor[]>(EMPTY_COMPETITORS);
-
-  const logoutMutation = trpc.agent.logout.useMutation({
-    onSuccess: async () => {
-      await utils.agent.me.invalidate();
-      toast.success("התנתקת בהצלחה.");
-      navigate("/agent-login");
-    },
-  });
-
-  const sidebarItems = [
-    { label: "סקירה כללית", icon: LayoutDashboard, href: "/agent-dashboard", active: false },
-    { label: "הנכסים שלי", icon: Building2, href: "/agent-dashboard", active: false },
-    { label: "שיווק נכסים", icon: Megaphone, href: "/agent-dashboard/marketing", active: false },
-    { label: "הערכת שווי CMA", icon: BarChart2, href: "/agent-dashboard/cma", active: true },
-    { label: "פרופיל סוכן", icon: UserCircle2, href: "/agent-dashboard", active: false },
-  ];
 
   const reportStats = useMemo(() => {
     if (!report) return null;
@@ -308,12 +284,6 @@ export default function CmaAgent() {
     window.print();
   }
 
-  function handleGoBack() {
-    if (typeof window !== "undefined") {
-      window.history.back();
-    }
-  }
-
   function parseNumberLike(value: string) {
     const normalized = value.replace(/[^\d.]/g, "");
     if (!normalized) return null;
@@ -329,67 +299,9 @@ export default function CmaAgent() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#fff8e6] text-black print:bg-white" dir="rtl">
-      <div className="min-h-screen print:block">
-        <aside className="border-l border-[#f3dfb0] bg-white px-5 py-6 shadow-[0_20px_50px_rgba(15,23,42,0.04)] print:hidden lg:fixed lg:right-0 lg:top-0 lg:h-screen lg:w-[280px] lg:overflow-y-auto">
-          <div className="flex items-center justify-between gap-3">
-            <img src={TEAM_LOGO} alt="Team Shay" className="h-14 w-auto object-contain" />
-            <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-[#d9ae4c]">
-              <ChevronLeft className="size-4" />
-              לאתר
-            </Link>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleGoBack}
-            className="mt-4 w-full rounded-full border-slate-200 text-slate-700 hover:bg-slate-50"
-          >
-            <ChevronLeft className="size-4" />
-            חזרה אחורה
-          </Button>
-
-          <div className="mt-8 rounded-[28px] bg-[#d9ae4c] p-5 text-white">
-            <p className="text-sm font-bold text-white/80">שלום {agent?.name ?? "סוכן"}</p>
-            <h1 className="mt-2 text-2xl font-black">אזור הסוכנים</h1>
-            <p className="mt-3 text-sm leading-7 text-white/85">
-              דוח שווי מהיר עם עסקאות השוואה אחרונות, סיכום AI וקפיצה נוחה לנכסים פעילים.
-            </p>
-          </div>
-
-          <nav className="mt-8 space-y-2">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link key={item.label} href={item.href}>
-                  <button
-                    type="button"
-                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right text-sm font-bold transition ${
-                      item.active
-                        ? "bg-[#fff4d8] text-[#b98b2f] shadow-[0_12px_24px_rgba(217,174,76,0.14)]"
-                        : "text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    <Icon className="size-4" />
-                    {item.label}
-                  </button>
-                </Link>
-              );
-            })}
-          </nav>
-
-          <Button
-            variant="outline"
-            onClick={() => logoutMutation.mutate()}
-            disabled={logoutMutation.isPending}
-            className="mt-6 w-full rounded-full border-slate-200 text-slate-700 hover:bg-slate-50"
-          >
-            <LogOut className="size-4" />
-            {logoutMutation.isPending ? "מתנתקים..." : "התנתקות"}
-          </Button>
-        </aside>
-
-        <main className="overflow-x-hidden px-4 py-6 md:px-8 md:py-8 print:px-0 print:py-0 lg:mr-[280px]">
+    <AgentLayout>
+      <div className="min-h-screen overflow-x-hidden bg-[#fff8e6] text-black print:bg-white" dir="rtl">
+        <main className="overflow-x-hidden px-4 py-6 md:px-8 md:py-8 print:px-0 print:py-0">
           <div className="mx-auto max-w-6xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between print:hidden">
               <div>
@@ -972,6 +884,6 @@ export default function CmaAgent() {
           </div>
         </main>
       </div>
-    </div>
+    </AgentLayout>
   );
 }

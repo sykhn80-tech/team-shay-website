@@ -1,20 +1,14 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import {
-  Building2,
-  ChevronLeft,
+  Check,
+  Megaphone,
   CirclePlus,
   Copy,
-  Check,
-  LayoutDashboard,
-  LogOut,
-  Megaphone,
   Sparkles,
-  UserCircle2,
 } from "lucide-react";
-import { TEAM_LOGO } from "@/lib/siteData";
+import AgentLayout from "@/components/AgentLayout";
 import { toast } from "sonner";
 
 interface PropertyForm {
@@ -125,17 +119,7 @@ ${details}
 }
 
 export default function MarketingAgent() {
-  const [, navigate] = useLocation();
-  const utils = trpc.useUtils();
-
   const { data: agent } = trpc.agent.me.useQuery();
-  const logoutMutation = trpc.agent.logout.useMutation({
-    onSuccess: async () => {
-      await utils.agent.me.invalidate();
-      toast.success("התנתקת בהצלחה.");
-      navigate("/agent-login");
-    },
-  });
 
   const [form, setForm] = useState<PropertyForm>(EMPTY_FORM);
   const [generating, setGenerating] = useState(false);
@@ -172,13 +156,6 @@ export default function MarketingAgent() {
     toast.success("הטקסט הועתק ללוח");
   }
 
-  const sidebarItems = [
-    { label: "סקירה כללית", icon: LayoutDashboard, href: "/agent-dashboard", active: false },
-    { label: "הנכסים שלי", icon: Building2, href: "/agent-dashboard", active: false },
-    { label: "שיווק נכסים", icon: Megaphone, href: "/agent-dashboard/marketing", active: true },
-    { label: "פרופיל סוכן", icon: UserCircle2, href: "/agent-dashboard", active: false },
-  ];
-
   const tabs = [
     { key: "facebook" as const, label: "פייסבוק" },
     { key: "instagram" as const, label: "אינסטגרם" },
@@ -186,59 +163,9 @@ export default function MarketingAgent() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#fff8e6] text-black" dir="rtl">
-      <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
-
-        <aside className="border-l border-[#f3dfb0] bg-white px-5 py-6 shadow-[0_20px_50px_rgba(15,23,42,0.04)]">
-          <div className="flex items-center justify-between gap-3">
-            <img src={TEAM_LOGO} alt="Team Shay" className="h-14 w-auto object-contain" />
-            <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-[#d9ae4c]">
-              <ChevronLeft className="size-4" />
-              לאתר
-            </Link>
-          </div>
-
-          <div className="mt-8 rounded-[28px] bg-[#d9ae4c] p-5 text-white">
-            <p className="text-sm font-bold text-white/80">שלום {agent?.name ?? "סוכן"}</p>
-            <h1 className="mt-2 text-2xl font-black">אזור הסוכנים</h1>
-            <p className="mt-3 text-sm leading-7 text-white/85">
-              ייצור תוכן שיווקי אוטומטי לכל הפלטפורמות בלחיצה אחת.
-            </p>
-          </div>
-
-          <nav className="mt-8 space-y-2">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link key={item.label} href={item.href}>
-                  <button
-                    type="button"
-                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-right text-sm font-bold transition ${
-                      item.active
-                        ? "bg-[#fff4d8] text-[#b98b2f] shadow-[0_12px_24px_rgba(217,174,76,0.14)]"
-                        : "text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    <Icon className="size-4" />
-                    {item.label}
-                  </button>
-                </Link>
-              );
-            })}
-          </nav>
-
-          <Button
-            variant="outline"
-            onClick={() => logoutMutation.mutate()}
-            disabled={logoutMutation.isPending}
-            className="mt-6 w-full rounded-full border-slate-200 text-slate-700 hover:bg-slate-50"
-          >
-            <LogOut className="size-4" />
-            {logoutMutation.isPending ? "מתנתקים..." : "התנתקות"}
-          </Button>
-        </aside>
-
-        <main className="px-4 py-6 md:px-8 md:py-8">
+    <AgentLayout>
+      <div className="min-h-screen bg-[#fff8e6] text-black px-4 py-6 md:px-8 md:py-8" dir="rtl">
+        <main>
           <div className="mx-auto max-w-5xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
@@ -450,6 +377,6 @@ export default function MarketingAgent() {
           </div>
         </main>
       </div>
-    </div>
+    </AgentLayout>
   );
 }

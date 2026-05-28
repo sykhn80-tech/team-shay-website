@@ -15,7 +15,7 @@ import { toast } from "sonner";
 const WHITE_LOGO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png";
 
 const NAV_ITEMS = [
-  { label: "לוח בקרה",       icon: LayoutDashboard, href: "/agent-dashboard",           exact: true },
+  { label: "סקירה כללית",    icon: LayoutDashboard, href: "/agent-dashboard",           exact: true },
   { label: "שיווק נכסים",    icon: Megaphone,       href: "/agent-dashboard/marketing", exact: false },
   { label: "הערכת שווי CMA", icon: BarChart2,       href: "/agent-dashboard/cma",       exact: false },
 ];
@@ -52,7 +52,7 @@ export default function AgentLayout({ children }: Props) {
         <img
           src={WHITE_LOGO}
           alt="Team Shay"
-          className="h-20 w-auto object-contain"
+          className="h-24 w-auto object-contain"
           style={{ filter: "brightness(10)" }}
         />
         <Link href="/" onClick={onNav}>
@@ -148,7 +148,7 @@ export default function AgentLayout({ children }: Props) {
         <img
           src={WHITE_LOGO}
           alt="Team Shay"
-          className="h-14 w-auto object-contain"
+          className="h-16 w-auto object-contain"
           style={{ filter: "brightness(10)" }}
         />
         <Link href="/agent-dashboard/crm">
