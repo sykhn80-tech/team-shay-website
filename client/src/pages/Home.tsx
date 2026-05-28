@@ -553,7 +553,7 @@ export default function Home() {
 
           {/* Mobile sidebar drawer — black header + white nav body */}
           <div
-            className={`lg:hidden fixed top-0 right-0 z-[60] h-full w-72 shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+            className={`lg:hidden fixed top-0 right-0 z-[60] flex h-full w-72 flex-col shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
             style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #d9ae4c" }}
             dir="rtl"
           >
@@ -564,42 +564,91 @@ export default function Home() {
                 <X className="size-5" />
               </button>
             </div>
-            <nav className="flex flex-col gap-1 px-4 pt-4">
-              {navItems.map((item) => {
-                const itemStyle = { color: "#1a1a1a", fontWeight: 800, fontSize: "1rem", display: "block", borderRadius: "12px", padding: "14px 16px", transition: "background 0.15s" };
-                return item.isRoute ? (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    style={itemStyle}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#fff8e6"; (e.currentTarget as HTMLElement).style.color = "#d9ae4c"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#1a1a1a"; }}
-                  >
-                    {item.label}
-                  </Link>
-                ) : (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    style={itemStyle}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#fff8e6"; (e.currentTarget as HTMLElement).style.color = "#d9ae4c"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#1a1a1a"; }}
-                  >
-                    {item.label}
-                  </a>
-                );
-              })}
-            </nav>
-            <div className="px-4 mt-8 space-y-3">
+            <div className="flex-1 bg-white px-4 py-5">
+              <div
+                className="rounded-[28px] px-4 py-4"
+                style={{
+                  background: "linear-gradient(180deg, #ffffff 0%, #fff8e6 100%)",
+                  border: "1px solid rgba(217,174,76,0.18)",
+                  boxShadow: "0 18px 42px rgba(15,23,42,0.08)",
+                }}
+              >
+                <p style={{ color: "#b98b2f", fontSize: "0.8rem", fontWeight: 900, letterSpacing: "0.08em" }}>
+                  ניווט מהיר
+                </p>
+                <nav className="mt-4 flex flex-col gap-3">
+                  {navItems.map((item) => {
+                    const itemStyle = {
+                      color: "#b98b2f",
+                      background: "#fffaf0",
+                      fontWeight: 900,
+                      fontSize: "1rem",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      borderRadius: "18px",
+                      padding: "15px 18px",
+                      border: "1px solid rgba(217,174,76,0.3)",
+                      boxShadow: "0 10px 24px rgba(217,174,76,0.08)",
+                      transition: "transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease",
+                    } as const;
+
+                    const hoverIn = (element: HTMLElement) => {
+                      element.style.background = "#d9ae4c";
+                      element.style.color = "#111111";
+                      element.style.transform = "translateY(-2px)";
+                      element.style.boxShadow = "0 16px 34px rgba(217,174,76,0.24)";
+                    };
+
+                    const hoverOut = (element: HTMLElement) => {
+                      element.style.background = "#fffaf0";
+                      element.style.color = "#b98b2f";
+                      element.style.transform = "translateY(0)";
+                      element.style.boxShadow = "0 10px 24px rgba(217,174,76,0.08)";
+                    };
+
+                    const content = (
+                      <>
+                        <span>{item.label}</span>
+                        <ChevronLeft className="size-4" />
+                      </>
+                    );
+
+                    return item.isRoute ? (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        style={itemStyle}
+                        onMouseEnter={(event) => hoverIn(event.currentTarget as HTMLElement)}
+                        onMouseLeave={(event) => hoverOut(event.currentTarget as HTMLElement)}
+                      >
+                        {content}
+                      </Link>
+                    ) : (
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setMobileMenuOpen(false)}
+                        style={itemStyle}
+                        onMouseEnter={(event) => hoverIn(event.currentTarget as HTMLElement)}
+                        onMouseLeave={(event) => hoverOut(event.currentTarget as HTMLElement)}
+                      >
+                        {content}
+                      </a>
+                    );
+                  })}
+                </nav>
+              </div>
+            </div>
+            <div className="border-t border-[#f3dfb0] bg-white px-4 py-4">
               <button
                 onClick={() => { window.open(whatsappLink, "_blank", "noopener,noreferrer"); setMobileMenuOpen(false); }}
                 style={{ width: "100%", background: "#d9ae4c", color: "#000", fontWeight: 900, borderRadius: "999px", height: "48px", fontSize: "1rem", border: "none", cursor: "pointer" }}
               >
                 שלחו הודעה עכשיו
               </button>
-              <div style={{ borderTop: "1px solid #eee", paddingTop: "14px", marginTop: "8px", textAlign: "center" }}>
+              <div style={{ borderTop: "1px solid #eee", paddingTop: "14px", marginTop: "12px", textAlign: "center" }}>
                 <p style={{ fontSize: "11px", color: "#999" }}>Team Shay — נדל״ן ירושלים</p>
               </div>
             </div>

@@ -8,6 +8,10 @@ import { AlertCircle, ChevronLeft, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { JERUSALEM_HERO, TEAM_LOGO } from "@/lib/siteData";
 
+function getRedirectTarget(accountRole?: string) {
+  return accountRole === "admin" ? "/admin" : "/agent-dashboard";
+}
+
 export default function AgentLogin() {
   const utils = trpc.useUtils();
   const [, navigate] = useLocation();
@@ -15,14 +19,11 @@ export default function AgentLogin() {
   const [password, setPassword] = useState("");
   const [inlineError, setInlineError] = useState<string | null>(null);
 
-  const redirectTarget = useMemo(() => {
-    return "/agent-dashboard";
-  }, []);
-
   const { data: activeAgent, isLoading: isAgentLoading } = trpc.agent.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: true,
   });
+  const redirectTarget = useMemo(() => getRedirectTarget(activeAgent?.accountRole), [activeAgent?.accountRole]);
 
   const loginMutation = trpc.admin.login.useMutation({
     onError: (error) => {
@@ -109,13 +110,14 @@ export default function AgentLogin() {
       ]);
 
       toast.success("התחברות הצליחה. מעבירים אתכם למסך הניהול...");
+      const nextTarget = getRedirectTarget(loginResult.admin.accountRole);
 
       if (typeof window !== "undefined") {
-        window.location.assign(redirectTarget);
+        window.location.assign(nextTarget);
         return;
       }
 
-      navigate(redirectTarget);
+      navigate(nextTarget);
     } catch {
       // Inline and toast errors are handled in the mutation onError callback.
     }
@@ -227,7 +229,7 @@ export default function AgentLogin() {
                 צריכים לחזור לדף הראשי? <Link href="/" className="font-bold text-[#d9ae4c]">לחצו כאן</Link>
               </p>
               <p>
-                לאחר התחברות תקינה תועברו ישירות אל <Link href="/agent-dashboard" className="font-bold text-[#d9ae4c]">סקירה כללית</Link>
+                לאחר התחברות תקינה תועברו ישירות אל <Link href="/admin" className="font-bold text-[#d9ae4c]">מסך הניהול המתאים</Link>
               </p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
@@ -13,12 +13,6 @@ import {
 import { toast } from "sonner";
 
 const WHITE_LOGO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png";
-
-const NAV_ITEMS = [
-  { label: "סקירה כללית",    icon: LayoutDashboard, href: "/agent-dashboard",           exact: true },
-  { label: "שיווק נכסים",    icon: Megaphone,       href: "/agent-dashboard/marketing", exact: false },
-  { label: "הערכת שווי CMA", icon: BarChart2,       href: "/agent-dashboard/cma",       exact: false },
-];
 
 interface Props { children: React.ReactNode }
 
@@ -42,6 +36,14 @@ export default function AgentLayout({ children }: Props) {
   }
 
   const crmActive = location === "/agent-dashboard/crm" || location.startsWith("/agent-dashboard/crm/");
+  const navItems = useMemo(() => {
+    const overviewHref = agent?.accountRole === "admin" ? "/admin" : "/agent-dashboard";
+    return [
+      { label: "סקירה כללית", icon: LayoutDashboard, href: overviewHref, exact: true },
+      { label: "שיווק נכסים", icon: Megaphone, href: "/agent-dashboard/marketing", exact: false },
+      { label: "הערכת שווי CMA", icon: BarChart2, href: "/agent-dashboard/cma", exact: false },
+    ];
+  }, [agent?.accountRole]);
 
   /* ──────────────────────────────────────────────────────── */
   const SidebarInner = ({ onNav }: { onNav?: () => void }) => (
@@ -100,7 +102,7 @@ export default function AgentLayout({ children }: Props) {
 
       {/* Nav */}
       <nav className="mt-2 space-y-0.5">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href, item.exact);
           return (
