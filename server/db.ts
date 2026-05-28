@@ -1401,3 +1401,730 @@ export async function deduplicateCrmLeads(): Promise<{ removed: number; remainin
   await writeCrmData(data);
   return { removed, remaining: unique.length };
 }
+
+// ─── CRM v2 Modules (Blob Storage) ───────────────────────────────────────────
+
+// פולואפ
+export type FollowUp = {
+  id: number;
+  agentId: number;
+  leadId: number;
+  scheduledDate: string;
+  type: "call" | "whatsapp" | "email" | "meeting";
+  note: string | null;
+  status: "pending" | "done" | "cancelled";
+  createdAt: string;
+  updatedAt: string;
+};
+
+// משימה
+export type Task = {
+  id: number;
+  agentId: number;
+  title: string;
+  description: string | null;
+  dueDate: string | null;
+  priority: "low" | "medium" | "high";
+  status: "open" | "in_progress" | "done";
+  leadId: number | null;
+  propertyId: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// התאמה — נכס ↔ ליד
+export type PropertyMatch = {
+  id: number;
+  agentId: number;
+  leadId: number;
+  propertyId: number;
+  note: string | null;
+  status: "pending" | "sent" | "interested" | "rejected";
+  sentAt: string | null;
+  createdAt: string;
+};
+
+// פעולת שיווק — לנכס בלעדי
+export type MarketingAction = {
+  id: number;
+  agentId: number;
+  propertyId: number;
+  weekNumber: number;
+  year: number;
+  templateId: number | null;
+  customMessage: string | null;
+  targetAudience: "all" | "buyers" | "sellers" | "investors";
+  sentAt: string | null;
+  recipientCount: number;
+  status: "draft" | "scheduled" | "sent";
+  createdAt: string;
+};
+
+// תבנית הודעה
+export type MessageTemplate = {
+  id: number;
+  name: string;
+  type: "shabbat" | "exclusivity" | "followup" | "general";
+  content: string;
+  imageUrl: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+// הכנסה/הוצאה
+export type FinanceEntry = {
+  id: number;
+  agentId: number;
+  type: "income" | "expense";
+  category: string;
+  amount: number;
+  date: string;
+  description: string | null;
+  propertyId: number | null;
+  leadId: number | null;
+  createdAt: string;
+};
+
+// מסמך
+export type Document = {
+  id: number;
+  agentId: number;
+  name: string;
+  type: "contract" | "appraisal" | "id" | "power_of_attorney" | "other";
+  url: string;
+  leadId: number | null;
+  propertyId: number | null;
+  notes: string | null;
+  uploadedAt: string;
+};
+
+// נתיבי Blob
+const FOLLOWUPS_KEY = "crm/team-shay/followups.json";
+const TASKS_KEY = "crm/team-shay/tasks.json";
+const MATCHES_KEY = "crm/team-shay/matches.json";
+const MARKETING_KEY = "crm/team-shay/marketing.json";
+const TEMPLATES_KEY = "crm/team-shay/templates.json";
+const FINANCE_KEY = "crm/team-shay/finance.json";
+const DOCUMENTS_KEY = "crm/team-shay/documents.json";
+
+type IdCollection<T> = {
+  nextId: number;
+  items: T[];
+};
+
+type CollectionCache<T> = {
+  data: IdCollection<T> | null;
+  etag: string | null;
+  fetchedAt: number;
+};
+
+const crm2CacheTtlMs = 15_000;
+const crm2LocalRoot = path.join(process.cwd(), ".local-cms-data");
+
+function createCollectionCache<T>(): CollectionCache<T> {
+  return { data: null, etag: null, fetchedAt: 0 };
+}
+
+function createEmptyCollection<T>(): IdCollection<T> {
+  return { nextId: 1, items: [] };
+}
+
+function normalizeCollection<T>(value: unknown): IdCollection<T> {
+  const parsed = value as Partial<IdCollection<T>> | null;
+  return {
+    nextId: Number(parsed?.nextId) > 0 ? Number(parsed?.nextId) : 1,
+    items: Array.isArray(parsed?.items) ? parsed.items : [],
+  };
+}
+
+async function readCollection<T>(
+  blobKey: string,
+  localPath: string,
+  cache: CollectionCache<T>,
+): Promise<IdCollection<T>> {
+  if (hasBlobStorage()) {
+    if (cache.data && Date.now() - cache.fetchedAt < crm2CacheTtlMs) {
+      return cache.data;
+    }
+
+    try {
+      const result = await blobGet(blobKey, {
+        access: "public",
+        ifNoneMatch: cache.etag ?? undefined,
+      });
+
+      if (result?.statusCode === 304 && cache.data) {
+        cache.fetchedAt = Date.now();
+        return cache.data;
+      }
+
+      if (result?.stream) {
+        const raw = await streamToText(result.stream);
+        const data = normalizeCollection<T>(JSON.parse(raw) as IdCollection<T>);
+        cache.data = data;
+        cache.etag = result.blob.etag ?? null;
+        cache.fetchedAt = Date.now();
+        return data;
+      }
+    } catch {
+      // fall through to local fallback
+    }
+  }
+
+  try {
+    const raw = await readFile(localPath, "utf8");
+    const data = normalizeCollection<T>(JSON.parse(raw) as IdCollection<T>);
+    cache.data = data;
+    cache.fetchedAt = Date.now();
+    return data;
+  } catch {
+    const empty = createEmptyCollection<T>();
+    cache.data = empty;
+    cache.fetchedAt = Date.now();
+    return empty;
+  }
+}
+
+async function writeCollection<T>(
+  blobKey: string,
+  localPath: string,
+  cache: CollectionCache<T>,
+  data: IdCollection<T>,
+): Promise<void> {
+  const json = `${JSON.stringify(data, null, 2)}\n`;
+
+  if (hasBlobStorage()) {
+    await blobPut(blobKey, json, {
+      access: "public",
+      allowOverwrite: true,
+      addRandomSuffix: false,
+      contentType: "application/json",
+      cacheControlMaxAge: 0,
+    });
+
+    cache.data = data;
+    cache.fetchedAt = Date.now();
+    return;
+  }
+
+  await mkdir(path.dirname(localPath), { recursive: true });
+  await writeFile(localPath, json);
+  cache.data = data;
+  cache.fetchedAt = Date.now();
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function getIsoWeekAndYear(date = new Date()) {
+  const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = utcDate.getUTCDay() || 7;
+  utcDate.setUTCDate(utcDate.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((utcDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return { weekNumber: weekNo, year: utcDate.getUTCFullYear() };
+}
+
+const followupsCache = createCollectionCache<FollowUp>();
+const tasksCache = createCollectionCache<Task>();
+const matchesCache = createCollectionCache<PropertyMatch>();
+const marketingCache = createCollectionCache<MarketingAction>();
+const templatesCache = createCollectionCache<MessageTemplate>();
+const financeCache = createCollectionCache<FinanceEntry>();
+const documentsCache = createCollectionCache<Document>();
+
+const followupsLocalPath = path.join(crm2LocalRoot, "crm-followups.json");
+const tasksLocalPath = path.join(crm2LocalRoot, "crm-tasks.json");
+const matchesLocalPath = path.join(crm2LocalRoot, "crm-matches.json");
+const marketingLocalPath = path.join(crm2LocalRoot, "crm-marketing.json");
+const templatesLocalPath = path.join(crm2LocalRoot, "crm-templates.json");
+const financeLocalPath = path.join(crm2LocalRoot, "crm-finance.json");
+const documentsLocalPath = path.join(crm2LocalRoot, "crm-documents.json");
+
+async function readFollowups() {
+  return readCollection<FollowUp>(FOLLOWUPS_KEY, followupsLocalPath, followupsCache);
+}
+async function saveFollowups(data: IdCollection<FollowUp>) {
+  return writeCollection<FollowUp>(FOLLOWUPS_KEY, followupsLocalPath, followupsCache, data);
+}
+
+export async function listFollowUps(agentId: number): Promise<FollowUp[]> {
+  const data = await readFollowups();
+  return data.items
+    .filter((item) => item.agentId === agentId)
+    .sort((left, right) => new Date(left.scheduledDate).getTime() - new Date(right.scheduledDate).getTime());
+}
+
+export async function getFollowUpById(id: number) {
+  const data = await readFollowups();
+  return data.items.find((item) => item.id === id) ?? null;
+}
+
+export async function createFollowUp(input: Omit<FollowUp, "id" | "createdAt" | "updatedAt">) {
+  const data = await readFollowups();
+  const timestamp = nowIso();
+  const next: FollowUp = { ...input, id: data.nextId++, createdAt: timestamp, updatedAt: timestamp };
+  data.items.push(next);
+  await saveFollowups(data);
+  return next;
+}
+
+export async function updateFollowUp(id: number, input: Partial<Omit<FollowUp, "id" | "createdAt">>) {
+  const data = await readFollowups();
+  const index = data.items.findIndex((item) => item.id === id);
+  if (index < 0) return null;
+  data.items[index] = { ...data.items[index], ...input, updatedAt: nowIso() };
+  await saveFollowups(data);
+  return data.items[index];
+}
+
+export async function deleteFollowUp(id: number) {
+  const data = await readFollowups();
+  data.items = data.items.filter((item) => item.id !== id);
+  await saveFollowups(data);
+}
+
+async function readTasks() {
+  return readCollection<Task>(TASKS_KEY, tasksLocalPath, tasksCache);
+}
+async function saveTasks(data: IdCollection<Task>) {
+  return writeCollection<Task>(TASKS_KEY, tasksLocalPath, tasksCache, data);
+}
+
+export async function listTasks(agentId: number): Promise<Task[]> {
+  const data = await readTasks();
+  return data.items
+    .filter((item) => item.agentId === agentId)
+    .sort((left, right) => {
+      const leftDate = left.dueDate ? new Date(left.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+      const rightDate = right.dueDate ? new Date(right.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
+      return leftDate - rightDate;
+    });
+}
+
+export async function getTaskById(id: number) {
+  const data = await readTasks();
+  return data.items.find((item) => item.id === id) ?? null;
+}
+
+export async function createTask(input: Omit<Task, "id" | "createdAt" | "updatedAt">) {
+  const data = await readTasks();
+  const timestamp = nowIso();
+  const next: Task = { ...input, id: data.nextId++, createdAt: timestamp, updatedAt: timestamp };
+  data.items.push(next);
+  await saveTasks(data);
+  return next;
+}
+
+export async function updateTask(id: number, input: Partial<Omit<Task, "id" | "createdAt">>) {
+  const data = await readTasks();
+  const index = data.items.findIndex((item) => item.id === id);
+  if (index < 0) return null;
+  data.items[index] = { ...data.items[index], ...input, updatedAt: nowIso() };
+  await saveTasks(data);
+  return data.items[index];
+}
+
+export async function deleteTask(id: number) {
+  const data = await readTasks();
+  data.items = data.items.filter((item) => item.id !== id);
+  await saveTasks(data);
+}
+
+async function readMatches() {
+  return readCollection<PropertyMatch>(MATCHES_KEY, matchesLocalPath, matchesCache);
+}
+async function saveMatches(data: IdCollection<PropertyMatch>) {
+  return writeCollection<PropertyMatch>(MATCHES_KEY, matchesLocalPath, matchesCache, data);
+}
+
+export async function listPropertyMatches(agentId: number) {
+  const data = await readMatches();
+  return data.items
+    .filter((item) => item.agentId === agentId)
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+}
+
+export async function getPropertyMatchById(id: number) {
+  const data = await readMatches();
+  return data.items.find((item) => item.id === id) ?? null;
+}
+
+export async function createPropertyMatch(input: Omit<PropertyMatch, "id" | "createdAt" | "sentAt" | "status"> & {
+  note?: string | null;
+  status?: PropertyMatch["status"];
+  sentAt?: string | null;
+}) {
+  const data = await readMatches();
+  const timestamp = nowIso();
+  const next: PropertyMatch = {
+    id: data.nextId++,
+    agentId: input.agentId,
+    leadId: input.leadId,
+    propertyId: input.propertyId,
+    note: input.note ?? null,
+    status: input.status ?? "pending",
+    sentAt: input.sentAt ?? null,
+    createdAt: timestamp,
+  };
+  data.items.push(next);
+  await saveMatches(data);
+  return next;
+}
+
+export async function updatePropertyMatch(id: number, input: Partial<Omit<PropertyMatch, "id" | "createdAt">>) {
+  const data = await readMatches();
+  const index = data.items.findIndex((item) => item.id === id);
+  if (index < 0) return null;
+  const current = data.items[index];
+  const nextStatus = input.status ?? current.status;
+  data.items[index] = {
+    ...current,
+    ...input,
+    status: nextStatus,
+    sentAt: nextStatus === "sent" ? (input.sentAt ?? current.sentAt ?? nowIso()) : (input.sentAt ?? current.sentAt),
+  };
+  await saveMatches(data);
+  return data.items[index];
+}
+
+export async function deletePropertyMatch(id: number) {
+  const data = await readMatches();
+  data.items = data.items.filter((item) => item.id !== id);
+  await saveMatches(data);
+}
+
+const defaultTemplatesSeed: Array<Omit<MessageTemplate, "id" | "createdAt" | "updatedAt">> = [
+  {
+    name: "שבת שלום",
+    type: "shabbat",
+    content: "שבת שלום {name}, מאחלים לך ולמשפחה סוף שבוע רגוע ומבורך מצוות Team Shay.",
+    imageUrl: null,
+    isActive: true,
+  },
+  {
+    name: "בלעדיות שבועית",
+    type: "exclusivity",
+    content: "היי {name}, הנכס הבלעדי השבועי שלנו: {address} במחיר {price}. לפרטים: {url}",
+    imageUrl: null,
+    isActive: true,
+  },
+];
+
+async function readTemplates() {
+  return readCollection<MessageTemplate>(TEMPLATES_KEY, templatesLocalPath, templatesCache);
+}
+async function saveTemplates(data: IdCollection<MessageTemplate>) {
+  return writeCollection<MessageTemplate>(TEMPLATES_KEY, templatesLocalPath, templatesCache, data);
+}
+
+async function ensureDefaultTemplates() {
+  const data = await readTemplates();
+  if (data.items.length > 0) return data;
+  const timestamp = nowIso();
+  for (const template of defaultTemplatesSeed) {
+    data.items.push({
+      id: data.nextId++,
+      ...template,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+  }
+  await saveTemplates(data);
+  return data;
+}
+
+export async function listMessageTemplates() {
+  const data = await ensureDefaultTemplates();
+  return [...data.items].sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
+}
+
+export async function getMessageTemplateById(id: number) {
+  const data = await ensureDefaultTemplates();
+  return data.items.find((item) => item.id === id) ?? null;
+}
+
+export async function getActiveMessageTemplate(type: MessageTemplate["type"]) {
+  const data = await ensureDefaultTemplates();
+  return data.items.find((item) => item.type === type && item.isActive) ?? null;
+}
+
+export async function createMessageTemplate(input: Omit<MessageTemplate, "id" | "createdAt" | "updatedAt">) {
+  const data = await readTemplates();
+  const timestamp = nowIso();
+  const next: MessageTemplate = { ...input, id: data.nextId++, createdAt: timestamp, updatedAt: timestamp };
+  data.items.push(next);
+  await saveTemplates(data);
+  return next;
+}
+
+export async function updateMessageTemplate(id: number, input: Partial<Omit<MessageTemplate, "id" | "createdAt">>) {
+  const data = await readTemplates();
+  const index = data.items.findIndex((item) => item.id === id);
+  if (index < 0) return null;
+  data.items[index] = { ...data.items[index], ...input, updatedAt: nowIso() };
+  await saveTemplates(data);
+  return data.items[index];
+}
+
+export async function deleteMessageTemplate(id: number) {
+  const data = await readTemplates();
+  data.items = data.items.filter((item) => item.id !== id);
+  await saveTemplates(data);
+}
+
+async function readMarketing() {
+  return readCollection<MarketingAction>(MARKETING_KEY, marketingLocalPath, marketingCache);
+}
+async function saveMarketing(data: IdCollection<MarketingAction>) {
+  return writeCollection<MarketingAction>(MARKETING_KEY, marketingLocalPath, marketingCache, data);
+}
+
+export async function listMarketingActions(agentId: number) {
+  const data = await readMarketing();
+  return data.items
+    .filter((item) => item.agentId === agentId)
+    .sort((left, right) => {
+      if (left.year !== right.year) return right.year - left.year;
+      return right.weekNumber - left.weekNumber;
+    });
+}
+
+export async function getMarketingActionById(id: number) {
+  const data = await readMarketing();
+  return data.items.find((item) => item.id === id) ?? null;
+}
+
+export async function createMarketingAction(input: Omit<MarketingAction, "id" | "createdAt" | "recipientCount" | "sentAt"> & {
+  recipientCount?: number;
+  sentAt?: string | null;
+}) {
+  const data = await readMarketing();
+  const next: MarketingAction = {
+    id: data.nextId++,
+    ...input,
+    sentAt: input.sentAt ?? null,
+    recipientCount: input.recipientCount ?? 0,
+    createdAt: nowIso(),
+  };
+  data.items.push(next);
+  await saveMarketing(data);
+  return next;
+}
+
+export async function updateMarketingAction(id: number, input: Partial<Omit<MarketingAction, "id" | "createdAt">>) {
+  const data = await readMarketing();
+  const index = data.items.findIndex((item) => item.id === id);
+  if (index < 0) return null;
+  data.items[index] = { ...data.items[index], ...input };
+  await saveMarketing(data);
+  return data.items[index];
+}
+
+export async function markMarketingActionSent(marketingActionId: number, recipientCount: number) {
+  const data = await readMarketing();
+  const index = data.items.findIndex((item) => item.id === marketingActionId);
+  if (index < 0) return null;
+  data.items[index] = {
+    ...data.items[index],
+    status: "sent",
+    recipientCount,
+    sentAt: nowIso(),
+  };
+  await saveMarketing(data);
+  return data.items[index];
+}
+
+async function readFinance() {
+  return readCollection<FinanceEntry>(FINANCE_KEY, financeLocalPath, financeCache);
+}
+async function saveFinance(data: IdCollection<FinanceEntry>) {
+  return writeCollection<FinanceEntry>(FINANCE_KEY, financeLocalPath, financeCache, data);
+}
+
+export async function listFinanceEntries(agentId: number) {
+  const data = await readFinance();
+  return data.items
+    .filter((item) => item.agentId === agentId)
+    .sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime());
+}
+
+export async function getFinanceEntryById(id: number) {
+  const data = await readFinance();
+  return data.items.find((item) => item.id === id) ?? null;
+}
+
+export async function createFinanceEntry(input: Omit<FinanceEntry, "id" | "createdAt">) {
+  const data = await readFinance();
+  const next: FinanceEntry = { ...input, id: data.nextId++, createdAt: nowIso() };
+  data.items.push(next);
+  await saveFinance(data);
+  return next;
+}
+
+export async function updateFinanceEntry(id: number, input: Partial<Omit<FinanceEntry, "id" | "createdAt">>) {
+  const data = await readFinance();
+  const index = data.items.findIndex((item) => item.id === id);
+  if (index < 0) return null;
+  data.items[index] = { ...data.items[index], ...input };
+  await saveFinance(data);
+  return data.items[index];
+}
+
+export async function deleteFinanceEntry(id: number) {
+  const data = await readFinance();
+  data.items = data.items.filter((item) => item.id !== id);
+  await saveFinance(data);
+}
+
+export async function summarizeFinanceEntries(agentId: number, month?: number, year?: number) {
+  const entries = await listFinanceEntries(agentId);
+  const now = new Date();
+  const targetMonth = month ?? (now.getMonth() + 1);
+  const targetYear = year ?? now.getFullYear();
+
+  const relevant = entries.filter((entry) => {
+    const date = new Date(entry.date);
+    return date.getFullYear() === targetYear && (date.getMonth() + 1) === targetMonth;
+  });
+
+  const income = relevant
+    .filter((entry) => entry.type === "income")
+    .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+  const expense = relevant
+    .filter((entry) => entry.type === "expense")
+    .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+
+  const monthlyMap = new Map<string, { income: number; expense: number }>();
+  for (const entry of entries) {
+    const date = new Date(entry.date);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const bucket = monthlyMap.get(key) ?? { income: 0, expense: 0 };
+    if (entry.type === "income") bucket.income += Number(entry.amount || 0);
+    else bucket.expense += Number(entry.amount || 0);
+    monthlyMap.set(key, bucket);
+  }
+
+  const byMonth = Array.from(monthlyMap.entries())
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .slice(-12)
+    .map(([key, value]) => ({
+      month: key,
+      income: value.income,
+      expense: value.expense,
+      profit: value.income - value.expense,
+    }));
+
+  return {
+    month: targetMonth,
+    year: targetYear,
+    income,
+    expense,
+    profit: income - expense,
+    byMonth,
+  };
+}
+
+async function readDocuments() {
+  return readCollection<Document>(DOCUMENTS_KEY, documentsLocalPath, documentsCache);
+}
+async function saveDocuments(data: IdCollection<Document>) {
+  return writeCollection<Document>(DOCUMENTS_KEY, documentsLocalPath, documentsCache, data);
+}
+
+export async function listDocuments(agentId: number) {
+  const data = await readDocuments();
+  return data.items
+    .filter((item) => item.agentId === agentId)
+    .sort((left, right) => new Date(right.uploadedAt).getTime() - new Date(left.uploadedAt).getTime());
+}
+
+export async function getDocumentById(id: number) {
+  const data = await readDocuments();
+  return data.items.find((item) => item.id === id) ?? null;
+}
+
+export async function createDocument(input: Omit<Document, "id" | "uploadedAt">) {
+  const data = await readDocuments();
+  const next: Document = { ...input, id: data.nextId++, uploadedAt: nowIso() };
+  data.items.push(next);
+  await saveDocuments(data);
+  return next;
+}
+
+export async function deleteDocument(id: number) {
+  const data = await readDocuments();
+  data.items = data.items.filter((item) => item.id !== id);
+  await saveDocuments(data);
+}
+
+function filterLeadsForAudience(
+  leads: CrmLeadData[],
+  audience: MarketingAction["targetAudience"],
+) {
+  if (audience === "all") return leads;
+  if (audience === "buyers") {
+    return leads.filter((lead) =>
+      /buyer|קונה|השקעה/i.test(`${lead.tags ?? ""} ${lead.leadType ?? ""}`),
+    );
+  }
+  if (audience === "sellers") {
+    return leads.filter((lead) =>
+      /seller|מוכר|בלעדי/i.test(`${lead.tags ?? ""} ${lead.leadType ?? ""}`),
+    );
+  }
+  if (audience === "investors") {
+    return leads.filter((lead) =>
+      /השקעה|invest/i.test(`${lead.tags ?? ""} ${lead.leadType ?? ""}`),
+    );
+  }
+  return leads;
+}
+
+export async function getWeeklyMarketingPayload(weekNumber?: number, year?: number) {
+  const iso = getIsoWeekAndYear();
+  const targetWeek = weekNumber ?? iso.weekNumber;
+  const targetYear = year ?? iso.year;
+  const actions = (await readMarketing()).items.filter(
+    (item) =>
+      item.weekNumber === targetWeek &&
+      item.year === targetYear &&
+      (item.status === "scheduled" || item.status === "draft"),
+  );
+
+  const allLeads = await listCrmLeads();
+  const propertiesData = await listAllProperties();
+  const templates = await listMessageTemplates();
+
+  const enriched = actions.map((action) => {
+    const property = propertiesData.find((item) => item.id === action.propertyId) ?? null;
+    const template = action.templateId
+      ? templates.find((item) => item.id === action.templateId) ?? null
+      : null;
+    const relevantLeads = filterLeadsForAudience(allLeads, action.targetAudience);
+
+    const message =
+      action.customMessage ??
+      template?.content ??
+      "היי {name}, מצורף נכס בלעדי השבוע: {address} במחיר {price}.";
+
+    return {
+      marketingActionId: action.id,
+      property,
+      template,
+      message,
+      leads: relevantLeads,
+      targetAudience: action.targetAudience,
+      weekNumber: action.weekNumber,
+      year: action.year,
+    };
+  });
+
+  return {
+    weekNumber: targetWeek,
+    year: targetYear,
+    actions: enriched,
+  };
+}

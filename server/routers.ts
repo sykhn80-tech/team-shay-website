@@ -40,8 +40,46 @@ import {
   deleteCrmLead,
   bulkImportCrmLeads,
   deduplicateCrmLeads,
+  listFollowUps,
+  getFollowUpById,
+  createFollowUp,
+  updateFollowUp,
+  deleteFollowUp,
+  listTasks,
+  getTaskById,
+  createTask,
+  updateTask,
+  deleteTask,
+  listPropertyMatches,
+  getPropertyMatchById,
+  createPropertyMatch,
+  updatePropertyMatch,
+  deletePropertyMatch,
+  listMarketingActions,
+  getMarketingActionById,
+  createMarketingAction,
+  updateMarketingAction,
+  markMarketingActionSent,
+  getWeeklyMarketingPayload,
+  listMessageTemplates,
+  getMessageTemplateById,
+  getActiveMessageTemplate,
+  createMessageTemplate,
+  updateMessageTemplate,
+  deleteMessageTemplate,
+  listFinanceEntries,
+  getFinanceEntryById,
+  createFinanceEntry,
+  updateFinanceEntry,
+  deleteFinanceEntry,
+  summarizeFinanceEntries,
+  listDocuments,
+  getDocumentById,
+  createDocument,
+  deleteDocument,
 } from "./db";
 import { storagePut } from "./storage";
+import { sendWhatsApp } from "./greenApi";
 
 const imageInputSchema = z.object({
   name: z.string().min(1),
@@ -158,6 +196,62 @@ const cmaAiSummarySchema = z.object({
   }),
   averagePricePerSqm: z.number().positive(),
   sellerRecommendation: z.string().min(20),
+});
+
+const followupSchema = z.object({
+  leadId: z.number().int().positive(),
+  scheduledDate: z.string().min(1),
+  type: z.enum(["call", "whatsapp", "email", "meeting"]),
+  note: z.string().optional().nullable(),
+  status: z.enum(["pending", "done", "cancelled"]).default("pending"),
+});
+
+const taskSchema = z.object({
+  title: z.string().min(2),
+  description: z.string().optional().nullable(),
+  dueDate: z.string().optional().nullable(),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
+  status: z.enum(["open", "in_progress", "done"]).default("open"),
+  leadId: z.number().int().positive().optional().nullable(),
+  propertyId: z.number().int().positive().optional().nullable(),
+});
+
+const messageTemplateSchema = z.object({
+  name: z.string().min(2),
+  type: z.enum(["shabbat", "exclusivity", "followup", "general"]),
+  content: z.string().min(2),
+  imageUrl: z.string().url().optional().nullable(),
+  isActive: z.boolean().default(true),
+});
+
+const marketingActionSchema = z.object({
+  propertyId: z.number().int().positive(),
+  weekNumber: z.number().int().min(1).max(53),
+  year: z.number().int().min(2000).max(3000),
+  templateId: z.number().int().positive().optional().nullable(),
+  customMessage: z.string().optional().nullable(),
+  targetAudience: z.enum(["all", "buyers", "sellers", "investors"]).default("all"),
+  status: z.enum(["draft", "scheduled", "sent"]).default("draft"),
+});
+
+const financeEntrySchema = z.object({
+  type: z.enum(["income", "expense"]),
+  category: z.string().min(1),
+  amount: z.number().positive(),
+  date: z.string().min(1),
+  description: z.string().optional().nullable(),
+  propertyId: z.number().int().positive().optional().nullable(),
+  leadId: z.number().int().positive().optional().nullable(),
+});
+
+const documentUploadSchema = z.object({
+  name: z.string().min(1),
+  type: z.enum(["contract", "appraisal", "id", "power_of_attorney", "other"]),
+  mimeType: z.string().min(1),
+  dataBase64: z.string().min(1),
+  leadId: z.number().int().positive().optional().nullable(),
+  propertyId: z.number().int().positive().optional().nullable(),
+  notes: z.string().optional().nullable(),
 });
 
 const CMA_DEFAULT_CITY_NAME = "ישראל";
@@ -1232,6 +1326,17 @@ function resolveFeaturedUploadUrl(
   return uploadedImages[featuredImageIndex]?.imageUrl ?? uploadedImages[0]?.imageUrl ?? null;
 }
 
+function applyTemplatePlaceholders(
+  template: string,
+  values: Record<string, string | number | null | undefined>,
+) {
+  let message = template;
+  for (const [key, value] of Object.entries(values)) {
+    message = message.replace(new RegExp(`\\{${key}\\}`, "g"), value == null ? "" : String(value));
+  }
+  return message;
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -1908,6 +2013,334 @@ export const appRouter = router({
 
     deduplicate: adminProcedure.mutation(async () => {
       return await deduplicateCrmLeads();
+    }),
+  }),
+
+  crm2: router({
+    followups: router({
+      list: agentProcedure.query(async ({ ctx }) => {
+        return listFollowUps(ctx.agentSession.id);
+      }),
+      create: agentProcedure
+        .input(followupSchema)
+        .mutation(async ({ ctx, input }) => {
+          return createFollowUp({
+            agentId: ctx.agentSession.id,
+            leadId: input.leadId,
+            scheduledDate: input.scheduledDate,
+            type: input.type,
+            note: input.note ?? null,
+            status: input.status,
+          });
+        }),
+      update: agentProcedure
+        .input(z.object({ id: z.number().int().positive(), data: followupSchema.partial() }))
+        .mutation(async ({ ctx, input }) => {
+          const existing = await getFollowUpById(input.id);
+          if (!existing || existing.agentId !== ctx.agentSession.id) {
+            throw new Error("Follow-up not found");
+          }
+          return updateFollowUp(input.id, input.data);
+        }),
+      delete: agentProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .mutation(async ({ ctx, input }) => {
+          const existing = await getFollowUpById(input.id);
+          if (!existing || existing.agentId !== ctx.agentSession.id) {
+            throw new Error("Follow-up not found");
+          }
+          await deleteFollowUp(input.id);
+          return { success: true } as const;
+        }),
+    }),
+
+    tasks: router({
+      list: agentProcedure.query(async ({ ctx }) => {
+        return listTasks(ctx.agentSession.id);
+      }),
+      create: agentProcedure
+        .input(taskSchema)
+        .mutation(async ({ ctx, input }) => {
+          return createTask({
+            agentId: ctx.agentSession.id,
+            title: input.title,
+            description: input.description ?? null,
+            dueDate: input.dueDate ?? null,
+            priority: input.priority,
+            status: input.status,
+            leadId: input.leadId ?? null,
+            propertyId: input.propertyId ?? null,
+          });
+        }),
+      update: agentProcedure
+        .input(z.object({ id: z.number().int().positive(), data: taskSchema.partial() }))
+        .mutation(async ({ ctx, input }) => {
+          const existing = await getTaskById(input.id);
+          if (!existing || existing.agentId !== ctx.agentSession.id) {
+            throw new Error("Task not found");
+          }
+          return updateTask(input.id, input.data);
+        }),
+      delete: agentProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .mutation(async ({ ctx, input }) => {
+          const existing = await getTaskById(input.id);
+          if (!existing || existing.agentId !== ctx.agentSession.id) {
+            throw new Error("Task not found");
+          }
+          await deleteTask(input.id);
+          return { success: true } as const;
+        }),
+    }),
+
+    matches: router({
+      list: agentProcedure.query(async ({ ctx }) => {
+        return listPropertyMatches(ctx.agentSession.id);
+      }),
+      create: agentProcedure
+        .input(z.object({
+          leadId: z.number().int().positive(),
+          propertyIds: z.array(z.number().int().positive()).min(1),
+          note: z.string().optional().nullable(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const created = [];
+          for (const propertyId of input.propertyIds) {
+            const match = await createPropertyMatch({
+              agentId: ctx.agentSession.id,
+              leadId: input.leadId,
+              propertyId,
+              note: input.note ?? null,
+            });
+            created.push(match);
+          }
+          return created;
+        }),
+      updateStatus: agentProcedure
+        .input(z.object({
+          id: z.number().int().positive(),
+          status: z.enum(["pending", "sent", "interested", "rejected"]),
+          note: z.string().optional().nullable(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const existing = await getPropertyMatchById(input.id);
+          if (!existing || existing.agentId !== ctx.agentSession.id) {
+            throw new Error("Match not found");
+          }
+          return updatePropertyMatch(input.id, {
+            status: input.status,
+            note: input.note ?? existing.note,
+          });
+        }),
+      sendViaWhatsApp: agentProcedure
+        .input(z.object({
+          matchId: z.number().int().positive(),
+          message: z.string().optional(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const match = await getPropertyMatchById(input.matchId);
+          if (!match || match.agentId !== ctx.agentSession.id) {
+            throw new Error("Match not found");
+          }
+
+          const lead = await getCrmLeadById(match.leadId);
+          const property = await getPropertyById(match.propertyId);
+          if (!lead || !property) {
+            throw new Error("Lead or property not found");
+          }
+
+          const defaultMessage = `היי ${lead.name}, מצרף לך נכס שעשוי להתאים: ${property.title} ב-${property.address}, מחיר ${property.price.toLocaleString("he-IL")} ₪.`;
+          const message = input.message ?? defaultMessage;
+
+          const response = await sendWhatsApp(lead.phone, message, property.featuredImageUrl ?? undefined);
+          if (!response.ok) {
+            const payload = await response.text().catch(() => "");
+            throw new Error(payload || "Failed to send WhatsApp message");
+          }
+
+          await updatePropertyMatch(match.id, { status: "sent", sentAt: new Date().toISOString() });
+          return { success: true } as const;
+        }),
+      delete: agentProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .mutation(async ({ ctx, input }) => {
+          const existing = await getPropertyMatchById(input.id);
+          if (!existing || existing.agentId !== ctx.agentSession.id) {
+            throw new Error("Match not found");
+          }
+          await deletePropertyMatch(input.id);
+          return { success: true } as const;
+        }),
+    }),
+
+    marketing: router({
+      list: agentProcedure.query(async ({ ctx }) => {
+        return listMarketingActions(ctx.agentSession.id);
+      }),
+      create: agentProcedure
+        .input(marketingActionSchema)
+        .mutation(async ({ ctx, input }) => {
+          return createMarketingAction({
+            agentId: ctx.agentSession.id,
+            propertyId: input.propertyId,
+            weekNumber: input.weekNumber,
+            year: input.year,
+            templateId: input.templateId ?? null,
+            customMessage: input.customMessage ?? null,
+            targetAudience: input.targetAudience,
+            status: input.status,
+          });
+        }),
+      update: agentProcedure
+        .input(z.object({
+          id: z.number().int().positive(),
+          data: marketingActionSchema.partial(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const existing = await getMarketingActionById(input.id);
+          if (!existing || existing.agentId !== ctx.agentSession.id) {
+            throw new Error("Marketing action not found");
+          }
+          return updateMarketingAction(input.id, input.data);
+        }),
+      getWeeklyData: publicProcedure
+        .input(z.object({
+          weekNumber: z.number().int().min(1).max(53).optional(),
+          year: z.number().int().min(2000).max(3000).optional(),
+        }).optional())
+        .query(async ({ input }) => {
+          return getWeeklyMarketingPayload(input?.weekNumber, input?.year);
+        }),
+    }),
+
+    templates: router({
+      list: agentProcedure.query(async () => {
+        return listMessageTemplates();
+      }),
+      create: agentProcedure
+        .input(messageTemplateSchema)
+        .mutation(async ({ input }) => {
+          return createMessageTemplate({
+            name: input.name,
+            type: input.type,
+            content: input.content,
+            imageUrl: input.imageUrl ?? null,
+            isActive: input.isActive,
+          });
+        }),
+      update: agentProcedure
+        .input(z.object({
+          id: z.number().int().positive(),
+          data: messageTemplateSchema.partial(),
+        }))
+        .mutation(async ({ input }) => {
+          const existing = await getMessageTemplateById(input.id);
+          if (!existing) {
+            throw new Error("Template not found");
+          }
+          return updateMessageTemplate(input.id, input.data);
+        }),
+      delete: agentProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .mutation(async ({ input }) => {
+          const existing = await getMessageTemplateById(input.id);
+          if (!existing) {
+            throw new Error("Template not found");
+          }
+          await deleteMessageTemplate(input.id);
+          return { success: true } as const;
+        }),
+      getActive: publicProcedure
+        .input(z.object({ type: z.enum(["shabbat", "exclusivity", "followup", "general"]) }))
+        .query(async ({ input }) => {
+          return getActiveMessageTemplate(input.type);
+        }),
+    }),
+
+    finance: router({
+      list: agentProcedure.query(async ({ ctx }) => {
+        return listFinanceEntries(ctx.agentSession.id);
+      }),
+      create: agentProcedure
+        .input(financeEntrySchema)
+        .mutation(async ({ ctx, input }) => {
+          return createFinanceEntry({
+            agentId: ctx.agentSession.id,
+            type: input.type,
+            category: input.category,
+            amount: input.amount,
+            date: input.date,
+            description: input.description ?? null,
+            propertyId: input.propertyId ?? null,
+            leadId: input.leadId ?? null,
+          });
+        }),
+      update: agentProcedure
+        .input(z.object({
+          id: z.number().int().positive(),
+          data: financeEntrySchema.partial(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+          const existing = await getFinanceEntryById(input.id);
+          if (!existing || existing.agentId !== ctx.agentSession.id) {
+            throw new Error("Finance entry not found");
+          }
+          return updateFinanceEntry(input.id, input.data);
+        }),
+      delete: agentProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .mutation(async ({ ctx, input }) => {
+          const existing = await getFinanceEntryById(input.id);
+          if (!existing || existing.agentId !== ctx.agentSession.id) {
+            throw new Error("Finance entry not found");
+          }
+          await deleteFinanceEntry(input.id);
+          return { success: true } as const;
+        }),
+      summary: agentProcedure
+        .input(z.object({
+          month: z.number().int().min(1).max(12).optional(),
+          year: z.number().int().min(2000).max(3000).optional(),
+        }).optional())
+        .query(async ({ ctx, input }) => {
+          return summarizeFinanceEntries(ctx.agentSession.id, input?.month, input?.year);
+        }),
+    }),
+
+    documents: router({
+      list: agentProcedure.query(async ({ ctx }) => {
+        return listDocuments(ctx.agentSession.id);
+      }),
+      upload: agentProcedure
+        .input(documentUploadSchema)
+        .mutation(async ({ ctx, input }) => {
+          const binary = decodeBase64File(input.dataBase64);
+          const upload = await storagePut(
+            `team-shay/documents/${ctx.agentSession.id}/${Date.now()}-${slugifyFilename(input.name)}`,
+            binary,
+            input.mimeType,
+          );
+
+          return createDocument({
+            agentId: ctx.agentSession.id,
+            name: input.name,
+            type: input.type,
+            url: upload.url,
+            leadId: input.leadId ?? null,
+            propertyId: input.propertyId ?? null,
+            notes: input.notes ?? null,
+          });
+        }),
+      delete: agentProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .mutation(async ({ ctx, input }) => {
+          const existing = await getDocumentById(input.id);
+          if (!existing || existing.agentId !== ctx.agentSession.id) {
+            throw new Error("Document not found");
+          }
+          await deleteDocument(input.id);
+          return { success: true } as const;
+        }),
     }),
   }),
 });

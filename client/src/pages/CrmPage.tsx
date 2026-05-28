@@ -2,7 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import AgentLayout from "@/components/AgentLayout";
+import CrmLayout from "@/components/CrmLayout";
 import {
   Calendar,
   Check,
@@ -596,7 +596,7 @@ export default function CrmPage() {
   const sourceSet = Array.from(new Set(leads.map(l => l.source).filter(Boolean))) as string[];
 
   return (
-    <AgentLayout>
+    <CrmLayout title="ניהול לידים" subtitle={isAdmin ? "כל לידי הצוות" : "הלידים שלי"}>
       <div className="min-h-screen bg-[#f5f3ee] px-3 py-5 md:px-6 md:py-7" dir="rtl">
         <div className="mx-auto max-w-7xl">
 
@@ -902,6 +902,6 @@ export default function CrmPage() {
           </div>
         </div>
       )}
-    </AgentLayout>
+    </CrmLayout>
   );
 }
