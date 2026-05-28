@@ -537,7 +537,7 @@ export default function Home() {
                 <span className="block h-[2px] w-6 rounded-full bg-white" />
               </button>
               <div className="flex items-center justify-center">
-                <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt={settings?.siteName || "Team Shay"} className="h-14 w-auto md:h-16" />
+                <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt={settings?.siteName || "Team Shay"} className="h-16 w-auto md:h-20" />
               </div>
             </div>
           </div>
@@ -553,93 +553,80 @@ export default function Home() {
 
           {/* Mobile sidebar drawer — black header + white nav body */}
           <div
-            className={`lg:hidden fixed top-0 right-0 z-[60] flex h-full w-72 flex-col shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+            className={`lg:hidden fixed top-0 right-0 z-[60] flex h-full w-80 flex-col shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
             style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #d9ae4c" }}
             dir="rtl"
           >
             {/* BLACK top header section */}
             <div className="flex items-center justify-between px-5 py-5" style={{ backgroundColor: "#0d0d0d" }}>
-              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="h-10 w-auto brightness-200" />
+              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="h-14 w-auto brightness-200" />
               <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#d9ae4c" }} className="p-2 rounded-lg transition" aria-label="סגור">
                 <X className="size-5" />
               </button>
             </div>
-            <div className="flex-1 bg-white px-4 py-5">
-              <div
-                className="rounded-[28px] px-4 py-4"
-                style={{
-                  background: "linear-gradient(180deg, #ffffff 0%, #fff8e6 100%)",
-                  border: "1px solid rgba(217,174,76,0.18)",
-                  boxShadow: "0 18px 42px rgba(15,23,42,0.08)",
-                }}
-              >
-                <p style={{ color: "#b98b2f", fontSize: "0.8rem", fontWeight: 900, letterSpacing: "0.08em" }}>
-                  ניווט מהיר
-                </p>
-                <nav className="mt-4 flex flex-col gap-3">
-                  {navItems.map((item) => {
-                    const itemStyle = {
-                      color: "#b98b2f",
-                      background: "#fffaf0",
-                      fontWeight: 900,
-                      fontSize: "1rem",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      borderRadius: "18px",
-                      padding: "15px 18px",
-                      border: "1px solid rgba(217,174,76,0.3)",
-                      boxShadow: "0 10px 24px rgba(217,174,76,0.08)",
-                      transition: "transform 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease",
-                    } as const;
+            <div style={{ flex: 1, background: "#fafafa", padding: "20px 16px", overflowY: "auto" }}>
+              <p style={{ color: "#d9ae4c", fontSize: "0.75rem", fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>
+                ניווט מהיר
+              </p>
+              <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {navItems.map((item) => {
+                  const baseStyle: React.CSSProperties = {
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "16px 20px",
+                    borderRadius: "16px",
+                    background: "#ffffff",
+                    color: "#0d0d0d",
+                    fontWeight: 800,
+                    fontSize: "1.05rem",
+                    border: "2px solid #f0e8d0",
+                    textDecoration: "none",
+                    cursor: "pointer",
+                    transition: "background 0.15s, border-color 0.15s",
+                  };
 
-                    const hoverIn = (element: HTMLElement) => {
-                      element.style.background = "#d9ae4c";
-                      element.style.color = "#111111";
-                      element.style.transform = "translateY(-2px)";
-                      element.style.boxShadow = "0 16px 34px rgba(217,174,76,0.24)";
-                    };
+                  const handleEnter = (e: React.MouseEvent<HTMLElement>) => {
+                    (e.currentTarget as HTMLElement).style.background = "#fff8e6";
+                    (e.currentTarget as HTMLElement).style.borderColor = "#d9ae4c";
+                  };
+                  const handleLeave = (e: React.MouseEvent<HTMLElement>) => {
+                    (e.currentTarget as HTMLElement).style.background = "#ffffff";
+                    (e.currentTarget as HTMLElement).style.borderColor = "#f0e8d0";
+                  };
 
-                    const hoverOut = (element: HTMLElement) => {
-                      element.style.background = "#fffaf0";
-                      element.style.color = "#b98b2f";
-                      element.style.transform = "translateY(0)";
-                      element.style.boxShadow = "0 10px 24px rgba(217,174,76,0.08)";
-                    };
+                  const inner = (
+                    <>
+                      <span>{item.label}</span>
+                      <ChevronLeft style={{ width: "18px", height: "18px", color: "#d9ae4c", flexShrink: 0 }} />
+                    </>
+                  );
 
-                    const content = (
-                      <>
-                        <span>{item.label}</span>
-                        <ChevronLeft className="size-4" />
-                      </>
-                    );
-
-                    return item.isRoute ? (
-                      <Link
-                        key={item.label}
-                        href={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        style={itemStyle}
-                        onMouseEnter={(event) => hoverIn(event.currentTarget as HTMLElement)}
-                        onMouseLeave={(event) => hoverOut(event.currentTarget as HTMLElement)}
-                      >
-                        {content}
-                      </Link>
-                    ) : (
-                      <a
-                        key={item.label}
-                        href={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        style={itemStyle}
-                        onMouseEnter={(event) => hoverIn(event.currentTarget as HTMLElement)}
-                        onMouseLeave={(event) => hoverOut(event.currentTarget as HTMLElement)}
-                      >
-                        {content}
-                      </a>
-                    );
-                  })}
-                </nav>
-              </div>
+                  return item.isRoute ? (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      style={baseStyle}
+                      onMouseEnter={handleEnter}
+                      onMouseLeave={handleLeave}
+                    >
+                      {inner}
+                    </Link>
+                  ) : (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      style={baseStyle}
+                      onMouseEnter={handleEnter}
+                      onMouseLeave={handleLeave}
+                    >
+                      {inner}
+                    </a>
+                  );
+                })}
+              </nav>
             </div>
             <div className="border-t border-[#f3dfb0] bg-white px-4 py-4">
               <button
