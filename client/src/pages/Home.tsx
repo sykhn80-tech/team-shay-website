@@ -553,7 +553,7 @@ export default function Home() {
 
           {/* Mobile sidebar drawer — black header + white nav body */}
           <div
-            className={`lg:hidden fixed top-0 right-0 z-50 h-full w-72 shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+            className={`lg:hidden fixed top-0 right-0 z-[60] h-full w-72 shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
             style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #d9ae4c" }}
             dir="rtl"
           >

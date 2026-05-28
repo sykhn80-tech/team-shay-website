@@ -52,7 +52,7 @@ export default function AgentLayout({ children }: Props) {
         <img
           src={WHITE_LOGO}
           alt="Team Shay"
-          className="h-14 w-auto object-contain"
+          className="h-20 w-auto object-contain"
           style={{ filter: "brightness(10)" }}
         />
         <Link href="/" onClick={onNav}>
@@ -148,7 +148,7 @@ export default function AgentLayout({ children }: Props) {
         <img
           src={WHITE_LOGO}
           alt="Team Shay"
-          className="h-11 w-auto object-contain"
+          className="h-14 w-auto object-contain"
           style={{ filter: "brightness(10)" }}
         />
         <Link href="/agent-dashboard/crm">
@@ -169,7 +169,7 @@ export default function AgentLayout({ children }: Props) {
 
       {/* ── Mobile drawer ───────────────────────────────── */}
       <div
-        className={`lg:hidden fixed top-0 right-0 z-50 h-full w-[270px] bg-[#0d0d0d] px-5 py-6 shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out border-l border-[#d9ae4c]/20 ${
+        className={`lg:hidden fixed top-0 right-0 z-[60] h-full w-[270px] bg-[#0d0d0d] px-5 py-6 shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out border-l border-[#d9ae4c]/20 ${
           mobileOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >

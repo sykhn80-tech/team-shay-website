@@ -1,13 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
-  BarChart2,
   Building2,
   ChevronLeft,
   ImagePlus,
-  LayoutDashboard,
   Loader2,
-  Megaphone,
   MessageSquareQuote,
   Pencil,
   Plus,
@@ -15,12 +12,12 @@ import {
   ShieldCheck,
   Trash2,
   Upload,
-  UserCircle2,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
+import AgentLayout from "@/components/AgentLayout";
 
 type UploadMimeType = "image/jpeg" | "image/png" | "image/webp";
 
@@ -514,73 +511,10 @@ export default function AdminPanel() {
     return null;
   }
 
-  const sidebarItems = [
-    { label: "סקירה כללית", icon: LayoutDashboard, href: "/agent-dashboard", active: false },
-    { label: "הנכסים שלי", icon: Building2, href: "/agent-dashboard", active: false },
-    { label: "CRM לידים", icon: Users, href: "/agent-dashboard/crm", active: false, highlight: true },
-    { label: "שיווק נכסים", icon: Megaphone, href: "/agent-dashboard/marketing", active: false },
-    { label: "הערכת שווי CMA", icon: BarChart2, href: "/agent-dashboard/cma", active: false },
-    { label: "פרופיל סוכן", icon: UserCircle2, href: "/agent-dashboard", active: false },
-  ];
-
-  const handleGoBack = () => {
-    navigate("/agent-dashboard/crm");
-  };
-
   return (
-    <div className="min-h-screen bg-[#fffdf7] py-8" dir="rtl">
-      <div className="mx-auto max-w-[1440px] px-4">
-        <aside className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_20px_40px_rgba(15,23,42,0.06)] lg:fixed lg:right-4 lg:top-6 lg:w-[280px] lg:overflow-y-auto">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Agent Area</p>
-            <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-[#d9ae4c]">
-              <ChevronLeft className="size-4" />
-              לאתר
-            </Link>
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleGoBack}
-            className="mt-4 w-full rounded-full border-slate-200 text-slate-700 hover:bg-slate-50"
-          >
-            <ChevronLeft className="size-4" />
-            חזרה אחורה
-          </Button>
-
-          <div className="mt-6 rounded-[28px] bg-[#d9ae4c] p-5 text-white">
-            <p className="text-sm font-bold text-white/80">שלום {agentSessionQuery.data.name ?? "סוכן"}</p>
-            <h1 className="mt-2 text-2xl font-black">אזור הסוכנים</h1>
-            <p className="mt-3 text-sm leading-7 text-white/85">ניווט קבוע ומהיר לכל כלי העבודה של הסוכן.</p>
-          </div>
-
-          <nav className="mt-6 space-y-1.5">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              const isHighlight = (item as { highlight?: boolean }).highlight;
-              return (
-                <Link key={item.label} href={item.href}>
-                  <button
-                    type="button"
-                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-right text-[15px] font-bold transition ${
-                      isHighlight
-                        ? "bg-[#fff4d8] text-[#b98b2f] hover:bg-[#ffedb0]"
-                        : item.active
-                        ? "bg-[#fff4d8] text-[#b98b2f]"
-                        : "text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    <Icon className={`size-5 ${isHighlight ? "text-[#d9ae4c]" : "text-slate-400"}`} />
-                    {item.label}
-                  </button>
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
-
-        <div className="mt-6 space-y-8 lg:mt-0 lg:mr-[304px]" dir="rtl">
+    <AgentLayout>
+    <div className="py-6 px-4" dir="rtl">
+      <div className="mx-auto max-w-[1160px] space-y-8">
         <header className="rounded-[32px] bg-[#d9ae4c] px-6 py-6 text-white shadow-[0_20px_50px_rgba(217,174,76,0.25)] md:px-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -1151,6 +1085,6 @@ export default function AdminPanel() {
         </section>
         </div>
       </div>
-    </div>
+    </AgentLayout>
   );
 }

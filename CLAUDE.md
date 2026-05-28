@@ -10,7 +10,7 @@ Claude Code מבצע deployment. Cowork כותב את הקוד.
 rm -f .git/index.lock
 git add -A
 git status
-git commit -m "תיקון ניווט אדמין + תפריט מובייל לבן + CRM מלא"
+git commit -m "AdminPanel שחור + login → agent-dashboard + לוגואים גדולים + Landsman בנכסים + mobile z-index"
 git push
 ```
 
@@ -23,20 +23,19 @@ git push
 ## מה עכשיו צריך לעשות
 Cowork כבר כתב את השינויים הבאים — הרץ deploy **עכשיו**:
 
-### שינויים ממתינים (כל הקבצים האלה שונו):
-1. `client/src/pages/AgentDashboard.tsx` — הסרת redirect אוטומטי של אדמין לCRM (עכשיו אדמין יכול לנווט חופשי)
-2. `client/src/components/AgentLayout.tsx` — sidebar שחור עם זהב חזק
-3. `client/src/pages/AdminPanel.tsx` — "חזרה אחורה" מנווט ל-/agent-dashboard/crm
-4. `server/db.ts` — הרחבת CrmLeadData עם 15 שדות חדשים
-5. `server/routers.ts` — עדכון zod schemas
-6. `client/src/pages/CrmPage.tsx` — CRM מלא עם פאנל פרטים ומודל 4 קטגוריות
-7. `client/src/pages/Home.tsx` — תפריט מובייל: רקע לבן, טקסט כהה #1a1a1a, hover זהב (style inline)
+### שינויים ממתינים:
+1. `client/src/pages/AgentLogin.tsx` — אחרי התחברות מעביר ל-/agent-dashboard (לא /admin)
+2. `client/src/pages/AdminPanel.tsx` — עטוף ב-AgentLayout (sidebar שחור), הסרת sidebar לבן
+3. `client/src/components/AgentLayout.tsx` — לוגו גדול יותר (h-20 sidebar, h-14 mobile), drawer z-[60]
+4. `client/src/pages/PropertyDetails.tsx` — לוגו לנדסמן ירושלים ליד לוגו Team Shay
+5. `client/src/pages/Home.tsx` — drawer z-[60] (מעל ה-overlay)
+6. `server/db.ts` — הרחבת CrmLeadData עם 15 שדות חדשים
 
 ### לאחר deploy — בדוק:
-1. `/agent-dashboard` — אדמין רואה דשבורד, יכול ללחוץ CRM מהסיידבר
-2. `/agent-dashboard/crm` — ניווט חופשי בין עמודים
-3. `/admin` — "חזרה אחורה" → CRM
-4. דף הבית במובייל — תפריט פתוח, טקסט כהה נראה על רקע לבן
+1. `/agent-login` — אחרי התחברות נפתח /agent-dashboard ישירות
+2. `/admin` — sidebar שחור בצד ימין (AgentLayout), ללא sidebar לבן
+3. `/properties/:id` — שני לוגואים: Team Shay + Landsman ירושלים
+4. מובייל — תפריט נפתח מעל ה-overlay בשני המסכים
 
 ## כללי עבודה
 - Cowork כותב קוד ← Claude Code מריץ git

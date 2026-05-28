@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { TEAM_LOGO, WHATSAPP_LINK } from "@/lib/siteData";
+import { LANDSMAN_LOGO, TEAM_LOGO, WHATSAPP_LINK } from "@/lib/siteData";
 
 type PropertyDetailsProps = {
   params?: {
@@ -144,6 +144,8 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
           <div className="flex flex-col gap-8 border-b border-slate-100 px-6 py-8 md:px-10 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
               <img src={headerLogoUrl} alt="Team Shay" className="h-16 w-auto object-contain" />
+              <div className="w-px h-10 bg-slate-200 shrink-0" />
+              <img src={LANDSMAN_LOGO} alt="Landsman Jerusalem" className="h-10 w-auto object-contain opacity-80" />
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Property Showcase</p>
                 <h1 className="mt-2 text-3xl font-black md:text-5xl">{property.title}</h1>

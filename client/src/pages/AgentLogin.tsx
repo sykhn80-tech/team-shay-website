@@ -16,9 +16,9 @@ export default function AgentLogin() {
   const [inlineError, setInlineError] = useState<string | null>(null);
 
   const redirectTarget = useMemo(() => {
-    if (typeof window === "undefined") return "/admin";
+    if (typeof window === "undefined") return "/agent-dashboard";
     const next = new URLSearchParams(window.location.search).get("next");
-    return next && next.startsWith("/") ? next : "/admin";
+    return next && next.startsWith("/") ? next : "/agent-dashboard";
   }, []);
 
   const { data: activeAgent, isLoading: isAgentLoading } = trpc.agent.me.useQuery(undefined, {
