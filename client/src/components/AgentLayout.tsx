@@ -54,7 +54,7 @@ export default function AgentLayout({ children }: Props) {
         <img
           src={WHITE_LOGO}
           alt="Team Shay"
-          className="h-24 w-auto object-contain"
+          className="h-20 w-auto object-contain"
           style={{ filter: "brightness(10)" }}
         />
         <Link href="/" onClick={onNav}>
@@ -150,7 +150,7 @@ export default function AgentLayout({ children }: Props) {
         <img
           src={WHITE_LOGO}
           alt="Team Shay"
-          className="h-16 w-auto object-contain"
+          className="h-14 w-auto object-contain"
           style={{ filter: "brightness(10)" }}
         />
         <Link href="/agent-dashboard/crm">

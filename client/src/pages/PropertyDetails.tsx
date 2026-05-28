@@ -145,7 +145,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
             <div className="flex items-center gap-4">
               <img src={headerLogoUrl} alt="Team Shay" className="h-16 w-auto object-contain" />
               <div className="w-px h-10 bg-slate-200 shrink-0" />
-              <img src={LANDSMAN_LOGO} alt="Landsman Jerusalem" className="h-8 w-auto object-contain opacity-80" />
+              <img src={LANDSMAN_LOGO} alt="Landsman Jerusalem" className="h-10 w-auto object-contain opacity-80" />
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Property Showcase</p>
                 <h1 className="mt-2 text-3xl font-black md:text-5xl">{property.title}</h1>

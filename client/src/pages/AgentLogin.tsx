@@ -8,8 +8,8 @@ import { AlertCircle, ChevronLeft, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { JERUSALEM_HERO, TEAM_LOGO } from "@/lib/siteData";
 
-function getRedirectTarget(accountRole?: string) {
-  return accountRole === "admin" ? "/admin" : "/agent-dashboard";
+function getRedirectTarget() {
+  return "/agent-dashboard";
 }
 
 export default function AgentLogin() {
@@ -23,7 +23,7 @@ export default function AgentLogin() {
     retry: false,
     refetchOnWindowFocus: true,
   });
-  const redirectTarget = useMemo(() => getRedirectTarget(activeAgent?.accountRole), [activeAgent?.accountRole]);
+  const redirectTarget = useMemo(() => getRedirectTarget(), [activeAgent?.accountRole]);
 
   const loginMutation = trpc.admin.login.useMutation({
     onError: (error) => {
@@ -110,7 +110,7 @@ export default function AgentLogin() {
       ]);
 
       toast.success("התחברות הצליחה. מעבירים אתכם למסך הניהול...");
-      const nextTarget = getRedirectTarget(loginResult.admin.accountRole);
+      const nextTarget = getRedirectTarget();
 
       if (typeof window !== "undefined") {
         window.location.assign(nextTarget);
@@ -229,7 +229,7 @@ export default function AgentLogin() {
                 צריכים לחזור לדף הראשי? <Link href="/" className="font-bold text-[#d9ae4c]">לחצו כאן</Link>
               </p>
               <p>
-                לאחר התחברות תקינה תועברו ישירות אל <Link href="/admin" className="font-bold text-[#d9ae4c]">מסך הניהול המתאים</Link>
+                לאחר התחברות תקינה תועברו ישירות אל <Link href="/agent-dashboard" className="font-bold text-[#d9ae4c]">דשבורד הסוכן</Link>
               </p>
             </div>
           </div>
