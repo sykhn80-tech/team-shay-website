@@ -542,105 +542,104 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Mobile sidebar overlay — light white backdrop */}
-          {mobileMenuOpen && (
-            <div
-              className="lg:hidden fixed inset-0 z-50"
-              style={{ background: "rgba(255,255,255,0.55)", backdropFilter: "blur(4px)" }}
-              onClick={() => setMobileMenuOpen(false)}
-            />
-          )}
+        </header>
 
-          {/* Mobile sidebar drawer — black header + white nav body */}
+        {/* Mobile sidebar overlay — outside header to avoid clipping/stacking issues */}
+        {mobileMenuOpen && (
           <div
-            className={`lg:hidden fixed top-0 right-0 z-[60] flex h-full w-80 flex-col shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
-            style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #d9ae4c" }}
-            dir="rtl"
-          >
-            {/* BLACK top header section */}
-            <div className="flex items-center justify-between px-5 py-5" style={{ backgroundColor: "#0d0d0d" }}>
-              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="h-14 w-auto brightness-200" />
-              <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#d9ae4c" }} className="p-2 rounded-lg transition" aria-label="סגור">
-                <X className="size-5" />
-              </button>
-            </div>
-            <div style={{ flex: 1, background: "#fafafa", padding: "20px 16px", overflowY: "auto" }}>
-              <p style={{ color: "#d9ae4c", fontSize: "0.75rem", fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>
-                ניווט מהיר
-              </p>
-              <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {navItems.map((item) => {
-                  const baseStyle: React.CSSProperties = {
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "16px 20px",
-                    borderRadius: "16px",
-                    background: "#ffffff",
-                    color: "#0d0d0d",
-                    fontWeight: 800,
-                    fontSize: "1.05rem",
-                    border: "2px solid #f0e8d0",
-                    textDecoration: "none",
-                    cursor: "pointer",
-                    transition: "background 0.15s, border-color 0.15s",
-                  };
+            className="fixed inset-0 z-50 lg:hidden"
+            style={{ background: "rgba(255,255,255,0.55)", backdropFilter: "blur(4px)" }}
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
 
-                  const handleEnter = (e: React.MouseEvent<HTMLElement>) => {
-                    (e.currentTarget as HTMLElement).style.background = "#fff8e6";
-                    (e.currentTarget as HTMLElement).style.borderColor = "#d9ae4c";
-                  };
-                  const handleLeave = (e: React.MouseEvent<HTMLElement>) => {
-                    (e.currentTarget as HTMLElement).style.background = "#ffffff";
-                    (e.currentTarget as HTMLElement).style.borderColor = "#f0e8d0";
-                  };
+        <div
+          className={`fixed top-0 right-0 z-[70] flex h-full w-80 flex-col overflow-hidden shadow-2xl transition-transform duration-300 ease-in-out lg:hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+          style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #d9ae4c" }}
+          dir="rtl"
+        >
+          <div className="flex items-center justify-between px-5 py-5" style={{ backgroundColor: "#0d0d0d" }}>
+            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="h-14 w-auto brightness-200" />
+            <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#d9ae4c" }} className="p-2 rounded-lg transition" aria-label="סגור">
+              <X className="size-5" />
+            </button>
+          </div>
+          <div style={{ flex: 1, background: "#fafafa", padding: "20px 16px", overflowY: "auto" }}>
+            <p style={{ color: "#d9ae4c", fontSize: "0.75rem", fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>
+              ניווט מהיר
+            </p>
+            <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {navItems.map((item) => {
+                const baseStyle: React.CSSProperties = {
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "16px 20px",
+                  borderRadius: "16px",
+                  background: "#ffffff",
+                  color: "#0d0d0d",
+                  fontWeight: 800,
+                  fontSize: "1.05rem",
+                  border: "2px solid #f0e8d0",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  transition: "background 0.15s, border-color 0.15s",
+                };
 
-                  const inner = (
-                    <>
-                      <span>{item.label}</span>
-                      <ChevronLeft style={{ width: "18px", height: "18px", color: "#d9ae4c", flexShrink: 0 }} />
-                    </>
-                  );
+                const handleEnter = (e: React.MouseEvent<HTMLElement>) => {
+                  (e.currentTarget as HTMLElement).style.background = "#fff8e6";
+                  (e.currentTarget as HTMLElement).style.borderColor = "#d9ae4c";
+                };
+                const handleLeave = (e: React.MouseEvent<HTMLElement>) => {
+                  (e.currentTarget as HTMLElement).style.background = "#ffffff";
+                  (e.currentTarget as HTMLElement).style.borderColor = "#f0e8d0";
+                };
 
-                  return item.isRoute ? (
-                    <Link
-                      key={item.label}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      style={baseStyle}
-                      onMouseEnter={handleEnter}
-                      onMouseLeave={handleLeave}
-                    >
-                      {inner}
-                    </Link>
-                  ) : (
-                    <a
-                      key={item.label}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      style={baseStyle}
-                      onMouseEnter={handleEnter}
-                      onMouseLeave={handleLeave}
-                    >
-                      {inner}
-                    </a>
-                  );
-                })}
-              </nav>
-            </div>
-            <div className="border-t border-[#f3dfb0] bg-white px-4 py-4">
-              <button
-                onClick={() => { window.open(whatsappLink, "_blank", "noopener,noreferrer"); setMobileMenuOpen(false); }}
-                style={{ width: "100%", background: "#d9ae4c", color: "#000", fontWeight: 900, borderRadius: "999px", height: "48px", fontSize: "1rem", border: "none", cursor: "pointer" }}
-              >
-                שלחו הודעה עכשיו
-              </button>
-              <div style={{ borderTop: "1px solid #eee", paddingTop: "14px", marginTop: "12px", textAlign: "center" }}>
-                <p style={{ fontSize: "11px", color: "#999" }}>Team Shay — נדל״ן ירושלים</p>
-              </div>
+                const inner = (
+                  <>
+                    <span>{item.label}</span>
+                    <ChevronLeft style={{ width: "18px", height: "18px", color: "#d9ae4c", flexShrink: 0 }} />
+                  </>
+                );
+
+                return item.isRoute ? (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={baseStyle}
+                    onMouseEnter={handleEnter}
+                    onMouseLeave={handleLeave}
+                  >
+                    {inner}
+                  </Link>
+                ) : (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={baseStyle}
+                    onMouseEnter={handleEnter}
+                    onMouseLeave={handleLeave}
+                  >
+                    {inner}
+                  </a>
+                );
+              })}
+            </nav>
+          </div>
+          <div className="border-t border-[#f3dfb0] bg-white px-4 py-4">
+            <button
+              onClick={() => { window.open(whatsappLink, "_blank", "noopener,noreferrer"); setMobileMenuOpen(false); }}
+              style={{ width: "100%", background: "#d9ae4c", color: "#000", fontWeight: 900, borderRadius: "999px", height: "48px", fontSize: "1rem", border: "none", cursor: "pointer" }}
+            >
+              שלחו הודעה עכשיו
+            </button>
+            <div style={{ borderTop: "1px solid #eee", paddingTop: "14px", marginTop: "12px", textAlign: "center" }}>
+              <p style={{ fontSize: "11px", color: "#999" }}>Team Shay — נדל״ן ירושלים</p>
             </div>
           </div>
-        </header>
+        </div>
       </div>
 
       <main>
