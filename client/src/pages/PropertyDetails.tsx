@@ -153,7 +153,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
                 <div className="w-px h-14 bg-slate-200 shrink-0 mx-1" />
                 <img src={LANDSMAN_LOGO} alt="Landsman Jerusalem" className="h-16 w-auto object-contain md:h-20" />
               </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="flex flex-col gap-3 sm:flex-row lg:me-4 xl:me-8">
                 <Button
                   onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}
                   className="h-12 rounded-full bg-[#d9ae4c] px-7 text-base font-black text-white hover:bg-[#c99a31]"
