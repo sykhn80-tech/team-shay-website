@@ -1223,29 +1223,29 @@ export type CrmLeadData = {
   agentId: number | null;
   name: string;
   phone: string;
-  secondaryPhone: string | null;
+  secondaryPhone?: string | null;
   email: string | null;
   neighborhood: string | null;
   notes: string | null;
   tags: string;
   leadStatus: "חדש" | "פעיל" | "סגור" | "לא רלוונטי";
   source: string | null;
-  // Extended Airtable fields
-  leadType: string | null;         // קונה / מוכר / שכירות / השקעה
-  budgetMin: number | null;
-  budgetMax: number | null;
-  desiredBudget: string | null;    // free-text budget note
-  processStage: string | null;     // שלב הליך
-  lastContact: string | null;      // ISO date
-  meetingDate: string | null;      // ISO date
-  meetingTime: string | null;
-  meetingNotes: string | null;
-  meetingLocation: string | null;
-  propertyNeighborhood: string | null;
-  propertyStreet: string | null;
-  propertyRooms: string | null;
-  propertyType: string | null;
-  currentPropertyPrice: number | null;
+  // Extended Airtable fields (optional for backwards compat with existing blob data)
+  leadType?: string | null;
+  budgetMin?: number | null;
+  budgetMax?: number | null;
+  desiredBudget?: string | null;
+  processStage?: string | null;
+  lastContact?: string | null;
+  meetingDate?: string | null;
+  meetingTime?: string | null;
+  meetingNotes?: string | null;
+  meetingLocation?: string | null;
+  propertyNeighborhood?: string | null;
+  propertyStreet?: string | null;
+  propertyRooms?: string | null;
+  propertyType?: string | null;
+  currentPropertyPrice?: number | null;
   createdAt: string;
   updatedAt: string;
 };

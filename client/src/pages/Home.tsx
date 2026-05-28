@@ -542,27 +542,29 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Mobile sidebar overlay */}
+          {/* Mobile sidebar overlay — light white backdrop */}
           {mobileMenuOpen && (
             <div
-              className="lg:hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+              className="lg:hidden fixed inset-0 z-50"
+              style={{ background: "rgba(255,255,255,0.55)", backdropFilter: "blur(4px)" }}
               onClick={() => setMobileMenuOpen(false)}
             />
           )}
 
-          {/* Mobile sidebar drawer (slides from right) — clean white */}
+          {/* Mobile sidebar drawer — black header + white nav body */}
           <div
-            className={`lg:hidden fixed top-0 right-0 z-50 h-full w-72 shadow-2xl transition-transform duration-300 ease-in-out ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+            className={`lg:hidden fixed top-0 right-0 z-50 h-full w-72 shadow-2xl transition-transform duration-300 ease-in-out overflow-hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
             style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #d9ae4c" }}
             dir="rtl"
           >
-            <div className="flex items-center justify-between px-6 pt-7 pb-8">
-              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="h-9 w-auto" />
-              <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#555" }} className="p-2 rounded-lg hover:bg-gray-100 transition" aria-label="סגור">
+            {/* BLACK top header section */}
+            <div className="flex items-center justify-between px-5 py-5" style={{ backgroundColor: "#0d0d0d" }}>
+              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="h-10 w-auto brightness-200" />
+              <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#d9ae4c" }} className="p-2 rounded-lg transition" aria-label="סגור">
                 <X className="size-5" />
               </button>
             </div>
-            <nav className="flex flex-col gap-1 px-4">
+            <nav className="flex flex-col gap-1 px-4 pt-4">
               {navItems.map((item) => {
                 const itemStyle = { color: "#1a1a1a", fontWeight: 800, fontSize: "1rem", display: "block", borderRadius: "12px", padding: "14px 16px", transition: "background 0.15s" };
                 return item.isRoute ? (
