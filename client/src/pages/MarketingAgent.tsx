@@ -49,77 +49,9 @@ const EMPTY_FORM: PropertyForm = {
   notes: "",
 };
 
-async function generateMarketing(form: PropertyForm): Promise<MarketingOutput> {
-  const details = [
-    `עיר: ירושלים`,
-    form.neighborhood && `שכונה: ${form.neighborhood}`,
-    form.street && `רחוב: ${form.street}`,
-    form.floor && `קומה: ${form.floor}`,
-    form.rooms && `חדרים: ${form.rooms}`,
-    form.sqm && `מ"ר בנוי: ${form.sqm}`,
-    form.balcony && `מרפסת/גינה: ${form.balcony}`,
-    `מעלית: ${form.elevator ? "יש" : "אין"}`,
-    `חניה: ${form.parking ? "יש" : "אין"}`,
-    `מחסן: ${form.storage ? "יש" : "אין"}`,
-    `מצב שיפוץ: ${form.renovated ? "משופץ" : "לא משופץ"}`,
-    form.price && `מחיר: ${Number(form.price).toLocaleString()} ₪`,
-    `בלעדיות: ${form.exclusive ? "כן" : "לא"}`,
-    form.notes && `הערות: ${form.notes}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  const prompt = `אתה סוכן שיווק נדל"ן מקצועי של צוות שי, לנדסמן ירושלים.
-צור 3 תיאורי שיווק לנכס הבא. עברית בלבד. חדה, אנושית, מוכרת.
-כל פוסט מסתיים עם "בלעדיות צוות שי | לנדסמן ירושלים".
-אל תמציא פרטים שלא ניתנו. הדגש יתרונות ייחודיים, מיקום, פוטנציאל.
-
-פרטי הנכס:
-${details}
-
-פלט נדרש:
-
-─── פייסבוק ───
-[פוסט 150-250 מילה, פתיחה חזקה, פרטים, יתרונות, CTA, 5-7 האשטאגים]
-
-─── אינסטגרם ───
-[קפשן עד 100 מילה, אימפקטי, CTA לDM, 8-10 האשטאגים]
-
-─── יד2 ───
-[תיאור רשמי 100-150 מילה, עובדות, בולטים, ללא האשטאגים]`;
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY as string,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1500,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  if (!res.ok) throw new Error("שגיאה בקריאה ל-Claude API");
-  const data = await res.json();
-  const raw: string = data.content[0].text;
-
-  const get = (pattern: RegExp) => {
-    const m = raw.match(pattern);
-    return m ? m[1].trim() : "";
-  };
-
-  return {
-    facebook: get(/─── פייסבוק ───\n([\s\S]*?)(?=─── אינסטגרם ───|$)/),
-    instagram: get(/─── אינסטגרם ───\n([\s\S]*?)(?=─── יד2 ───|$)/),
-    yad2: get(/─── יד2 ───\n([\s\S]*?)$/),
-  };
-}
-
 export default function MarketingAgent() {
   const { data: agent } = trpc.agent.me.useQuery();
+  const generateMarketingMutation = trpc.agent.generateMarketing.useMutation();
 
   const [form, setForm] = useState<PropertyForm>(EMPTY_FORM);
   const [generating, setGenerating] = useState(false);
@@ -138,7 +70,21 @@ export default function MarketingAgent() {
     setGenerating(true);
     setOutput(null);
     try {
-      const result = await generateMarketing(form);
+      const result = await generateMarketingMutation.mutateAsync({
+        neighborhood: form.neighborhood,
+        street: form.street,
+        floor: form.floor,
+        rooms: form.rooms,
+        sqm: form.sqm,
+        balcony: form.balcony,
+        elevator: form.elevator,
+        parking: form.parking,
+        storage: form.storage,
+        renovated: form.renovated,
+        price: form.price,
+        exclusive: form.exclusive,
+        notes: form.notes,
+      });
       setOutput(result);
       setActiveTab("facebook");
       toast.success("התוכן השיווקי מוכן!");
