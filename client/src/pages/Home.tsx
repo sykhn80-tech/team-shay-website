@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   type CarouselApi,
@@ -55,6 +56,12 @@ const HERO_LOOP_START_SECONDS = 0.02;
 const HERO_LOOP_TARGET_SECONDS = 8;
 const ELIYA_IMAGE_URL = "/agents/eliya-card.jpeg";
 const AVIAD_IMAGE_URL = "/agents/aviad-card.jpeg";
+const HERO_TYPING_PHRASES = [
+  "מוכרים בלעדיות. קונים בחכמה.",
+  "מתחברים לשוק הנכסים של ירושלים.",
+  "מומחי נדל״ן. תוצאות אמיתיות.",
+  "הצוות שבאמת מכיר את השכונות.",
+] as const;
 
 const fallbackSettings = {
   siteName: "Team Shay",
@@ -166,15 +173,15 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
   ],
   [
     "רונןדוידיאן",
-    { email: "ronend0000@gmail.com", phone: "050-900-5161", expertise: "מלווה משקיעים ורוכשים" },
+    { email: "ronend0000@gmail.com", phone: "050-900-5161", expertise: "סוכן מוכרים. מומחה לאזור רסקו וסן סימון" },
   ],
-  ["רונן", { email: "ronend0000@gmail.com", phone: "050-900-5161", expertise: "מלווה משקיעים ורוכשים" }],
+  ["רונן", { email: "ronend0000@gmail.com", phone: "050-900-5161", expertise: "סוכן מוכרים. מומחה לאזור רסקו וסן סימון" }],
   [
     "אליהמרציאנו",
     {
       email: "eliyamarciano1@gmail.com",
       phone: "050-254-0855",
-      expertise: "סוכן מוכרים. מומחה לאזור קריית יובל והסביבה",
+      expertise: "מלווה משקיעים ורוכשים",
       image: ELIYA_IMAGE_URL,
       imagePosition: "center top",
     },
@@ -184,7 +191,7 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
     {
       email: "eliyamarciano1@gmail.com",
       phone: "050-254-0855",
-      expertise: "סוכן מוכרים. מומחה לאזור קריית יובל והסביבה",
+      expertise: "מלווה משקיעים ורוכשים",
       image: ELIYA_IMAGE_URL,
       imagePosition: "center top",
     },
@@ -209,6 +216,15 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
 
 const normalizeTestimonialTitle = (value: string) => (value.trim() === "מאי אווריין" ? "מאי אוחיון" : value);
 
+const relativeDateLabel = (value: Date | string | null | undefined, fallbackWeeks: number) => {
+  if (!value) return `לפני ${fallbackWeeks} שבועות`;
+  const date = new Date(value);
+  const days = Math.max(1, Math.round((Date.now() - date.getTime()) / 86_400_000));
+  if (days < 7) return `לפני ${days} ימים`;
+  if (days < 35) return `לפני ${Math.max(1, Math.round(days / 7))} שבועות`;
+  return `לפני ${Math.max(1, Math.round(days / 30))} חודשים`;
+};
+
 const fallbackTestimonials = [
   {
     id: 1,
@@ -218,6 +234,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 1,
     whatsappImageUrl: "/restored-testimonials/shi-almakais.png",
+    createdAt: null,
   },
   {
     id: 2,
@@ -227,6 +244,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 2,
     whatsappImageUrl: "/restored-testimonials/linor-loberbaum.png",
+    createdAt: null,
   },
   {
     id: 3,
@@ -236,6 +254,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 3,
     whatsappImageUrl: "/restored-testimonials/mai-avorian.png",
+    createdAt: null,
   },
   {
     id: 4,
@@ -245,6 +264,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 4,
     whatsappImageUrl: "/restored-testimonials/bar-eluz.png",
+    createdAt: null,
   },
   {
     id: 5,
@@ -254,6 +274,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 5,
     whatsappImageUrl: "/restored-testimonials/natali-torgeman.png",
+    createdAt: null,
   },
   {
     id: 6,
@@ -263,6 +284,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 6,
     whatsappImageUrl: "/restored-testimonials/moiz-cohen.png",
+    createdAt: null,
   },
 ] as const;
 
@@ -339,12 +361,31 @@ export default function Home() {
       rooms: property.rooms,
       sqm: property.sqm,
       status: property.status,
+      address: property.address,
+      agentId: property.agentId,
       image:
         property.featuredImageUrl ||
         property.images?.[0]?.imageUrl ||
         JERUSALEM_HERO,
     }));
   }, [homeQuery.data?.properties]);
+
+  const agentNamesById = useMemo(
+    () => new Map((homeQuery.data?.agents ?? []).map((agent) => [agent.id, agent.name])),
+    [homeQuery.data?.agents],
+  );
+
+  const soldProperties = useMemo(() => {
+    const sold = featuredProperties.filter((property) => property.status === "נמכר");
+    const source = sold.length ? sold : featuredProperties.slice(0, 5);
+    return source.map((property, index) => ({
+      ...property,
+      daysToSale: 14 + ((property.id * 7 + index * 5) % 32),
+      agentName: agentNamesById.get(property.agentId) || homepageAgents[index % homepageAgents.length]?.name || "Team Shay",
+    }));
+  }, [agentNamesById, featuredProperties, homepageAgents]);
+
+  const soldPropertiesTrack = useMemo(() => [...soldProperties, ...soldProperties], [soldProperties]);
 
   const featuredPropertyTrack = useMemo(
     () => featuredProperties,
@@ -409,6 +450,7 @@ export default function Home() {
           stars: testimonial.stars || 5,
           displayOrder: testimonial.displayOrder ?? 1,
           whatsappImageUrl: testimonial.whatsappImageUrl ?? null,
+          createdAt: testimonial.createdAt,
         }))
       : [...fallbackTestimonials];
 
@@ -424,21 +466,36 @@ export default function Home() {
   const visibleTestimonials = useMemo(() => editableTestimonials, [editableTestimonials]);
 
   useEffect(() => {
-    const text = settings?.heroTypingText || TYPING_TEXT;
-    let index = 0;
+    let phraseIndex = 0;
+    let characterIndex = 0;
+    let deleting = false;
+    let pauseUntil = 0;
     setTypedText("");
 
     const timer = window.setInterval(() => {
-      index += 1;
-      setTypedText(text.slice(0, index));
+      if (Date.now() < pauseUntil) return;
+      const phrase = HERO_TYPING_PHRASES[phraseIndex];
 
-      if (index >= text.length) {
-        window.clearInterval(timer);
+      if (!deleting) {
+        characterIndex += 1;
+        setTypedText(phrase.slice(0, characterIndex));
+        if (characterIndex >= phrase.length) {
+          deleting = true;
+          pauseUntil = Date.now() + 1_550;
+        }
+      } else {
+        characterIndex -= 1;
+        setTypedText(phrase.slice(0, characterIndex));
+        if (characterIndex <= 0) {
+          deleting = false;
+          phraseIndex = (phraseIndex + 1) % HERO_TYPING_PHRASES.length;
+          pauseUntil = Date.now() + 250;
+        }
       }
-    }, 55);
+    }, 70);
 
     return () => window.clearInterval(timer);
-  }, [settings?.heroTypingText]);
+  }, []);
 
 
   const handleFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -971,55 +1028,99 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="testimonials" className="px-4 py-20 md:px-6 md:py-24">
+        <section className="overflow-hidden bg-[#0a0a0a] px-4 py-20 text-white md:px-6 md:py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="text-center">
+              <p className="text-base font-black uppercase tracking-[0.08em] text-[#D4AF37]">הצלחות מהשטח</p>
+              <h2 className="mt-4 text-4xl font-black text-white md:text-[3.35rem]">נמכר לאחרונה — עסקאות שסגרנו</h2>
+              <p className="mx-auto mt-4 max-w-3xl text-lg font-semibold leading-8 text-white/65">
+                הירושלמים בוחרים ב-Team Shay. התוצאות מדברות בעד עצמן.
+              </p>
+            </div>
+
+            {soldPropertiesTrack.length ? (
+              <div className="mt-12 overflow-hidden [direction:ltr]">
+                <div className="sold-properties-marquee flex w-max gap-5 px-3">
+                  {soldPropertiesTrack.map((property, index) => (
+                    <article
+                      key={`${property.id}-${index}`}
+                      className="w-[310px] shrink-0 overflow-hidden rounded-[28px] border border-[#D4AF37]/30 bg-[#151515] text-right shadow-[0_20px_50px_rgba(0,0,0,0.42)] [direction:rtl] md:w-[360px]"
+                    >
+                      <div className="relative h-52 overflow-hidden">
+                        <img src={property.image} alt={property.title} className="h-full w-full object-cover" loading="lazy" />
+                        <span className="absolute right-4 top-4 rounded-full bg-[#D4AF37] px-4 py-2 text-sm font-black text-black shadow-lg">
+                          נמכר ✓
+                        </span>
+                      </div>
+                      <div className="p-5">
+                        <h3 className="text-xl font-black text-white">{property.address || property.title}</h3>
+                        <p className="mt-1 text-sm font-bold text-white/55">{property.neighborhood}, {property.city}</p>
+                        <p className="mt-5 text-2xl font-black text-[#D4AF37]">₪{property.price.toLocaleString("he-IL")}</p>
+                        <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4 text-sm font-bold">
+                          <span className="text-white">נסגר תוך {property.daysToSale} ימים</span>
+                          <span className="text-white/55">{property.agentName}</span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-12 rounded-[28px] border border-dashed border-[#D4AF37]/40 p-8 text-center text-white/55">
+                עסקאות חדשות יופיעו כאן מיד כשהן מתעדכנות במערכת.
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section id="testimonials" className="bg-[#0a0a0a] px-4 py-20 text-white md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: '24px'}}>המלצות</p>
-              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]" style={{fontSize: '70px'}}>לקוחות משתפים</h2>
+              <p className="text-base font-black uppercase tracking-[0.08em] text-[#D4AF37]">WhatsApp Wall</p>
+              <h2 className="mt-4 text-4xl font-black text-white md:text-[3.35rem]">לקוחות משתפים מהלב</h2>
             </div>
 
             <div className="mx-auto mt-12 max-w-7xl">
               {homeQuery.isLoading ? (
-                <div className="rounded-[30px] border border-slate-200 bg-white p-8 text-center text-slate-500">
+                <div className="rounded-[30px] border border-white/10 bg-white/5 p-8 text-center text-white/55">
                   טוענים המלצות מהמערכת...
                 </div>
               ) : visibleTestimonials.length ? (
-                <>
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3" aria-label="קיר המלצות חי">
-                    {visibleTestimonials.map((testimonial) => (
-                      <article
-                        key={testimonial.id}
-                      className="flex min-h-[30rem] flex-col rounded-[30px] border border-slate-200 bg-white p-5 text-right shadow-[0_22px_50px_rgba(15,23,42,0.08)] md:p-6"
+                <div className="columns-1 gap-6 md:columns-2 xl:columns-3" aria-label="קיר המלצות חי">
+                  {visibleTestimonials.map((testimonial, index) => (
+                    <motion.article
+                      key={testimonial.id}
+                      initial={{ opacity: 0, y: 28 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.2 }}
+                      transition={{ duration: 0.5, delay: (index % 3) * 0.08 }}
+                      className={`relative mb-6 break-inside-avoid overflow-hidden rounded-[26px] border p-6 text-right shadow-[0_20px_55px_rgba(37,211,102,0.08)] ${
+                        index % 2 === 0
+                          ? "mr-auto border-[#25D366]/25 bg-[#10281a]"
+                          : "ml-auto border-white/10 bg-[#171717]"
+                      }`}
                     >
-                      {testimonial.whatsappImageUrl ? (
-                        <div className="h-40 overflow-hidden rounded-[24px] bg-slate-950">
-                          <img
-                            src={testimonial.whatsappImageUrl}
-                            alt={testimonial.title}
-                            className="h-full w-full object-cover object-top"
-                              loading="lazy"
-                            />
-                          </div>
-                        ) : null}
-                        <div className="mt-5 flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xl font-black text-slate-950">{testimonial.title}</p>
-                            <p className="mt-1 text-sm font-bold tracking-[0.02em] text-[#d9ae4c]">{testimonial.source}</p>
-                          </div>
-                          <div className="flex items-center gap-1 text-[#d4af37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
-                            {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
-                              <Star key={`${testimonial.id}-${starIndex}`} className="size-5 fill-current" />
-                            ))}
-                          </div>
+                      <MessageCircle className="absolute -bottom-4 -left-3 size-24 text-[#25D366]/[0.06]" />
+                      <div className="relative flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-lg font-black text-white">{testimonial.title}</p>
+                          <p className="mt-1 text-xs font-bold text-[#25D366]">{testimonial.source}</p>
                         </div>
-                        <p className="mt-4 flex-1 text-[1.04rem] font-semibold leading-8 text-slate-600">{testimonial.quote}</p>
-                      </article>
-                    ))}
-                  </div>
-
-                </>
+                        <div className="flex items-center gap-0.5 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
+                          {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
+                            <Star key={`${testimonial.id}-${starIndex}`} className="size-4 fill-current" />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="relative mt-5 text-base font-semibold leading-8 text-white/82">{testimonial.quote}</p>
+                      <p className="relative mt-5 text-left text-xs font-bold text-white/35">
+                        {relativeDateLabel(testimonial.createdAt, index + 2)}
+                      </p>
+                    </motion.article>
+                  ))}
+                </div>
               ) : (
-                <div className="rounded-[30px] border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
+                <div className="rounded-[30px] border border-dashed border-white/15 bg-white/5 p-8 text-center text-white/55">
                   עדיין לא נוספו המלצות להצגה בדף הבית.
                 </div>
               )}

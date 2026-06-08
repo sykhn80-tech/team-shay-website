@@ -610,10 +610,31 @@ export default function CrmPage({
 
           {/* ── Filters ────────────────────────────────────────── */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3 mb-4">
+            <div className="mb-3 flex flex-wrap gap-2 border-b border-slate-100 pb-3">
+              {[
+                { label: "הכל", active: !filterStatus && !filterType && filterTag === initialTag, action: resetFilters },
+                { label: "חדשים", active: filterStatus === "חדש", action: () => { resetFilters(); setFilterStatus("חדש"); } },
+                { label: "בלעדיות", active: filterType === "exclusive", action: () => { resetFilters(); setFilterType("exclusive"); } },
+                { label: "קונים", active: filterType === "buyer", action: () => { resetFilters(); setFilterType("buyer"); } },
+                { label: "פוטנציאלי", active: filterStatus === "פעיל", action: () => { resetFilters(); setFilterStatus("פעיל"); } },
+              ].map((filter) => (
+                <button
+                  key={filter.label}
+                  type="button"
+                  onClick={filter.action}
+                  className={`rounded-full px-4 py-2 text-xs font-black transition ${
+                    filter.active ? "bg-[#1a1a1a] text-[#d4af37]" : "border border-slate-200 bg-white text-slate-600 hover:border-[#d4af37]"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
             <div className="flex flex-wrap gap-2 items-center">
               <div className="relative flex-1 min-w-40">
                 <Search size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input value={search} onChange={e => setSearch(e.target.value)}
+                  autoComplete="off"
                   placeholder="חיפוש שם, טלפון, שכונה..."
                   className="w-full h-9 pr-8 pl-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-slate-50"
                 />

@@ -50,7 +50,7 @@ export const agents = [
   {
     id: "ronen",
     name: "רונן דוידיאן",
-    expertise: "מלווה משקיעים ורוכשים",
+    expertise: "סוכן מוכרים. מומחה לאזור רסקו וסן סימון",
     email: "ronend0000@gmail.com",
     phone: "050-900-5161",
     image:
@@ -60,7 +60,7 @@ export const agents = [
   {
     id: "eliya",
     name: "אליה מרציאנו",
-    expertise: "סוכן מוכרים. מומחה לאזור קריית יובל והסביבה",
+    expertise: "מלווה משקיעים ורוכשים",
     email: "eliyamarciano1@gmail.com",
     phone: "050-254-0855",
     image: "/agents/eliya-card.jpeg",

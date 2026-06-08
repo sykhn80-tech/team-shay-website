@@ -28,9 +28,10 @@ interface PropertyForm {
 }
 
 interface MarketingOutput {
-  facebook: string;
-  instagram: string;
   yad2: string;
+  facebook: string;
+  whatsapp: string;
+  instagram: string;
 }
 
 const EMPTY_FORM: PropertyForm = {
@@ -56,7 +57,7 @@ export default function MarketingAgent() {
   const [form, setForm] = useState<PropertyForm>(EMPTY_FORM);
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState<MarketingOutput | null>(null);
-  const [activeTab, setActiveTab] = useState<"facebook" | "instagram" | "yad2">("facebook");
+  const [activeTab, setActiveTab] = useState<keyof MarketingOutput>("yad2");
   const [copied, setCopied] = useState("");
 
   const set = (key: keyof PropertyForm, val: string | boolean) =>
@@ -86,7 +87,7 @@ export default function MarketingAgent() {
         notes: form.notes,
       });
       setOutput(result);
-      setActiveTab("facebook");
+      setActiveTab("yad2");
       toast.success("התוכן השיווקי מוכן!");
     } catch (e: any) {
       toast.error(e.message || "שגיאה בייצור תוכן");
@@ -103,9 +104,10 @@ export default function MarketingAgent() {
   }
 
   const tabs = [
-    { key: "facebook" as const, label: "פייסבוק" },
-    { key: "instagram" as const, label: "אינסטגרם" },
     { key: "yad2" as const, label: "יד2" },
+    { key: "facebook" as const, label: "פייסבוק" },
+    { key: "whatsapp" as const, label: "וואטסאפ" },
+    { key: "instagram" as const, label: "אינסטגרם" },
   ];
 
   return (
@@ -118,7 +120,7 @@ export default function MarketingAgent() {
                 <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Marketing Agent</p>
                 <h2 className="mt-3 text-3xl font-black text-black md:text-4xl">שיווק נכסים</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
-                  הזן פרטי נכס ← קבל תוכן שיווקי מוכן לפייסבוק, אינסטגרם ויד2.
+                  הזן פרטי נכס ← קבל נוסח מדויק ומותאם ליד2, פייסבוק, וואטסאפ ואינסטגרם.
                 </p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full bg-[#fff4d8] px-4 py-2 text-sm font-bold text-[#d9ae4c]">
@@ -137,6 +139,7 @@ export default function MarketingAgent() {
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">שכונה *</label>
                     <input
+                      autoComplete="off"
                       value={form.neighborhood}
                       onChange={(e) => set("neighborhood", e.target.value)}
                       placeholder="למשל: קטמונים"
@@ -147,6 +150,7 @@ export default function MarketingAgent() {
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">רחוב ומספר</label>
                     <input
+                      autoComplete="off"
                       value={form.street}
                       onChange={(e) => set("street", e.target.value)}
                       placeholder="למשל: סן מרטין 9"
@@ -157,6 +161,7 @@ export default function MarketingAgent() {
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">קומה</label>
                     <input
+                      autoComplete="off"
                       value={form.floor}
                       onChange={(e) => set("floor", e.target.value)}
                       placeholder="למשל: 3 מתוך 5"
@@ -167,6 +172,7 @@ export default function MarketingAgent() {
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">חדרים</label>
                     <input
+                      autoComplete="off"
                       value={form.rooms}
                       onChange={(e) => set("rooms", e.target.value)}
                       placeholder="למשל: 3"
@@ -177,6 +183,7 @@ export default function MarketingAgent() {
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">מ״ר בנוי</label>
                     <input
+                      autoComplete="off"
                       value={form.sqm}
                       onChange={(e) => set("sqm", e.target.value)}
                       placeholder="למשל: 84"
@@ -187,6 +194,7 @@ export default function MarketingAgent() {
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">מרפסת / גינה</label>
                     <input
+                      autoComplete="off"
                       value={form.balcony}
                       onChange={(e) => set("balcony", e.target.value)}
                       placeholder="למשל: גינה 6 מ״ר"
@@ -197,6 +205,7 @@ export default function MarketingAgent() {
                   <div className="md:col-span-2">
                     <label className="block text-sm font-bold text-slate-700 mb-1">מחיר מבוקש (₪)</label>
                     <input
+                      autoComplete="off"
                       value={form.price}
                       onChange={(e) => set("price", e.target.value)}
                       placeholder="למשל: 2600000"
@@ -244,6 +253,7 @@ export default function MarketingAgent() {
                 <div className="mt-5">
                   <label className="block text-sm font-bold text-slate-700 mb-1">פרטים נוספים / הערות</label>
                   <textarea
+                    autoComplete="off"
                     value={form.notes}
                     onChange={(e) => set("notes", e.target.value)}
                     placeholder="כיווני אוויר, נוף, שכנים, קרבה לתחבורה, כל יתרון שרוצים להדגיש..."

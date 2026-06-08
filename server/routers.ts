@@ -361,7 +361,7 @@ function extractMarketingSection(raw: string, pattern: RegExp) {
   return match ? match[1].trim() : "";
 }
 
-function buildMarketingPrompt(input: z.infer<typeof marketingInputSchema>) {
+function buildMarketingPrompt(input: z.infer<typeof marketingInputSchema>, agentPhone?: string | null) {
   const details = [
     "עיר: ירושלים",
     input.neighborhood && `שכונה: ${input.neighborhood}`,
@@ -377,54 +377,36 @@ function buildMarketingPrompt(input: z.infer<typeof marketingInputSchema>) {
     input.price && `מחיר: ${Number(input.price).toLocaleString("he-IL")} ₪`,
     input.exclusive && "בלעדיות: כן",
     input.notes && `הערות: ${input.notes}`,
+    agentPhone && `טלפון הסוכן: ${agentPhone}`,
   ]
     .filter(Boolean)
     .join("\n");
 
-  return `אתה מומחה קופירייטינג נדל"ן ישראלי של צוות שי, לנדסמן ירושלים — אחד הצוותים המובילים בעיר.
-המשימה: לכתוב תוכן שיווקי שמוכר חלום, לא רק דירה. הטקסט גורם לאנשים לעצור בפיד, לקרוא עד הסוף, וליצור קשר.
-
-עקרונות ברזל (חובה בכל הפלט):
-1) פתיחה שמייצרת FOMO או רגש — לעולם לא לפתוח ב"דירה למכירה".
-2) פנייה לקונה ספציפי לפי ההקשר: משפחה / משקיע / זוג צעיר.
-3) למכור את החוויה והתחושה של החיים בנכס, לא רק מפרט.
-4) שפה חיה, טבעית וישראלית.
-5) לייצר דחיפות אמיתית, במיוחד כשיש בלעדיות.
-6) לא להמציא פרטים שלא ניתנו.
-7) כל פוסט חייב להסתיים בדיוק במשפט: "בלעדיות צוות שי | לנדסמן ירושלים"
-8) אין לציין חיסרון או מה שאין בנכס (לדוגמה: "ללא מעלית", "אין חניה", "אין מחסן") אלא אם נכתב מפורשות בהערות.
-9) הדגש המרכזי הוא הנתונים הקיימים של הנכס. תיאור האזור צריך להיות כללי, קצר ואמין — בלי שמות מוסדות/רחובות/נתונים שלא נמסרו.
-10) אם נתון מסוים לא סופק, פשוט מדלגים עליו ולא משלימים לבד.
+  return `אתה קופירייטר נדל"ן ישראלי של Team Shay, לנדסמן ירושלים.
+כתוב ארבעה נוסחים נפרדים בעברית, מותאמים במדויק לפלטפורמה. אין להמציא פרטים שלא נמסרו, ואין לציין מה חסר בנכס.
 
 פרטי הנכס:
 ${details}
 
-כללי פורמט:
-- עברית בלבד.
-- שמור בדיוק על כותרות הסקשנים הבאות.
-- ללא הקדמות מחוץ לסקשנים.
-
-פלט נדרש:
-
-─── פייסבוק ───
-פתיחה חזקה שעוצרת גלילה (שאלה / עובדה מפתיעה / תמונת מצב רגשית).
-תיאור שמוכר את החיים בדירה ולא רק את המפרט.
-פרטים טכניים בשורה אחת קצרה.
-CTA ברור עם תחושת דחיפות.
-5-7 האשטאגים ממוקדים ירושלים.
-אורך יעד: 150-200 מילים.
-
-─── אינסטגרם ───
-קפשן שמתאים לתמונה יפה — קצר, אימפקטי, עם נשימה.
-מקסימום 5-6 שורות.
-CTA ל-DM.
-10 האשטאגים (מיקום + נדל"ן + ירושלים).
+חובה לשמור בדיוק על כותרות הסקשנים הבאות, ללא הקדמה או סיכום מחוץ להן:
 
 ─── יד2 ───
-כותרת חזקה לנכס (לא גנרית).
-תיאור מקצועי שמדגיש יתרון תחרותי.
-פרטים טכניים מסודרים וברורים.
-ללא האשטאגים.`;
+נוסח מקצועי, עובדתי וללא אימוג'ים.
+מבנה חובה: שורת פתיחה, רשימת תבליטים של פרטי הנכס, ושורת סיום עם מספר הטלפון שסופק.
+אם לא סופק טלפון, סיים בקריאה ישירה ליצירת קשר עם Team Shay.
+
+─── פייסבוק ───
+טון חם ואישי, פסקאות קצרות, ורק 2–3 אימוג'ים מתוך 🏠✨💛.
+סיים בדיוק בשאלה: "אתם מחפשים? צרו קשר!"
+
+─── וואטסאפ ───
+מקסימום 5 שורות קצרות.
+הדגש מידע מרכזי באמצעות *כוכביות* בסגנון וואטסאפ.
+סיים בקריאה ישירה וברורה לפעולה.
+
+─── אינסטגרם ───
+טון שאפתני וממוקד סגנון חיים, משפטים קצרים וקצביים.
+סיים ב-3–5 האשטאגים רלוונטיים בעברית.`;
 }
 
 function parseNumericInput(value: string) {
@@ -1525,7 +1507,7 @@ export const appRouter = router({
       }),
     generateMarketing: agentProcedure
       .input(marketingInputSchema)
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         if (!input.neighborhood && !input.street) {
           throw new Error("יש למלא לפחות שכונה או רחוב");
         }
@@ -1535,12 +1517,13 @@ export const appRouter = router({
           throw new Error("מפתח Anthropic לא מוגדר בסביבת השרת.");
         }
 
-        const raw = await requestAnthropicMarketing(buildMarketingPrompt(input), apiKey);
+        const raw = await requestAnthropicMarketing(buildMarketingPrompt(input, ctx.agentSession.phone), apiKey);
 
         return {
-          facebook: extractMarketingSection(raw, /─── פייסבוק ───\n([\s\S]*?)(?=─── אינסטגרם ───|$)/),
-          instagram: extractMarketingSection(raw, /─── אינסטגרם ───\n([\s\S]*?)(?=─── יד2 ───|$)/),
-          yad2: extractMarketingSection(raw, /─── יד2 ───\n([\s\S]*?)$/),
+          yad2: extractMarketingSection(raw, /─── יד2 ───\n([\s\S]*?)(?=─── פייסבוק ───|$)/),
+          facebook: extractMarketingSection(raw, /─── פייסבוק ───\n([\s\S]*?)(?=─── וואטסאפ ───|$)/),
+          whatsapp: extractMarketingSection(raw, /─── וואטסאפ ───\n([\s\S]*?)(?=─── אינסטגרם ───|$)/),
+          instagram: extractMarketingSection(raw, /─── אינסטגרם ───\n([\s\S]*?)$/),
         };
       }),
     generateCma: agentProcedure

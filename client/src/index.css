@@ -177,6 +177,12 @@ All global tokens should support a modern, clean, conversion-first interface.
     font: inherit;
   }
 
+  input::-webkit-contacts-auto-fill-button,
+  input::-webkit-credentials-auto-fill-button {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   img {
     display: block;
     max-width: 100%;
@@ -295,6 +301,15 @@ All global tokens should support a modern, clean, conversion-first interface.
   }
 }
 
+@keyframes sold-properties-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(50%, 0, 0);
+  }
+}
+
 @layer utilities {
   .cms-marquee-track {
     animation: cms-marquee 42s linear infinite;
@@ -304,5 +319,14 @@ All global tokens should support a modern, clean, conversion-first interface.
   .cms-marquee-track-slow {
     animation: cms-marquee 48s linear infinite;
     will-change: transform;
+  }
+
+  .sold-properties-marquee {
+    animation: sold-properties-marquee 38s linear infinite;
+    will-change: transform;
+  }
+
+  .sold-properties-marquee:hover {
+    animation-play-state: paused;
   }
 }

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
@@ -52,6 +52,24 @@ export default function CrmLayout({ title, subtitle, children }: CrmLayoutProps)
     () => navItems.find((item) => isActive(location, item.href))?.href ?? "/crm",
     [location],
   );
+
+  useEffect(() => {
+    const suppressBrowserSuggestions = () => {
+      const fields = document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(".crm-shell input, .crm-shell textarea");
+      fields.forEach((field) => {
+        field.setAttribute("autocomplete", "off");
+        field.setAttribute("data-lpignore", "true");
+        field.setAttribute("data-form-type", "other");
+      });
+    };
+
+    suppressBrowserSuggestions();
+    const observer = new MutationObserver(suppressBrowserSuggestions);
+    const shell = document.querySelector(".crm-shell");
+    if (shell) observer.observe(shell, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, [location]);
 
   const logoutMutation = trpc.agent.logout.useMutation({
     onSuccess: async () => {
