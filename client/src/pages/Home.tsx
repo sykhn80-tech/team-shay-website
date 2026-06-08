@@ -335,9 +335,9 @@ export default function Home() {
     });
   }, [homeQuery.data?.agents, officePhone]);
 
-  const featuredProperties = useMemo(() => {
+  const homepageProperties = useMemo(() => {
     const properties = homeQuery.data?.properties ?? [];
-    return properties.slice(0, 8).map((property) => ({
+    return properties.map((property) => ({
       id: property.id,
       title: property.title,
       neighborhood: property.neighborhood,
@@ -356,19 +356,24 @@ export default function Home() {
     }));
   }, [homeQuery.data?.properties]);
 
+  const featuredProperties = useMemo(
+    () => homepageProperties.filter((property) => property.status.trim() === "בלעדי").slice(0, 8),
+    [homepageProperties],
+  );
+
   const agentNamesById = useMemo(
     () => new Map((homeQuery.data?.agents ?? []).map((agent) => [agent.id, agent.name])),
     [homeQuery.data?.agents],
   );
 
   const soldProperties = useMemo(() => {
-    const sold = featuredProperties.filter((property) => property.status === "נמכר");
-    const source = sold.length ? sold : featuredProperties.slice(0, 5);
-    return source.map((property, index) => ({
+    return homepageProperties
+      .filter((property) => property.status.trim() === "נמכר")
+      .map((property, index) => ({
       ...property,
       agentName: agentNamesById.get(property.agentId) || homepageAgents[index % homepageAgents.length]?.name || "Team Shay",
     }));
-  }, [agentNamesById, featuredProperties, homepageAgents]);
+  }, [agentNamesById, homepageAgents, homepageProperties]);
 
   const soldPropertiesTrack = useMemo(() => [...soldProperties, ...soldProperties], [soldProperties]);
 

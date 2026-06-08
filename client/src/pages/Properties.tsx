@@ -114,6 +114,7 @@ export default function Properties() {
           sampleProperties[index % sampleProperties.length]?.image,
       };
     }).filter((property) => {
+      if (property.status.trim() === "נמכר") return false;
       if (!roomFilter) return true;
       if (roomFilter === "5+") return property.rooms >= 5;
       return Math.floor(property.rooms) === Number(roomFilter);
