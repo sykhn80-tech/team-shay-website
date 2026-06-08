@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { leadLabel } from "@/lib/lead-display";
+import { CrmSearchSelect } from "@/components/CrmSearchSelect";
 
 type Status = "open" | "in_progress" | "done";
 
@@ -15,14 +17,17 @@ const columns: Array<{ key: Status; label: string }> = [
 export default function CrmTasks() {
   const utils = trpc.useUtils();
   const tasksQuery = trpc.crm2.tasks.list.useQuery();
+  const leadsQuery = trpc.crm.list.useQuery({ search: undefined, agentId: undefined });
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
+  const [leadId, setLeadId] = useState<number | null>(null);
 
   const createMutation = trpc.crm2.tasks.create.useMutation({
     onSuccess: async () => {
       await utils.crm2.tasks.list.invalidate();
       setTitle("");
       setPriority("medium");
+      setLeadId(null);
       toast.success("משימה נוספה.");
     },
     onError: (error) => toast.error(error.message),
@@ -48,6 +53,11 @@ export default function CrmTasks() {
     return map;
   }, [tasksQuery.data]);
 
+  const leadsById = useMemo(
+    () => new Map((leadsQuery.data ?? []).map((lead) => [lead.id, lead])),
+    [leadsQuery.data],
+  );
+
   return (
     <CrmLayout title="משימות" subtitle="לוח קנבן פשוט: פתוח, בביצוע, הושלם.">
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
@@ -59,15 +69,10 @@ export default function CrmTasks() {
             placeholder="כותרת המשימה"
             className="h-11 flex-1 rounded-xl border border-slate-200 px-3"
           />
-          <select
-            value={priority}
-            onChange={(event) => setPriority(event.target.value as "low" | "medium" | "high")}
-            className="h-11 rounded-xl border border-slate-200 px-3"
-          >
-            <option value="low">נמוכה</option>
-            <option value="medium">בינונית</option>
-            <option value="high">גבוהה</option>
-          </select>
+          <CrmSearchSelect value={priority} onChange={value => setPriority((value ?? "medium") as "low" | "medium" | "high")} isClearable={false}
+            options={[{ value: "low", label: "נמוכה" }, { value: "medium", label: "בינונית" }, { value: "high", label: "גבוהה" }]} />
+          <CrmSearchSelect value={leadId} onChange={value => setLeadId(value == null ? null : Number(value))} placeholder="ללא שיוך ללקוח"
+            className="min-w-56" options={(leadsQuery.data ?? []).map(lead => ({ value: lead.id, label: leadLabel(lead) }))} />
           <Button
             onClick={() => {
               if (!title.trim()) {
@@ -80,7 +85,7 @@ export default function CrmTasks() {
                 dueDate: null,
                 priority,
                 status: "open",
-                leadId: null,
+                leadId,
                 propertyId: null,
               });
             }}
@@ -99,6 +104,7 @@ export default function CrmTasks() {
               {grouped[column.key].map((task) => (
                 <div key={task.id} className="rounded-xl border border-slate-200 bg-[#faf8f1] p-3">
                   <p className="text-sm font-black text-slate-800">{task.title}</p>
+                  {task.leadId ? <p className="mt-1 text-xs font-bold text-[#b98b2f]">{leadLabel(leadsById.get(task.leadId))}</p> : null}
                   <p className="mt-1 text-xs text-slate-500">עדיפות: {task.priority}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {column.key !== "open" ? (

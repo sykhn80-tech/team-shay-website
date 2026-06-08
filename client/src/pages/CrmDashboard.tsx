@@ -1,5 +1,6 @@
 import CrmLayout from "@/components/CrmLayout";
 import { trpc } from "@/lib/trpc";
+import { leadLocation } from "@/lib/lead-display";
 
 function Card({ label, value }: { label: string; value: string | number }) {
   return (
@@ -20,6 +21,7 @@ export default function CrmDashboard() {
   const tasks = tasksQuery.data ?? [];
   const followups = followupsQuery.data ?? [];
   const financeSummary = financeSummaryQuery.data;
+  const leadsById = new Map(leads.map((lead) => [lead.id, lead]));
 
   const now = new Date();
   const weekFromNow = new Date();
@@ -54,7 +56,11 @@ export default function CrmDashboard() {
           <div className="mt-4 space-y-3">
             {followupsThisWeek.slice(0, 6).map((item) => (
               <div key={item.id} className="rounded-xl border border-slate-200 bg-[#faf8f1] p-3">
-                <p className="text-sm font-black text-slate-800">{item.type.toUpperCase()} · Lead #{item.leadId}</p>
+                <p className="text-sm font-black text-slate-800">{leadsById.get(item.leadId)?.name ?? `ליד #${item.leadId}`}</p>
+                {leadLocation(leadsById.get(item.leadId)) ? (
+                  <p className="mt-1 text-xs font-bold text-[#b98b2f]">{leadLocation(leadsById.get(item.leadId))}</p>
+                ) : null}
+                <p className="mt-1 text-xs text-slate-500">{item.type.toUpperCase()}</p>
                 <p className="mt-1 text-sm text-slate-600">{new Date(item.scheduledDate).toLocaleString("he-IL")}</p>
                 {item.note ? <p className="mt-1 text-sm text-slate-600">{item.note}</p> : null}
               </div>

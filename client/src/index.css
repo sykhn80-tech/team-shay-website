@@ -200,6 +200,63 @@ All global tokens should support a modern, clean, conversion-first interface.
 }
 
 @layer components {
+  .crm-shell h1,
+  .crm-shell h2,
+  .crm-shell h3,
+  .crm-shell h4,
+  .crm-shell h5,
+  .crm-shell h6 {
+    color: #0f172a;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+  }
+
+  .crm-shell h2,
+  .crm-shell h3 {
+    text-wrap: balance;
+  }
+
+  .crm-shell label {
+    color: #334155;
+    font-weight: 900;
+  }
+
+  .crm-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  .crm-shell textarea,
+  .crm-field {
+    min-height: 44px;
+    border: 1.5px solid #d4af37;
+    border-radius: 8px;
+    background: #fafafa;
+    color: #1a1a1a;
+    padding: 10px 14px;
+    font-size: 14px;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  }
+
+  .crm-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
+  .crm-shell textarea:focus,
+  .crm-field:focus {
+    border-color: #d4af37;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+    outline: none;
+  }
+
+  .crm-shell .crm-section-title {
+    color: #1e293b;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+
+  .crm-shell .crm-empty-temporal::-webkit-datetime-edit {
+    color: transparent;
+  }
+
+  .crm-shell .crm-empty-temporal:focus::-webkit-datetime-edit {
+    color: #334155;
+  }
+
   .container {
     width: 100%;
     margin-left: auto;

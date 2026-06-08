@@ -230,6 +230,7 @@ const marketingActionSchema = z.object({
   year: z.number().int().min(2000).max(3000),
   templateId: z.number().int().positive().optional().nullable(),
   customMessage: z.string().optional().nullable(),
+  marketingFields: z.record(z.string(), z.string()).optional(),
   targetAudience: z.enum(["all", "buyers", "sellers", "investors"]).default("all"),
   status: z.enum(["draft", "scheduled", "sent"]).default("draft"),
 });
@@ -1856,8 +1857,13 @@ export const appRouter = router({
 
     getById: agentProcedure
       .input(z.object({ id: z.number().int().positive() }))
-      .query(async ({ input }) => {
-        return getCrmLeadById(input.id);
+      .query(async ({ ctx, input }) => {
+        const lead = await getCrmLeadById(input.id);
+        const isAdmin = ctx.agentSession.accountRole === "admin";
+        if (!isAdmin && (!lead || lead.agentId !== ctx.agentSession.id)) {
+          throw new Error("אין הרשאה לצפות בליד זה");
+        }
+        return lead;
       }),
 
     create: agentProcedure
@@ -1885,9 +1891,22 @@ export const appRouter = router({
           meetingLocation: z.string().optional().nullable(),
           propertyNeighborhood: z.string().optional().nullable(),
           propertyStreet: z.string().optional().nullable(),
+          propertyCity: z.string().optional().nullable(),
           propertyRooms: z.string().optional().nullable(),
           propertyType: z.string().optional().nullable(),
           currentPropertyPrice: z.number().optional().nullable(),
+          exclusivityStartDate: z.string().optional().nullable(),
+          exclusivityEndDate: z.string().optional().nullable(),
+          marketingPrice: z.number().optional().nullable(),
+          ownerName: z.string().optional().nullable(),
+          desiredNeighborhoods: z.array(z.string()).optional(),
+          desiredRooms: z.string().optional().nullable(),
+          desiredPropertyType: z.string().optional().nullable(),
+          askingPrice: z.number().optional().nullable(),
+          rentalPrice: z.number().optional().nullable(),
+          dealDate: z.string().optional().nullable(),
+          finalPrice: z.number().optional().nullable(),
+          lastTransactionDate: z.string().optional().nullable(),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -1916,9 +1935,22 @@ export const appRouter = router({
           meetingLocation: input.meetingLocation ?? null,
           propertyNeighborhood: input.propertyNeighborhood ?? null,
           propertyStreet: input.propertyStreet ?? null,
+          propertyCity: input.propertyCity ?? null,
           propertyRooms: input.propertyRooms ?? null,
           propertyType: input.propertyType ?? null,
           currentPropertyPrice: input.currentPropertyPrice ?? null,
+          exclusivityStartDate: input.exclusivityStartDate ?? null,
+          exclusivityEndDate: input.exclusivityEndDate ?? null,
+          marketingPrice: input.marketingPrice ?? null,
+          ownerName: input.ownerName ?? null,
+          desiredNeighborhoods: input.desiredNeighborhoods ?? [],
+          desiredRooms: input.desiredRooms ?? null,
+          desiredPropertyType: input.desiredPropertyType ?? null,
+          askingPrice: input.askingPrice ?? null,
+          rentalPrice: input.rentalPrice ?? null,
+          dealDate: input.dealDate ?? null,
+          finalPrice: input.finalPrice ?? null,
+          lastTransactionDate: input.lastTransactionDate ?? null,
         });
         return { id };
       }),
@@ -1949,14 +1981,33 @@ export const appRouter = router({
           meetingLocation: z.string().optional().nullable(),
           propertyNeighborhood: z.string().optional().nullable(),
           propertyStreet: z.string().optional().nullable(),
+          propertyCity: z.string().optional().nullable(),
           propertyRooms: z.string().optional().nullable(),
           propertyType: z.string().optional().nullable(),
           currentPropertyPrice: z.number().optional().nullable(),
+          exclusivityStartDate: z.string().optional().nullable(),
+          exclusivityEndDate: z.string().optional().nullable(),
+          marketingPrice: z.number().optional().nullable(),
+          ownerName: z.string().optional().nullable(),
+          desiredNeighborhoods: z.array(z.string()).optional(),
+          desiredRooms: z.string().optional().nullable(),
+          desiredPropertyType: z.string().optional().nullable(),
+          askingPrice: z.number().optional().nullable(),
+          rentalPrice: z.number().optional().nullable(),
+          dealDate: z.string().optional().nullable(),
+          finalPrice: z.number().optional().nullable(),
+          lastTransactionDate: z.string().optional().nullable(),
         })
       )
       .mutation(async ({ ctx, input }) => {
         const isAdmin = ctx.agentSession.accountRole === "admin";
         const { id, ...data } = input;
+        if (!isAdmin) {
+          const lead = await getCrmLeadById(id);
+          if (!lead || lead.agentId !== ctx.agentSession.id) {
+            throw new Error("אין הרשאה לעדכן ליד זה");
+          }
+        }
         if (!isAdmin) {
           delete (data as { agentId?: unknown }).agentId;
         }
@@ -2187,6 +2238,7 @@ export const appRouter = router({
             year: input.year,
             templateId: input.templateId ?? null,
             customMessage: input.customMessage ?? null,
+            marketingFields: input.marketingFields ?? {},
             targetAudience: input.targetAudience,
             status: input.status,
           });

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { toast } from "sonner";
+import { CrmSearchSelect } from "@/components/CrmSearchSelect";
 
 export default function CrmTemplates() {
   const utils = trpc.useUtils();
@@ -44,16 +45,8 @@ export default function CrmTemplates() {
             placeholder="שם תבנית"
             className="h-11 rounded-xl border border-slate-200 px-3"
           />
-          <select
-            value={type}
-            onChange={(event) => setType(event.target.value as "shabbat" | "exclusivity" | "followup" | "general")}
-            className="h-11 rounded-xl border border-slate-200 px-3"
-          >
-            <option value="shabbat">שבת שלום</option>
-            <option value="exclusivity">בלעדיות שבועית</option>
-            <option value="followup">פולואפ</option>
-            <option value="general">כללי</option>
-          </select>
+          <CrmSearchSelect value={type} onChange={value => setType((value ?? "general") as "shabbat" | "exclusivity" | "followup" | "general")} isClearable={false}
+            options={[{ value: "shabbat", label: "שבת שלום" }, { value: "exclusivity", label: "בלעדיות שבועית" }, { value: "followup", label: "פולואפ" }, { value: "general", label: "כללי" }]} />
         </div>
         <textarea
           value={content}

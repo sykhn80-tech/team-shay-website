@@ -35,7 +35,7 @@ export default function CrmImportPage() {
   const [done, setDone] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
 
-  const staffQuery = trpc.admin.listStaffAccounts.useQuery(undefined, {
+  const staffQuery = trpc.admin.listStaff.useQuery(undefined, {
     retry: false, enabled: false,
   });
   const bulkImport = trpc.crm.bulkImport.useMutation();
@@ -51,7 +51,7 @@ export default function CrmImportPage() {
     setRunning(true); setLog([]); setProgress(0); setDone(false);
     try {
       addLog("🔍 שולף רשימת סוכנים מהמערכת...", "info");
-      let emailToId = { ...FALLBACK_IDS };
+      let emailToId: Record<string, number> = { ...FALLBACK_IDS };
       try {
         const res = await staffQuery.refetch();
         if (res.data?.length) {

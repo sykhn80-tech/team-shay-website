@@ -122,10 +122,10 @@ export default function Properties() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fff8e6] text-slate-950" dir="rtl">
+    <div className="min-h-screen bg-[#1A1A1A] text-slate-950" dir="rtl">
       <section className="px-4 pb-12 pt-10 md:px-6 md:pb-16">
-        <div className="mx-auto max-w-7xl overflow-hidden rounded-[36px] bg-white shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
-          <div className="flex flex-col gap-8 border-b border-slate-100 px-6 py-8 md:px-10 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mx-auto max-w-7xl overflow-hidden rounded-[36px] border border-[#D4AF37]/40 bg-[#FAFAFA] shadow-[0_28px_70px_rgba(0,0,0,0.35)]">
+          <div className="flex flex-col gap-8 border-b border-[#D4AF37]/25 bg-[#1A1A1A] px-6 py-8 text-white md:px-10 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
               <img src={homeQuery.data?.settings?.headerLogoUrl || TEAM_LOGO} alt="Team Shay" className="h-16 w-auto object-contain" />
               <div>
@@ -136,14 +136,14 @@ export default function Properties() {
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link href="/">
-                <Button variant="outline" className="rounded-full border-slate-200 text-slate-700 hover:bg-slate-50">
+                <Button variant="outline" className="rounded-full border-[#D4AF37] bg-transparent text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black">
                   <ChevronLeft className="size-4" />
                   חזרה לדף הבית
                 </Button>
               </Link>
               <Button
                 onClick={() => window.open(homeQuery.data?.settings?.whatsappLink || WHATSAPP_LINK, "_blank", "noopener,noreferrer")}
-                className="rounded-full bg-[#fff2a8] px-6 text-black hover:bg-[#ffe97a]"
+                className="rounded-full bg-[#D4AF37] px-6 text-black hover:bg-[#e5c45e]"
               >
                 דברו איתנו
               </Button>
@@ -152,13 +152,13 @@ export default function Properties() {
 
           <div className="px-6 py-8 md:px-10">
             <div className="grid gap-8 xl:grid-cols-[320px_1fr]">
-              <aside className="order-1 rounded-[30px] border border-slate-200 bg-[#fbfdff] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.05)] xl:order-none">
+              <aside className="order-1 rounded-[30px] border border-[#D4AF37]/50 bg-[#1A1A1A] p-6 text-white shadow-[0_18px_40px_rgba(0,0,0,0.18)] xl:order-none">
                 <div className="flex items-center gap-2 text-[#d9ae4c]">
                   <SlidersHorizontal className="size-4" />
                   <p className="text-sm font-black uppercase tracking-[0.06em]">סינון חכם</p>
                 </div>
-                <h2 className="mt-4 text-2xl font-black">מצאו נכס לפי מחיר ואזור</h2>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
+                <h2 className="mt-4 text-2xl font-black text-white">מצאו נכס לפי מחיר ואזור</h2>
+                <p className="mt-3 text-sm leading-7 text-white/70">
                   השתמשו בטווח המחיר ובחיפוש האזורי כדי להתמקד רק בנכסים הרלוונטיים עבורכם.
                 </p>
 
@@ -234,7 +234,7 @@ export default function Properties() {
                   {filteredProperties.map((property) => (
                     <article
                       key={property.id}
-                      className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_36px_rgba(15,23,42,0.06)]"
+                      className="group overflow-hidden rounded-[28px] border border-[#D4AF37]/35 bg-white shadow-[0_18px_36px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:shadow-[0_24px_48px_rgba(212,175,55,0.22)]"
                     >
                       <img src={property.image} alt={property.title} className="h-56 w-full object-cover" loading="lazy" />
                       <div className="p-5">
@@ -258,7 +258,7 @@ export default function Properties() {
 
                         <div className="mt-5">
                           <Link href={`/properties/${property.id}`} className="block">
-                            <Button className="w-full rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">
+                            <Button className="w-full rounded-full bg-[#1A1A1A] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black">
                               לפרטים נוספים
                             </Button>
                           </Link>

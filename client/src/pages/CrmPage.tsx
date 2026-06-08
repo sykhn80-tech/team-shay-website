@@ -4,10 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CrmLayout from "@/components/CrmLayout";
 import {
-  Calendar,
   Check,
-  ChevronDown,
-  ChevronRight,
   Download,
   MapPin,
   Phone,
@@ -19,6 +16,17 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { leadLocation, leadNeighborhood, leadStreet } from "@/lib/lead-display";
+import { CrmMultiSearchSelect, CrmSearchSelect } from "@/components/CrmSearchSelect";
+import {
+  LEAD_TYPE_OPTIONS,
+  NEIGHBORHOOD_OPTIONS,
+  PROPERTY_TYPE_OPTIONS,
+  ROOM_OPTIONS,
+  leadTypeLabel,
+  normalizeLeadType,
+  type CrmOption,
+} from "@/lib/crm-options";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,9 +54,22 @@ type Lead = {
   meetingLocation?: string | null;
   propertyNeighborhood?: string | null;
   propertyStreet?: string | null;
+  propertyCity?: string | null;
   propertyRooms?: string | null;
   propertyType?: string | null;
   currentPropertyPrice?: number | null;
+  exclusivityStartDate?: string | null;
+  exclusivityEndDate?: string | null;
+  marketingPrice?: number | null;
+  ownerName?: string | null;
+  desiredNeighborhoods?: string[];
+  desiredRooms?: string | null;
+  desiredPropertyType?: string | null;
+  askingPrice?: number | null;
+  rentalPrice?: number | null;
+  dealDate?: string | null;
+  finalPrice?: number | null;
+  lastTransactionDate?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 };
@@ -61,17 +82,17 @@ type FormState = {
   leadType: string; budgetMin: string; budgetMax: string; desiredBudget: string;
   processStage: string; lastContact: string;
   meetingDate: string; meetingTime: string; meetingNotes: string; meetingLocation: string;
-  propertyNeighborhood: string; propertyStreet: string;
+  propertyNeighborhood: string; propertyStreet: string; propertyCity: string;
   propertyRooms: string; propertyType: string; currentPropertyPrice: string;
+  exclusivityStartDate: string; exclusivityEndDate: string; marketingPrice: string; ownerName: string;
+  desiredNeighborhoods: string[]; desiredRooms: string; desiredPropertyType: string;
+  askingPrice: string; rentalPrice: string; dealDate: string; finalPrice: string; lastTransactionDate: string;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STATUS_OPTIONS = ["חדש", "פעיל", "סגור", "לא רלוונטי"] as const;
-const LEAD_TYPE_OPTIONS = ["קונה", "מוכר", "שוכר", "משכיר", "השקעה", "אחר"];
 const PROCESS_STAGES = ["יצירת קשר ראשוני","פגישת היכרות","בדיקת נכסים","הצעת מחיר","משא ומתן","חתימת חוזה","סגירת עסקה","לא רלוונטי"];
-const DISPLAY_TAGS = ["בלעדי", "קונה", "מוכר", "שכירות", "past_client"];
-const ALL_TAGS = ["בלעדי","קונה","מוכר","שכירות","buyer","seller","past_client"];
 const SOURCE_OPTIONS = ["יד2","הומלי","פייסבוק","אינסטגרם","Organic","ממולץ","Google","אחר"];
 
 const STATUS_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
@@ -81,17 +102,8 @@ const STATUS_STYLE: Record<string, { bg: string; text: string; dot: string }> = 
   "לא רלוונטי": { bg: "bg-red-50",     text: "text-red-500",     dot: "bg-red-400" },
 };
 
-const TAG_STYLE: Record<string, string> = {
-  "בלעדי":      "bg-violet-100 text-violet-700",
-  "קונה":       "bg-sky-100 text-sky-700",
-  "buyer":      "bg-sky-100 text-sky-700",
-  "מוכר":       "bg-amber-100 text-amber-700",
-  "seller":     "bg-amber-100 text-amber-700",
-  "שכירות":     "bg-teal-100 text-teal-700",
-  "past_client":"bg-rose-100 text-rose-600",
-};
-
 const TYPE_STYLE: Record<string, string> = {
+  "בלעדיות": "bg-violet-50 text-violet-700 border-violet-200",
   "קונה":  "bg-sky-50 text-sky-700 border-sky-200",
   "מוכר":  "bg-amber-50 text-amber-700 border-amber-200",
   "שוכר":  "bg-teal-50 text-teal-700 border-teal-200",
@@ -109,6 +121,24 @@ function fmtBudget(min?: number | null, max?: number | null) {
   return `עד ${f(max!)}`;
 }
 
+function isExclusiveValue(value?: string | null) {
+  return /exclusive|בלעדי|בלעדיות/i.test(value ?? "");
+}
+
+function displayLeadType(type?: string | null) {
+  return leadTypeLabel(type);
+}
+
+function leadMatchesTag(lead: Lead, tag: string) {
+  if (isExclusiveValue(tag)) return isExclusiveValue(`${lead.tags} ${lead.leadType}`);
+  return lead.tags.includes(tag);
+}
+
+function leadMatchesType(lead: Lead, type: string) {
+  if (isExclusiveValue(type)) return isExclusiveValue(`${lead.tags} ${lead.leadType}`);
+  return normalizeLeadType(lead.leadType) === normalizeLeadType(type);
+}
+
 function fmtDate(d?: string | Date | null) {
   if (!d) return "";
   try { return new Date(d).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit", year: "2-digit" }); }
@@ -121,11 +151,48 @@ function emptyForm(agentId: number): FormState {
     leadStatus:"חדש",source:"",agentId,leadType:"",budgetMin:"",budgetMax:"",
     desiredBudget:"",processStage:"",lastContact:"",meetingDate:"",meetingTime:"",
     meetingNotes:"",meetingLocation:"",propertyNeighborhood:"",propertyStreet:"",
-    propertyRooms:"",propertyType:"",currentPropertyPrice:"",
+    propertyCity:"ירושלים",propertyRooms:"",propertyType:"",currentPropertyPrice:"",
+    exclusivityStartDate:"",exclusivityEndDate:"",marketingPrice:"",ownerName:"",
+    desiredNeighborhoods:[],desiredRooms:"",desiredPropertyType:"",askingPrice:"",
+    rentalPrice:"",dealDate:"",finalPrice:"",lastTransactionDate:"",
   };
 }
 
+function cleanImportedNotes(notes?: string | null) {
+  return (notes ?? "")
+    .split("\n")
+    .filter(line => !/^\s*(סוג ליד|רחוב)\s*:/i.test(line))
+    .join("\n")
+    .trim();
+}
+
+function syncLeadTypeTag(tags: string, leadType: string) {
+  const retained = tags
+    .split(",")
+    .map(tag => tag.trim())
+    .filter(Boolean)
+    .filter(tag => !["בלעדיות", "בלעדי", "exclusive", "קונה", "buyer", "מוכר", "seller", "שכירות"].includes(tag));
+  return Array.from(new Set([...retained, ...(leadType ? [leadType] : [])])).join(",");
+}
+
 // ─── Small UI components ──────────────────────────────────────────────────────
+
+function SectionCard({ title, icon, children, className = "" }: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`rounded-2xl border border-[#D4AF37]/35 bg-white p-4 shadow-sm ${className}`}>
+      <div className="mb-4 flex items-center gap-2 border-b border-[#D4AF37]/20 pb-3">
+        <span className="flex size-8 items-center justify-center rounded-xl bg-[#fff7df] text-[#b98b2f]">{icon}</span>
+        <h3 className="text-base font-black text-slate-900">{title}</h3>
+      </div>
+      {children}
+    </section>
+  );
+}
 
 function StatusBadge({ status }: { status: string }) {
   const s = STATUS_STYLE[status] ?? { bg:"bg-slate-100", text:"text-slate-600", dot:"bg-slate-400" };
@@ -139,48 +206,17 @@ function StatusBadge({ status }: { status: string }) {
 
 function TypeBadge({ type }: { type?: string | null }) {
   if (!type) return null;
-  const cls = TYPE_STYLE[type] ?? "bg-slate-50 text-slate-600 border-slate-200";
-  return <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${cls}`}>{type}</span>;
-}
-
-function TagPills({ tags }: { tags: string }) {
-  const list = tags ? tags.split(",").map(t => t.trim()).filter(Boolean) : [];
-  if (!list.length) return null;
-  return (
-    <div className="flex flex-wrap gap-1 mt-1">
-      {list.slice(0, 2).map(tag => (
-        <span key={tag} className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${TAG_STYLE[tag] ?? "bg-slate-100 text-slate-600"}`}>{tag}</span>
-      ))}
-      {list.length > 2 && <span className="text-[10px] text-slate-400">+{list.length - 2}</span>}
-    </div>
-  );
-}
-
-function TagSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const selected = value ? value.split(",").map(t => t.trim()).filter(Boolean) : [];
-  const toggle = (tag: string) => {
-    const next = selected.includes(tag) ? selected.filter(t => t !== tag) : [...selected, tag];
-    onChange(next.join(","));
-  };
-  return (
-    <div className="flex flex-wrap gap-2">
-      {DISPLAY_TAGS.map(tag => (
-        <button key={tag} type="button" onClick={() => toggle(tag)}
-          className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-            selected.includes(tag) ? `${TAG_STYLE[tag] ?? "bg-slate-100"} border-transparent` : "border-slate-200 text-slate-500 hover:border-slate-400"
-          }`}
-        >{tag}</button>
-      ))}
-    </div>
-  );
+  const label = displayLeadType(type) ?? type;
+  const cls = TYPE_STYLE[label] ?? "bg-slate-50 text-slate-600 border-slate-200";
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold border ${cls}`}>{label}</span>;
 }
 
 // ─── Export CSV ───────────────────────────────────────────────────────────────
 
 function exportCsv(leads: Lead[], agentName: (id: number | null) => string) {
-  const headers = ["שם","טלפון","טלפון נוסף","אימייל","שכונה","סוג ליד","סטטוס","שלב תהליך","תקציב מינ","תקציב מקס","מקור","סוכן","הערות","תאריך יצירה"];
+  const headers = ["שם","רחוב","שכונה","טלפון","טלפון נוסף","אימייל","סוג ליד","סטטוס","שלב תהליך","תקציב מינ","תקציב מקס","מקור","סוכן","הערות","תאריך יצירה"];
   const rows = leads.map(l => [
-    l.name, l.phone, l.secondaryPhone ?? "", l.email ?? "", l.neighborhood ?? "",
+    l.name, leadStreet(l), leadNeighborhood(l), l.phone, l.secondaryPhone ?? "", l.email ?? "",
     l.leadType ?? "", l.leadStatus, l.processStage ?? "",
     l.budgetMin ?? "", l.budgetMax ?? "", l.source ?? "",
     agentName(l.agentId), (l.notes ?? "").replace(/,/g,""), fmtDate(l.createdAt),
@@ -193,7 +229,7 @@ function exportCsv(leads: Lead[], agentName: (id: number | null) => string) {
   a.click(); URL.revokeObjectURL(url);
 }
 
-// ─── Lead modal (4 collapsible sections) ─────────────────────────────────────
+// ─── Lead modal ───────────────────────────────────────────────────────────────
 
 function LeadModal({ initial, agents, isAdmin, currentAgentId, onClose, onSave, isSaving }: {
   initial?: Lead | null;
@@ -206,10 +242,10 @@ function LeadModal({ initial, agents, isAdmin, currentAgentId, onClose, onSave, 
   const [form, setForm] = useState<FormState>(() =>
     initial ? {
       name: initial.name, phone: initial.phone, secondaryPhone: initial.secondaryPhone ?? "",
-      email: initial.email ?? "", neighborhood: initial.neighborhood ?? "",
-      notes: initial.notes ?? "", tags: initial.tags ?? "", leadStatus: initial.leadStatus,
+      email: initial.email ?? "", neighborhood: initial.propertyNeighborhood ?? initial.neighborhood ?? "",
+      notes: cleanImportedNotes(initial.notes), tags: initial.tags ?? "", leadStatus: initial.leadStatus,
       source: initial.source ?? "", agentId: initial.agentId,
-      leadType: initial.leadType ?? "",
+      leadType: normalizeLeadType(initial.leadType),
       budgetMin: initial.budgetMin != null ? String(initial.budgetMin) : "",
       budgetMax: initial.budgetMax != null ? String(initial.budgetMax) : "",
       desiredBudget: initial.desiredBudget ?? "", processStage: initial.processStage ?? "",
@@ -217,294 +253,195 @@ function LeadModal({ initial, agents, isAdmin, currentAgentId, onClose, onSave, 
       meetingDate: initial.meetingDate ? String(initial.meetingDate).slice(0,10) : "",
       meetingTime: initial.meetingTime ?? "", meetingNotes: initial.meetingNotes ?? "",
       meetingLocation: initial.meetingLocation ?? "",
-      propertyNeighborhood: initial.propertyNeighborhood ?? "",
+      propertyNeighborhood: initial.propertyNeighborhood ?? initial.neighborhood ?? "",
       propertyStreet: initial.propertyStreet ?? "",
+      propertyCity: initial.propertyCity ?? "ירושלים",
       propertyRooms: initial.propertyRooms ?? "", propertyType: initial.propertyType ?? "",
       currentPropertyPrice: initial.currentPropertyPrice != null ? String(initial.currentPropertyPrice) : "",
+      exclusivityStartDate: initial.exclusivityStartDate?.slice(0, 10) ?? "",
+      exclusivityEndDate: initial.exclusivityEndDate?.slice(0, 10) ?? "",
+      marketingPrice: initial.marketingPrice != null ? String(initial.marketingPrice) : "",
+      ownerName: initial.ownerName ?? initial.name,
+      desiredNeighborhoods: initial.desiredNeighborhoods ?? [],
+      desiredRooms: initial.desiredRooms ?? "",
+      desiredPropertyType: initial.desiredPropertyType ?? "",
+      askingPrice: initial.askingPrice != null ? String(initial.askingPrice) : "",
+      rentalPrice: initial.rentalPrice != null ? String(initial.rentalPrice) : "",
+      dealDate: initial.dealDate?.slice(0, 10) ?? "",
+      finalPrice: initial.finalPrice != null ? String(initial.finalPrice) : "",
+      lastTransactionDate: initial.lastTransactionDate?.slice(0, 10) ?? "",
     } : emptyForm(currentAgentId)
   );
 
-  const [section, setSection] = useState<"basic"|"budget"|"property"|"meeting">("basic");
   const f = (k: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>) =>
     setForm(p => ({ ...p, [k]: e.target.value }));
 
-  const SectionBtn = ({ id, label, icon }: { id: typeof section; label: string; icon: React.ReactNode }) => (
-    <button type="button" onClick={() => setSection(section === id ? "basic" : id)}
-      className="flex w-full items-center justify-between px-4 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition text-sm font-bold text-slate-700"
-    >
-      <span className="flex items-center gap-2">{icon}{label}</span>
-      {section === id ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
-    </button>
-  );
-
-  const field = (label: string, key: keyof FormState, opts?: { type?: string; placeholder?: string; dir?: string }) => (
+  const field = (label: string, key: keyof FormState, opts?: { type?: string; dir?: string }) => (
     <div>
-      <label className="block text-xs font-bold text-slate-600 mb-1.5">{label}</label>
-      <Input value={form[key] as string} onChange={f(key)} type={opts?.type ?? "text"} placeholder={opts?.placeholder} dir={opts?.dir} className="rounded-xl" />
+      <label className="block text-sm font-black text-slate-700 mb-1.5">{label}</label>
+      <Input
+        value={form[key] as string}
+        onChange={f(key)}
+        type={opts?.type ?? "text"}
+        dir={opts?.dir}
+        className={`h-11 rounded-xl bg-white ${["date", "time"].includes(opts?.type ?? "") && !form[key] ? "crm-empty-temporal" : ""}`}
+      />
     </div>
   );
 
-  const select = (label: string, key: keyof FormState, options: string[]) => (
+  const select = (label: string, key: keyof FormState, options: CrmOption[], opts?: { creatable?: boolean }) => (
     <div>
-      <label className="block text-xs font-bold text-slate-600 mb-1.5">{label}</label>
-      <select value={form[key] as string} onChange={f(key)}
-        className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-300"
-      >
-        <option value="">— לא נבחר —</option>
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
-      </select>
+      <label className="block text-sm font-black text-slate-700 mb-1.5">{label}</label>
+      <CrmSearchSelect
+        value={form[key] as string}
+        options={options}
+        onChange={value => setForm(previous => ({ ...previous, [key]: String(value ?? "") }))}
+        placeholder="— לא נבחר —"
+        isCreatable={opts?.creatable}
+      />
+    </div>
+  );
+
+  const pillChoice = (label: string, key: "leadType" | "leadStatus", options: readonly (string | CrmOption)[]) => (
+    <div>
+      <label className="mb-2 block text-sm font-black text-slate-700">{label}</label>
+      <div className="flex flex-wrap gap-2">
+        {options.map(item => {
+          const option = typeof item === "string" ? { value: item, label: item } : item;
+          const active = form[key] === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setForm(previous => ({ ...previous, [key]: option.value }))}
+              className={`rounded-full border px-3.5 py-2 text-xs font-black transition ${
+                active
+                  ? "border-[#d9ae4c] bg-[#d9ae4c] text-black shadow-sm"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-[#d9ae4c]/70 hover:bg-amber-50"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3 backdrop-blur-sm md:p-6">
+      <div className="flex max-h-[94vh] w-full max-w-6xl flex-col overflow-hidden rounded-[28px] bg-[#f8f7f3] shadow-2xl" dir="rtl">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
+        <div className="z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 md:px-7">
           <div>
-            <h2 className="text-lg font-black text-slate-900">{initial ? "עריכת ליד" : "ליד חדש"}</h2>
-            {initial && <p className="text-xs text-slate-400 mt-0.5">#{initial.id} · {fmtDate(initial.updatedAt)}</p>}
+            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#b98b2f]">{initial ? `ליד #${initial.id}` : "רשומה חדשה"}</p>
+            <h2 className="mt-1 text-2xl font-black text-slate-950">{initial ? `עריכת ${initial.name}` : "יצירת ליד חדש"}</h2>
+            <p className="mt-1 text-sm text-slate-500">כל המידע החשוב במסך אחד. שדות ריקים יכולים להישאר ריקים.</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 transition"><X size={18} /></button>
+          <button onClick={onClose} className="rounded-full border border-slate-200 bg-white p-2.5 text-slate-500 transition hover:bg-slate-100"><X size={18} /></button>
         </div>
 
-        <div className="px-6 py-5 space-y-3">
+        <div className="overflow-y-auto p-4 md:p-6">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <SectionCard title="פרטי קשר" icon={<User size={17} />}>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {field("שם מלא *", "name")}
+                {field("טלפון ראשי *", "phone", { dir: "ltr" })}
+                {field("טלפון נוסף", "secondaryPhone", { dir: "ltr" })}
+                {field("אימייל", "email", { dir: "ltr" })}
+              </div>
+            </SectionCard>
 
-          {/* Basic */}
-          <SectionBtn id="basic" label="פרטי ליד" icon={<User size={14} className="text-[#d9ae4c]" />} />
-          {section === "basic" && (
-            <div className="space-y-3 pb-1">
-              <div className="grid grid-cols-2 gap-3">
-                {field("שם מלא *", "name", { placeholder: "ישראל ישראלי" })}
-                {field("טלפון ראשי *", "phone", { placeholder: "05X-XXXXXXX", dir: "ltr" })}
-                {field("טלפון נוסף", "secondaryPhone", { placeholder: "05X-XXXXXXX", dir: "ltr" })}
-                {field("אימייל", "email", { placeholder: "email@example.com", dir: "ltr" })}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {select("סוג ליד", "leadType", LEAD_TYPE_OPTIONS)}
-                {select("שלב תהליך", "processStage", PROCESS_STAGES)}
-                {select("סטטוס", "leadStatus", [...STATUS_OPTIONS])}
-                {field("שכונה", "neighborhood", { placeholder: "גילה, קטמונים..." })}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {select("מקור", "source", SOURCE_OPTIONS)}
+            <SectionCard title="ניהול הליד" icon={<Check size={17} />}>
+              <div className="space-y-4">
+                {pillChoice("סוג ליד", "leadType", LEAD_TYPE_OPTIONS)}
+                {pillChoice("סטטוס", "leadStatus", STATUS_OPTIONS)}
+                <div className="grid gap-3 sm:grid-cols-2">
+                {select("שלב תהליך", "processStage", PROCESS_STAGES.map(value => ({ value, label: value })))}
+                {select("מקור", "source", SOURCE_OPTIONS.map(value => ({ value, label: value })), { creatable: true })}
                 {field("קשר אחרון", "lastContact", { type: "date" })}
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-2">תגיות</label>
-                <TagSelector value={form.tags} onChange={v => setForm(p => ({ ...p, tags: v }))} />
-              </div>
-              {isAdmin && (
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5">סוכן אחראי</label>
-                  <select value={form.agentId ?? ""} onChange={e => setForm(p => ({ ...p, agentId: e.target.value ? Number(e.target.value) : null }))}
-                    className="w-full h-10 rounded-xl border border-slate-200 px-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-300"
-                  >
-                    <option value="">— ללא סוכן —</option>
-                    {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                  </select>
+                  {isAdmin && (
+                    <div>
+                      <label className="block text-sm font-black text-slate-700 mb-1.5">סוכן אחראי</label>
+                      <CrmSearchSelect
+                        value={form.agentId}
+                        options={agents.map(agent => ({ value: agent.id, label: agent.name }))}
+                        onChange={value => setForm(previous => ({ ...previous, agentId: value == null ? null : Number(value) }))}
+                        placeholder="— ללא סוכן —"
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+            </SectionCard>
+
+            {form.leadType ? (
+              <SectionCard title={`פרטי ${leadTypeLabel(form.leadType)}`} icon={<MapPin size={17} />} className="lg:col-span-2">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {["exclusive", "seller", "rental", "agreement", "buyer_and_seller"].includes(form.leadType) && field("רחוב ומספר", "propertyStreet")}
+                  {["exclusive", "seller", "rental", "agreement", "buyer_and_seller"].includes(form.leadType) && field("עיר", "propertyCity")}
+                  {["exclusive", "seller", "rental", "agreement", "buyer_and_seller"].includes(form.leadType) && select("שכונה", "propertyNeighborhood", NEIGHBORHOOD_OPTIONS, { creatable: true })}
+                  {["exclusive", "seller", "rental", "buyer_and_seller"].includes(form.leadType) && select("סוג נכס", "propertyType", PROPERTY_TYPE_OPTIONS)}
+                  {["exclusive", "seller", "rental", "buyer_and_seller"].includes(form.leadType) && select("מספר חדרים", "propertyRooms", ROOM_OPTIONS)}
+                  {form.leadType === "exclusive" && field("תחילת בלעדיות", "exclusivityStartDate", { type: "date" })}
+                  {form.leadType === "exclusive" && field("סיום בלעדיות", "exclusivityEndDate", { type: "date" })}
+                  {form.leadType === "exclusive" && field("מחיר שיווק (₪)", "marketingPrice", { type: "number", dir: "ltr" })}
+                  {form.leadType === "exclusive" && field("שם בעל הנכס", "ownerName")}
+                  {["buyer", "buyer_and_seller"].includes(form.leadType) && (
+                    <div>
+                      <label className="block text-sm font-black text-slate-700 mb-1.5">שכונות רצויות</label>
+                      <CrmMultiSearchSelect
+                        value={form.desiredNeighborhoods}
+                        options={NEIGHBORHOOD_OPTIONS}
+                        onChange={value => setForm(previous => ({ ...previous, desiredNeighborhoods: value }))}
+                        isCreatable
+                      />
+                    </div>
+                  )}
+                  {["buyer", "buyer_and_seller"].includes(form.leadType) && field("תקציב מקסימלי (₪)", "budgetMax", { type: "number", dir: "ltr" })}
+                  {["buyer", "buyer_and_seller"].includes(form.leadType) && select("מספר חדרים רצוי", "desiredRooms", ROOM_OPTIONS)}
+                  {["buyer", "buyer_and_seller"].includes(form.leadType) && select("סוג נכס רצוי", "desiredPropertyType", PROPERTY_TYPE_OPTIONS)}
+                  {["seller", "buyer_and_seller"].includes(form.leadType) && field("מחיר מבוקש (₪)", "askingPrice", { type: "number", dir: "ltr" })}
+                  {form.leadType === "rental" && field("מחיר שכירות (₪)", "rentalPrice", { type: "number", dir: "ltr" })}
+                  {form.leadType === "agreement" && field("תאריך עסקה", "dealDate", { type: "date" })}
+                  {form.leadType === "agreement" && field("מחיר סופי (₪)", "finalPrice", { type: "number", dir: "ltr" })}
+                  {form.leadType === "past_client" && field("תאריך עסקה אחרונה", "lastTransactionDate", { type: "date" })}
+                </div>
+              </SectionCard>
+            ) : null}
+
+            <SectionCard title="הערות עבודה" icon={<Pencil size={17} />} className="lg:col-span-2">
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">הערות</label>
-                <textarea value={form.notes} onChange={f("notes")} rows={3}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-300"
-                  placeholder="פרטים נוספים..."
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Budget */}
-          <SectionBtn id="budget" label="תקציב ופיננסים" icon={<span className="text-[#d9ae4c] font-black text-xs leading-none">₪</span>} />
-          {section === "budget" && (
-            <div className="grid grid-cols-2 gap-3 pb-1">
-              {field("תקציב מינימום (₪)", "budgetMin", { type: "number", placeholder: "1500000", dir: "ltr" })}
-              {field("תקציב מקסימום (₪)", "budgetMax", { type: "number", placeholder: "2500000", dir: "ltr" })}
-              <div className="col-span-2">{field("הערת תקציב", "desiredBudget", { placeholder: "גמיש, ₪1.8M ל״מ" })}</div>
-            </div>
-          )}
-
-          {/* Property */}
-          <SectionBtn id="property" label="פרטי נכס" icon={<MapPin size={14} className="text-[#d9ae4c]" />} />
-          {section === "property" && (
-            <div className="grid grid-cols-2 gap-3 pb-1">
-              {field("שכונת הנכס", "propertyNeighborhood", { placeholder: "גילה, מלחה..." })}
-              {field("רחוב", "propertyStreet", { placeholder: "רח׳ הדר 5" })}
-              {field("מספר חדרים", "propertyRooms", { placeholder: "4, 4.5..." })}
-              {field("סוג נכס", "propertyType", { placeholder: "דירה, קוטג׳..." })}
-              <div className="col-span-2">{field("מחיר נכס נוכחי (₪)", "currentPropertyPrice", { type: "number", dir: "ltr" })}</div>
-            </div>
-          )}
-
-          {/* Meeting */}
-          <SectionBtn id="meeting" label="פגישה ותיאום" icon={<Calendar size={14} className="text-[#d9ae4c]" />} />
-          {section === "meeting" && (
-            <div className="space-y-3 pb-1">
-              <div className="grid grid-cols-2 gap-3">
-                {field("תאריך פגישה", "meetingDate", { type: "date" })}
-                {field("שעת פגישה", "meetingTime", { type: "time" })}
-                <div className="col-span-2">{field("מיקום פגישה", "meetingLocation", { placeholder: "כתובת / Zoom / טלפון" })}</div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">הערות פגישה</label>
-                <textarea value={form.meetingNotes} onChange={f("meetingNotes")} rows={3}
-                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-300"
-                  placeholder="מה דובר, מה מתוכנן..."
-                />
-              </div>
-            </div>
-          )}
+                  <label className="block text-sm font-black text-slate-700 mb-1.5">הערות כלליות</label>
+                  <textarea value={form.notes} onChange={f("notes")} rows={4}
+                    className="crm-field w-full resize-none"
+                  />
+                </div>
+            </SectionCard>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="flex gap-2 px-6 py-4 border-t border-slate-100 justify-end sticky bottom-0 bg-white">
-          <Button variant="outline" onClick={onClose} className="rounded-full font-bold">ביטול</Button>
+        <div className="flex items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-4 md:px-7">
+          <p className="hidden text-xs font-bold text-slate-400 sm:block">השדות נשמרים ישירות ברשומת הליד ובאוטומציות המחוברות.</p>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} className="rounded-full font-bold">ביטול</Button>
           <Button
-            disabled={!form.name.trim() || !form.phone.trim() || isSaving}
-            onClick={() => onSave(form)}
-            className="rounded-full bg-[#d9ae4c] hover:bg-[#c99a31] text-white font-black"
+            disabled={isSaving}
+            onClick={() => {
+              if (!form.name.trim() || !form.phone.trim()) {
+                toast.error("שם מלא וטלפון ראשי הם שדות חובה.");
+                return;
+              }
+              onSave(form);
+            }}
+              className="rounded-full bg-[#d9ae4c] px-6 font-black text-black hover:bg-[#c99a31]"
           >
             <Check size={15} />
             {isSaving ? "שומר..." : initial ? "שמור שינויים" : "הוסף ליד"}
           </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Lead Detail Side Panel ───────────────────────────────────────────────────
-
-function LeadPanel({ lead, agentName, onEdit, onClose }: {
-  lead: Lead; agentName: string; onEdit: () => void; onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-40 flex" dir="rtl">
-      <div className="flex-1" style={{ background: "rgba(0,0,0,0.3)" }} onClick={onClose} />
-      <div className="w-full max-w-[420px] bg-white shadow-2xl flex flex-col overflow-y-auto">
-
-        {/* Header */}
-        <div className="px-5 py-4 border-b" style={{ background: "#0d0d0d" }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#d9ae4c]">פרטי ליד #{lead.id}</p>
-              <h3 className="text-xl font-black text-white mt-0.5">{lead.name}</h3>
-            </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg text-white/40 hover:bg-white/10 hover:text-white transition">
-              <X size={18} />
-            </button>
           </div>
-          {/* Status + type row */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            <StatusBadge status={lead.leadStatus} />
-            <TypeBadge type={lead.leadType} />
-            {lead.processStage && (
-              <span className="text-xs font-bold bg-white/10 text-white/80 px-2.5 py-1 rounded-full">{lead.processStage}</span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex-1 p-5 space-y-4">
-
-          {/* Contact */}
-          <div className="rounded-2xl bg-slate-50 p-4 space-y-2.5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">יצירת קשר</p>
-            <a href={`tel:${lead.phone}`} className="flex items-center gap-2 text-[#d9ae4c] font-black hover:text-[#b98b2f] transition text-base" dir="ltr">
-              <Phone size={15} />
-              {lead.phone}
-            </a>
-            {lead.secondaryPhone && (
-              <a href={`tel:${lead.secondaryPhone}`} className="flex items-center gap-2 text-slate-500 font-medium hover:text-[#d9ae4c] transition text-sm" dir="ltr">
-                <Phone size={13} />
-                {lead.secondaryPhone}
-              </a>
-            )}
-            {lead.email && <p className="text-sm text-slate-600">{lead.email}</p>}
-            {lead.neighborhood && (
-              <p className="flex items-center gap-1.5 text-sm text-slate-600">
-                <MapPin size={13} className="text-slate-400 shrink-0" />{lead.neighborhood}
-              </p>
-            )}
-          </div>
-
-          {/* Budget */}
-          {(lead.budgetMin || lead.budgetMax || lead.desiredBudget) && (
-            <div className="rounded-2xl bg-[#fffdf5] border border-[#f3dfb0] p-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-[#b98b2f] mb-2">תקציב</p>
-              {fmtBudget(lead.budgetMin, lead.budgetMax) && (
-                <p className="text-2xl font-black text-[#d9ae4c]">{fmtBudget(lead.budgetMin, lead.budgetMax)}</p>
-              )}
-              {lead.desiredBudget && <p className="text-sm text-slate-600 mt-1">{lead.desiredBudget}</p>}
-            </div>
-          )}
-
-          {/* Property */}
-          {(lead.propertyNeighborhood || lead.propertyStreet || lead.propertyRooms || lead.currentPropertyPrice) && (
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">פרטי נכס</p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                {lead.propertyNeighborhood && <div><p className="text-xs text-slate-400">שכונה</p><p className="font-bold">{lead.propertyNeighborhood}</p></div>}
-                {lead.propertyStreet && <div><p className="text-xs text-slate-400">רחוב</p><p className="font-bold">{lead.propertyStreet}</p></div>}
-                {lead.propertyRooms && <div><p className="text-xs text-slate-400">חדרים</p><p className="font-bold">{lead.propertyRooms}</p></div>}
-                {lead.propertyType && <div><p className="text-xs text-slate-400">סוג</p><p className="font-bold">{lead.propertyType}</p></div>}
-              </div>
-              {lead.currentPropertyPrice && (
-                <p className="mt-2 text-xl font-black text-[#d9ae4c]">₪{lead.currentPropertyPrice.toLocaleString("he-IL")}</p>
-              )}
-            </div>
-          )}
-
-          {/* Meeting */}
-          {(lead.meetingDate || lead.meetingNotes) && (
-            <div className="rounded-2xl bg-blue-50 border border-blue-100 p-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-2">פגישה</p>
-              {lead.meetingDate && (
-                <div className="flex items-center gap-2 font-bold text-blue-700 text-sm">
-                  <Calendar size={13} />
-                  {fmtDate(lead.meetingDate)}{lead.meetingTime && ` · ${lead.meetingTime}`}
-                </div>
-              )}
-              {lead.meetingLocation && <p className="text-sm text-blue-600 mt-1 flex items-center gap-1.5"><MapPin size={12} />{lead.meetingLocation}</p>}
-              {lead.meetingNotes && <p className="text-sm text-slate-600 mt-2">{lead.meetingNotes}</p>}
-            </div>
-          )}
-
-          {/* Tags */}
-          {lead.tags && (
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">תגיות</p>
-              <div className="flex flex-wrap gap-1.5">
-                {lead.tags.split(",").map(t => t.trim()).filter(Boolean).map(tag => (
-                  <span key={tag} className={`px-2.5 py-1 rounded-full text-xs font-bold ${TAG_STYLE[tag] ?? "bg-slate-100 text-slate-600"}`}>{tag}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Notes */}
-          {lead.notes && (
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">הערות</p>
-              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{lead.notes}</p>
-            </div>
-          )}
-
-          {/* Meta */}
-          <div className="text-xs text-slate-400 space-y-1 pt-2 border-t border-slate-100">
-            {lead.source && <p>מקור: <span className="font-bold text-slate-600">{lead.source}</span></p>}
-            {lead.lastContact && <p>קשר אחרון: <span className="font-bold text-slate-600">{fmtDate(lead.lastContact)}</span></p>}
-            <p>סוכן: <span className="font-bold text-slate-600">{agentName}</span></p>
-            <p>נוצר: <span className="font-bold text-slate-600">{fmtDate(lead.createdAt)}</span></p>
-          </div>
-        </div>
-
-        <div className="px-5 py-4 border-t bg-white">
-          <Button onClick={onEdit} className="w-full rounded-full bg-[#d9ae4c] hover:bg-[#c99a31] text-white font-black">
-            <Pencil size={14} />
-            עריכת ליד
-          </Button>
         </div>
       </div>
     </div>
@@ -513,7 +450,17 @@ function LeadPanel({ lead, agentName, onEdit, onClose }: {
 
 // ─── Main CRM Page ────────────────────────────────────────────────────────────
 
-export default function CrmPage() {
+type CrmPageProps = {
+  initialTag?: string;
+  title?: string;
+  subtitle?: string;
+};
+
+export default function CrmPage({
+  initialTag = "",
+  title = "ניהול לידים",
+  subtitle,
+}: CrmPageProps = {}) {
   const { data: agent } = trpc.agent.me.useQuery();
   const isAdmin = agent?.accountRole === "admin";
 
@@ -522,10 +469,9 @@ export default function CrmPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterSource, setFilterSource] = useState("");
-  const [filterTag, setFilterTag] = useState("");
+  const [filterTag, setFilterTag] = useState(initialTag);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const [viewingLead, setViewingLead] = useState<Lead | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const agentsQuery = trpc.admin.listStaff.useQuery(undefined, { enabled: !!isAdmin });
@@ -549,10 +495,11 @@ export default function CrmPage() {
   });
 
   function handleSave(form: FormState) {
+    const neighborhood = form.propertyNeighborhood || null;
     const p = {
       name: form.name, phone: form.phone, secondaryPhone: form.secondaryPhone || null,
-      email: form.email || null, neighborhood: form.neighborhood || null,
-      notes: form.notes || null, tags: form.tags, leadStatus: form.leadStatus,
+      email: form.email || null, neighborhood,
+      notes: cleanImportedNotes(form.notes) || null, tags: syncLeadTypeTag(form.tags, form.leadType), leadStatus: form.leadStatus,
       source: form.source || null, agentId: form.agentId,
       leadType: form.leadType || null,
       budgetMin: form.budgetMin ? Number(form.budgetMin) : null,
@@ -561,16 +508,29 @@ export default function CrmPage() {
       lastContact: form.lastContact || null, meetingDate: form.meetingDate || null,
       meetingTime: form.meetingTime || null, meetingNotes: form.meetingNotes || null,
       meetingLocation: form.meetingLocation || null,
-      propertyNeighborhood: form.propertyNeighborhood || null,
-      propertyStreet: form.propertyStreet || null, propertyRooms: form.propertyRooms || null,
+      propertyNeighborhood: neighborhood,
+      propertyStreet: form.propertyStreet || null, propertyCity: form.propertyCity || null,
+      propertyRooms: form.propertyRooms || null,
       propertyType: form.propertyType || null,
       currentPropertyPrice: form.currentPropertyPrice ? Number(form.currentPropertyPrice) : null,
+      exclusivityStartDate: form.exclusivityStartDate || null,
+      exclusivityEndDate: form.exclusivityEndDate || null,
+      marketingPrice: form.marketingPrice ? Number(form.marketingPrice) : null,
+      ownerName: form.ownerName || null,
+      desiredNeighborhoods: form.desiredNeighborhoods,
+      desiredRooms: form.desiredRooms || null,
+      desiredPropertyType: form.desiredPropertyType || null,
+      askingPrice: form.askingPrice ? Number(form.askingPrice) : null,
+      rentalPrice: form.rentalPrice ? Number(form.rentalPrice) : null,
+      dealDate: form.dealDate || null,
+      finalPrice: form.finalPrice ? Number(form.finalPrice) : null,
+      lastTransactionDate: form.lastTransactionDate || null,
     };
     if (editingLead) updateMutation.mutate({ id: editingLead.id, ...p });
     else createMutation.mutate(p);
   }
 
-  function openEdit(lead: Lead) { setEditingLead(lead); setViewingLead(null); setModalOpen(true); }
+  function openEdit(lead: Lead) { setEditingLead(lead); setModalOpen(true); }
 
   const agentName = (id: number | null) => {
     if (!id) return "—";
@@ -579,9 +539,9 @@ export default function CrmPage() {
 
   const filtered = leads.filter(l => {
     if (filterStatus && l.leadStatus !== filterStatus) return false;
-    if (filterType && l.leadType !== filterType) return false;
+    if (filterType && !leadMatchesType(l, filterType)) return false;
     if (filterSource && l.source !== filterSource) return false;
-    if (filterTag && !l.tags.includes(filterTag)) return false;
+    if (filterTag && !leadMatchesTag(l, filterTag)) return false;
     return true;
   });
 
@@ -595,20 +555,25 @@ export default function CrmPage() {
   // Unique sources for filter
   const sourceSet = Array.from(new Set(leads.map(l => l.source).filter(Boolean))) as string[];
 
+  const resetFilters = () => {
+    setFilterStatus("");
+    setFilterType("");
+    setFilterSource("");
+    setFilterTag(initialTag);
+  };
+
+  const hasActiveFilters = filterStatus || filterType || filterSource || filterTag !== initialTag;
+
   return (
-    <CrmLayout title="ניהול לידים" subtitle={isAdmin ? "כל לידי הצוות" : "הלידים שלי"}>
+    <CrmLayout title={title} subtitle={subtitle ?? (isAdmin ? "כל לידי הצוות" : "הלידים שלי")}>
       <div className="min-h-screen bg-[#f5f3ee] px-3 py-5 md:px-6 md:py-7" dir="rtl">
         <div className="mx-auto max-w-7xl">
 
-          {/* ── Header ─────────────────────────────────────────── */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-5">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-widest text-[#d9ae4c]">CRM מערכת</p>
-              <h1 className="mt-1 text-2xl font-black text-slate-900">ניהול לידים</h1>
-              <p className="mt-0.5 text-sm text-slate-500">
-                {isAdmin ? "כל לידי הצוות" : "הלידים שלי"} — {stats.total} רשומות
-              </p>
-            </div>
+          {/* ── Actions ────────────────────────────────────────── */}
+          <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-white/70 bg-white/80 p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-bold text-slate-500">
+              {stats.total} רשומות · לחיצה על ליד פותחת עריכה ישירה
+            </p>
             <div className="flex gap-2 flex-wrap">
               <Button
                 variant="outline"
@@ -654,28 +619,26 @@ export default function CrmPage() {
                 />
               </div>
               {[
-                { val: filterStatus, set: setFilterStatus, opts: STATUS_OPTIONS, placeholder: "סטטוס" },
-                { val: filterType,   set: setFilterType,   opts: LEAD_TYPE_OPTIONS, placeholder: "סוג ליד" },
-                { val: filterTag,    set: setFilterTag,    opts: ALL_TAGS, placeholder: "תגית" },
-                ...(sourceSet.length ? [{ val: filterSource, set: setFilterSource, opts: sourceSet, placeholder: "מקור" }] : []),
+                { val: filterStatus, set: setFilterStatus, opts: STATUS_OPTIONS.map(value => ({ value, label: value })), placeholder: "סטטוס" },
+                { val: filterType, set: setFilterType, opts: LEAD_TYPE_OPTIONS, placeholder: "סוג ליד" },
+                ...(sourceSet.length ? [{ val: filterSource, set: setFilterSource, opts: sourceSet.map(value => ({ value, label: value })), placeholder: "מקור" }] : []),
               ].map((f, i) => (
-                <select key={i} value={f.val} onChange={e => f.set(e.target.value)}
-                  className="h-9 rounded-xl border border-slate-200 px-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-300"
-                >
-                  <option value="">{f.placeholder}</option>
-                  {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
-                </select>
+                <div key={i} className="min-w-32">
+                  <CrmSearchSelect value={f.val} onChange={value => f.set(String(value ?? ""))} options={f.opts} placeholder={f.placeholder} />
+                </div>
               ))}
               {isAdmin && (
-                <select value={filterAgentId ?? ""} onChange={e => setFilterAgentId(e.target.value ? Number(e.target.value) : undefined)}
-                  className="h-9 rounded-xl border border-slate-200 px-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-300"
-                >
-                  <option value="">כל הסוכנים</option>
-                  {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </select>
+                <div className="min-w-36">
+                  <CrmSearchSelect
+                    value={filterAgentId}
+                    onChange={value => setFilterAgentId(value == null ? undefined : Number(value))}
+                    options={agents.map(agent => ({ value: agent.id, label: agent.name }))}
+                    placeholder="כל הסוכנים"
+                  />
+                </div>
               )}
-              {(filterStatus || filterType || filterSource || filterTag) && (
-                <button onClick={() => { setFilterStatus(""); setFilterType(""); setFilterSource(""); setFilterTag(""); }}
+              {hasActiveFilters && (
+                <button onClick={resetFilters}
                   className="h-9 px-3 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 border border-slate-200 transition"
                 >
                   נקה
@@ -706,7 +669,7 @@ export default function CrmPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-100">
-                        {["שם ופרטים","טלפון","סוג / שלב","תקציב","סטטוס","מקור","תאריך","סוכן","פעולות"].map((h,i) => (
+                        {["שם, רחוב ושכונה","טלפון","סוג / שלב","תקציב","סטטוס","מקור","תאריך","סוכן","פעולות"].map((h,i) => (
                           <th key={i} className={`text-right px-4 py-3 font-black text-slate-400 text-[11px] uppercase tracking-wide ${h === "פעולות" ? "w-24 text-center" : ""}`}>{h}</th>
                         ))}
                       </tr>
@@ -715,13 +678,17 @@ export default function CrmPage() {
                       {filtered.map(lead => (
                         <tr key={lead.id}
                           className="hover:bg-[#fffdf8] transition-colors group cursor-pointer"
-                          onClick={() => setViewingLead(lead)}
+                          onClick={() => openEdit(lead)}
                         >
                           {/* Name + address */}
                           <td className="px-4 py-3">
                             <p className="font-black text-slate-900 leading-tight">{lead.name}</p>
-                            <p className="text-xs text-slate-400 mt-0.5">{lead.neighborhood || lead.propertyNeighborhood || ""}</p>
-                            <TagPills tags={lead.tags} />
+                            {leadLocation(lead) && (
+                              <p className="mt-1 flex items-center gap-1 text-xs font-bold text-slate-600">
+                                <MapPin size={11} className="shrink-0 text-[#d9ae4c]" />
+                                {leadLocation(lead)}
+                              </p>
+                            )}
                           </td>
 
                           {/* Phone */}
@@ -809,7 +776,7 @@ export default function CrmPage() {
                 {/* Mobile cards */}
                 <div className="md:hidden divide-y divide-slate-50">
                   {filtered.map(lead => (
-                    <div key={lead.id} className="p-4 hover:bg-[#fffdf8] transition" onClick={() => setViewingLead(lead)}>
+                    <div key={lead.id} className="p-4 hover:bg-[#fffdf8] transition" onClick={() => openEdit(lead)}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -821,8 +788,11 @@ export default function CrmPage() {
                           >
                             <Phone size={11} />{lead.phone}
                           </a>
-                          {lead.neighborhood && (
-                            <p className="text-xs text-slate-400 mt-0.5">{lead.neighborhood}</p>
+                          {leadLocation(lead) && (
+                            <p className="mt-1 flex items-center gap-1 text-xs font-bold text-slate-600">
+                              <MapPin size={11} className="shrink-0 text-[#d9ae4c]" />
+                              {leadLocation(lead)}
+                            </p>
                           )}
                         </div>
                         <div className="flex flex-col items-end gap-1.5">
@@ -842,7 +812,6 @@ export default function CrmPage() {
                           <span className="text-xs font-black text-[#d9ae4c]">{fmtBudget(lead.budgetMin, lead.budgetMax)}</span>
                         )}
                         {lead.processStage && <span className="text-xs text-slate-500">{lead.processStage}</span>}
-                        <TagPills tags={lead.tags} />
                       </div>
                     </div>
                   ))}
@@ -856,16 +825,6 @@ export default function CrmPage() {
           )}
         </div>
       </div>
-
-      {/* Detail panel */}
-      {viewingLead && !modalOpen && (
-        <LeadPanel
-          lead={viewingLead}
-          agentName={agentName(viewingLead.agentId)}
-          onEdit={() => openEdit(viewingLead)}
-          onClose={() => setViewingLead(null)}
-        />
-      )}
 
       {/* Modal */}
       {modalOpen && (

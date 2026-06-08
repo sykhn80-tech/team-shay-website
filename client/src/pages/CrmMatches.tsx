@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { leadLabel, leadLocation } from "@/lib/lead-display";
+import { CrmSearchSelect } from "@/components/CrmSearchSelect";
 
 export default function CrmMatches() {
   const utils = trpc.useUtils();
@@ -33,6 +35,11 @@ export default function CrmMatches() {
     });
   }, [propertiesQuery.data, selectedLead]);
 
+  const leadsById = useMemo(
+    () => new Map((leadsQuery.data ?? []).map((lead) => [lead.id, lead])),
+    [leadsQuery.data],
+  );
+
   const createMutation = trpc.crm2.matches.create.useMutation({
     onSuccess: async () => {
       await utils.crm2.matches.list.invalidate();
@@ -54,21 +61,8 @@ export default function CrmMatches() {
     <CrmLayout title="התאמות נכסים" subtitle="בחרו ליד, סמנו נכסים מתאימים ושלחו ללקוח ישירות ב-WhatsApp.">
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
         <label className="text-sm font-black text-slate-700">בחר ליד</label>
-        <select
-          value={leadId ?? ""}
-          onChange={(event) => {
-            const value = Number(event.target.value);
-            setLeadId(Number.isFinite(value) && value > 0 ? value : null);
-          }}
-          className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3"
-        >
-          <option value="">בחרו ליד</option>
-          {(leadsQuery.data ?? []).map((lead) => (
-            <option key={lead.id} value={lead.id}>
-              {lead.name} · {lead.phone} · {lead.budgetMin || "-"}-{lead.budgetMax || "-"}
-            </option>
-          ))}
-        </select>
+        <CrmSearchSelect value={leadId} onChange={value => setLeadId(value == null ? null : Number(value))} placeholder="בחרו ליד"
+          className="mt-2" options={(leadsQuery.data ?? []).map(lead => ({ value: lead.id, label: `${leadLabel(lead)} · ${lead.phone}` }))} />
       </section>
 
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
@@ -130,9 +124,11 @@ export default function CrmMatches() {
         <div className="mt-4 space-y-3">
           {(matchesQuery.data ?? []).map((match) => (
             <div key={match.id} className="rounded-xl border border-slate-200 bg-[#faf8f1] p-3">
-              <p className="text-sm font-black text-slate-800">
-                ליד #{match.leadId} ↔ נכס #{match.propertyId}
-              </p>
+              <p className="text-sm font-black text-slate-800">{leadsById.get(match.leadId)?.name ?? `ליד #${match.leadId}`}</p>
+              {leadLocation(leadsById.get(match.leadId)) ? (
+                <p className="mt-1 text-xs font-bold text-[#b98b2f]">{leadLocation(leadsById.get(match.leadId))}</p>
+              ) : null}
+              <p className="mt-1 text-xs text-slate-600">נכס #{match.propertyId}</p>
               <p className="mt-1 text-xs text-slate-600">סטטוס: {match.status}</p>
               <div className="mt-2">
                 <Button

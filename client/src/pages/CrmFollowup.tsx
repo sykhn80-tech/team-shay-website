@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { leadLabel, leadLocation } from "@/lib/lead-display";
+import { CrmSearchSelect } from "@/components/CrmSearchSelect";
 
 const typeOptions = [
   { value: "call", label: "שיחה" },
@@ -53,26 +55,18 @@ export default function CrmFollowup() {
     return Array.from(map.entries());
   }, [followupsQuery.data]);
 
+  const leadsById = useMemo(
+    () => new Map((leadsQuery.data ?? []).map((lead) => [lead.id, lead])),
+    [leadsQuery.data],
+  );
+
   return (
     <CrmLayout title="פולואפ" subtitle="ניהול פולואפים שבועי לפי לידים: שיחות, וואטסאפ, אימייל ופגישות.">
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-lg font-black text-slate-950">+ פולואפ חדש</h2>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <select
-            value={leadId ?? ""}
-            onChange={(event) => {
-              const value = Number(event.target.value);
-              setLeadId(Number.isFinite(value) && value > 0 ? value : null);
-            }}
-            className="h-11 rounded-xl border border-slate-200 px-3"
-          >
-            <option value="">בחר ליד</option>
-            {(leadsQuery.data ?? []).map((lead) => (
-              <option key={lead.id} value={lead.id}>
-                {lead.name}
-              </option>
-            ))}
-          </select>
+          <CrmSearchSelect value={leadId} onChange={value => setLeadId(value == null ? null : Number(value))} placeholder="בחר ליד"
+            options={(leadsQuery.data ?? []).map(lead => ({ value: lead.id, label: leadLabel(lead) }))} />
 
           <input
             type="datetime-local"
@@ -81,17 +75,8 @@ export default function CrmFollowup() {
             className="h-11 rounded-xl border border-slate-200 px-3"
           />
 
-          <select
-            value={type}
-            onChange={(event) => setType(event.target.value as (typeof typeOptions)[number]["value"])}
-            className="h-11 rounded-xl border border-slate-200 px-3"
-          >
-            {typeOptions.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+          <CrmSearchSelect value={type} onChange={value => setType((value ?? "call") as (typeof typeOptions)[number]["value"])}
+            options={[...typeOptions]} isClearable={false} />
 
           <Button
             onClick={() => {
@@ -131,9 +116,11 @@ export default function CrmFollowup() {
               <div className="mt-2 space-y-2">
                 {items?.map((item) => (
                   <div key={item.id} className="rounded-xl border border-slate-200 bg-[#faf8f1] p-3">
-                    <p className="text-sm font-black text-slate-800">
-                      ליד #{item.leadId} · {item.type}
-                    </p>
+                    <p className="text-sm font-black text-slate-800">{leadsById.get(item.leadId)?.name ?? `ליד #${item.leadId}`}</p>
+                    {leadLocation(leadsById.get(item.leadId)) ? (
+                      <p className="mt-1 text-xs font-bold text-[#b98b2f]">{leadLocation(leadsById.get(item.leadId))}</p>
+                    ) : null}
+                    <p className="mt-1 text-xs text-slate-500">{item.type}</p>
                     {item.note ? <p className="mt-1 text-sm text-slate-600">{item.note}</p> : null}
                     <div className="mt-2 flex gap-2">
                       <Button

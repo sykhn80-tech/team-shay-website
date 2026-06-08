@@ -35,7 +35,11 @@ export default function AgentLayout({ children }: Props) {
     return location === href || location.startsWith(href + "/");
   }
 
-  const crmActive = location === "/agent-dashboard/crm" || location.startsWith("/agent-dashboard/crm/");
+  const crmActive =
+    location === "/crm" ||
+    location.startsWith("/crm/") ||
+    location === "/agent-dashboard/crm" ||
+    location.startsWith("/agent-dashboard/crm/");
   const navItems = useMemo(() => {
     const overviewHref = agent?.accountRole === "admin" ? "/admin" : "/agent-dashboard";
     return [
@@ -80,7 +84,7 @@ export default function AgentLayout({ children }: Props) {
       </div>
 
       {/* CRM — gold block */}
-      <Link href="/agent-dashboard/crm" onClick={onNav}>
+      <Link href="/crm" onClick={onNav}>
         <div className={`mt-4 rounded-2xl p-3.5 transition-all cursor-pointer border ${
           crmActive
             ? "bg-[#d9ae4c] border-[#d9ae4c] shadow-lg shadow-[#d9ae4c]/20"
@@ -153,7 +157,7 @@ export default function AgentLayout({ children }: Props) {
           className="h-14 w-auto object-contain"
           style={{ filter: "brightness(10)" }}
         />
-        <Link href="/agent-dashboard/crm">
+        <Link href="/crm">
           <span className="flex items-center gap-1.5 rounded-xl bg-[#d9ae4c] px-3 py-1.5 text-xs font-black text-black shadow-md">
             <Users className="size-3.5" />
             CRM

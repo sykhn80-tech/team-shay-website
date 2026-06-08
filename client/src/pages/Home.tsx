@@ -849,12 +849,12 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="properties" className="bg-white px-4 py-20 md:px-6 md:py-24">
+        <section id="properties" className="bg-[#1A1A1A] px-4 py-20 text-white md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-lg font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c] md:text-2xl">מחפשים נכס ? הגעתם למקום הנכון</p>
-                <h2 className="mt-4 text-4xl font-extrabold leading-tight md:text-[3.35rem]">הנכסים המובחרים שלנו</h2>
+                <h2 className="mt-4 text-4xl font-extrabold leading-tight text-white md:text-[3.35rem]">הנכסים המובחרים שלנו</h2>
               </div>
               <Link href="/properties" className="inline-flex items-center gap-2 text-base font-black text-[#d9ae4c]">
                 לכל הנכסים
@@ -882,7 +882,7 @@ export default function Home() {
                   <CarouselContent className="-ml-3 md:-ml-5">
                     {featuredPropertyTrack.map((property) => (
                       <CarouselItem key={property.id} className="basis-[84%] pl-3 sm:basis-[58%] md:pl-5 lg:basis-1/3">
-                        <article className="h-full overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_36px_rgba(15,23,42,0.06)]">
+                        <article className="group h-full overflow-hidden rounded-[28px] border border-[#D4AF37]/35 bg-white shadow-[0_18px_36px_rgba(0,0,0,0.24)] transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:shadow-[0_24px_48px_rgba(212,175,55,0.2)]">
                           <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100">
                             <img
                               src={property.image}
@@ -910,7 +910,7 @@ export default function Home() {
                                 <span>{property.sqm} מ״ר</span>
                               </div>
                             </div>
-                            <Link href={`/properties/${property.id}`} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-[#d9ae4c]" aria-label={`פרטים נוספים ${property.title}`}>
+                            <Link href={`/properties/${property.id}`} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#1A1A1A] px-4 py-3 text-sm font-black text-[#D4AF37] transition hover:bg-[#D4AF37] hover:text-black" aria-label={`פרטים נוספים ${property.title}`}>
                               פרטים נוספים
                               <ChevronLeft className="size-4" />
                             </Link>

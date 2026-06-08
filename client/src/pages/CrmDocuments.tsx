@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { leadLabel } from "@/lib/lead-display";
+import { CrmSearchSelect } from "@/components/CrmSearchSelect";
 
 async function fileToBase64(file: File) {
   return new Promise<string>((resolve, reject) => {
@@ -16,7 +18,9 @@ async function fileToBase64(file: File) {
 export default function CrmDocuments() {
   const utils = trpc.useUtils();
   const documentsQuery = trpc.crm2.documents.list.useQuery();
+  const leadsQuery = trpc.crm.list.useQuery({ search: undefined, agentId: undefined });
   const [search, setSearch] = useState("");
+  const [leadId, setLeadId] = useState<number | null>(null);
 
   const uploadMutation = trpc.crm2.documents.upload.useMutation({
     onSuccess: async () => {
@@ -37,8 +41,11 @@ export default function CrmDocuments() {
   const filteredDocs = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return documentsQuery.data ?? [];
-    return (documentsQuery.data ?? []).filter((item) => item.name.toLowerCase().includes(query));
-  }, [documentsQuery.data, search]);
+    return (documentsQuery.data ?? []).filter((item) => {
+      const lead = (leadsQuery.data ?? []).find((candidate) => candidate.id === item.leadId);
+      return `${item.name} ${leadLabel(lead)}`.toLowerCase().includes(query);
+    });
+  }, [documentsQuery.data, leadsQuery.data, search]);
 
   return (
     <CrmLayout title="מסמכים" subtitle="ניהול מסמכי לקוחות ונכסים עם אחסון ב-Vercel Blob.">
@@ -50,6 +57,8 @@ export default function CrmDocuments() {
             placeholder="חיפוש מסמך..."
             className="h-11 flex-1 rounded-xl border border-slate-200 px-3"
           />
+          <CrmSearchSelect value={leadId} onChange={value => setLeadId(value == null ? null : Number(value))} placeholder="ללא שיוך ללקוח"
+            className="min-w-56" options={(leadsQuery.data ?? []).map(lead => ({ value: lead.id, label: leadLabel(lead) }))} />
 
           <label className="inline-flex h-11 cursor-pointer items-center justify-center rounded-xl bg-[#d9ae4c] px-4 text-sm font-black text-black hover:bg-[#c99a31]">
             + העלה מסמך
@@ -66,7 +75,7 @@ export default function CrmDocuments() {
                     type: "other",
                     mimeType: file.type || "application/octet-stream",
                     dataBase64,
-                    leadId: null,
+                    leadId,
                     propertyId: null,
                     notes: null,
                   });
@@ -87,6 +96,7 @@ export default function CrmDocuments() {
           {filteredDocs.map((document) => (
             <div key={document.id} className="rounded-xl border border-slate-200 bg-[#faf8f1] p-3">
               <p className="text-sm font-black text-slate-900">{document.name}</p>
+              {document.leadId ? <p className="mt-1 text-xs font-bold text-[#b98b2f]">{leadLabel((leadsQuery.data ?? []).find((lead) => lead.id === document.leadId))}</p> : null}
               <p className="mt-1 text-xs text-slate-500">{new Date(document.uploadedAt).toLocaleDateString("he-IL")} · {document.type}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <a href={document.url} target="_blank" rel="noreferrer">

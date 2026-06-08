@@ -3,17 +3,21 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { toast } from "sonner";
+import { leadLabel } from "@/lib/lead-display";
+import { CrmSearchSelect } from "@/components/CrmSearchSelect";
 
 export default function CrmFinance() {
   const utils = trpc.useUtils();
   const entriesQuery = trpc.crm2.finance.list.useQuery();
   const summaryQuery = trpc.crm2.finance.summary.useQuery();
+  const leadsQuery = trpc.crm.list.useQuery({ search: undefined, agentId: undefined });
 
   const [type, setType] = useState<"income" | "expense">("income");
   const [category, setCategory] = useState("עמלה");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState("");
+  const [leadId, setLeadId] = useState<number | null>(null);
 
   const createMutation = trpc.crm2.finance.create.useMutation({
     onSuccess: async () => {
@@ -23,6 +27,7 @@ export default function CrmFinance() {
       ]);
       setAmount("");
       setDescription("");
+      setLeadId(null);
       toast.success("רשומה נשמרה.");
     },
     onError: (error) => toast.error(error.message),
@@ -50,14 +55,14 @@ export default function CrmFinance() {
 
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-xl font-black text-slate-950">+ הוסף רשומה</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <select value={type} onChange={(event) => setType(event.target.value as "income" | "expense")} className="h-11 rounded-xl border border-slate-200 px-3">
-            <option value="income">הכנסה</option>
-            <option value="expense">הוצאה</option>
-          </select>
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+          <CrmSearchSelect value={type} onChange={value => setType((value ?? "income") as "income" | "expense")} isClearable={false}
+            options={[{ value: "income", label: "הכנסה" }, { value: "expense", label: "הוצאה" }]} />
           <input value={category} onChange={(event) => setCategory(event.target.value)} className="h-11 rounded-xl border border-slate-200 px-3" />
           <input value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="סכום" className="h-11 rounded-xl border border-slate-200 px-3" />
           <input type="date" value={date} onChange={(event) => setDate(event.target.value)} className="h-11 rounded-xl border border-slate-200 px-3" />
+          <CrmSearchSelect value={leadId} onChange={value => setLeadId(value == null ? null : Number(value))} placeholder="ללא שיוך ללקוח"
+            options={(leadsQuery.data ?? []).map(lead => ({ value: lead.id, label: leadLabel(lead) }))} />
           <Button
             onClick={() => {
               const numericAmount = Number(amount);
@@ -72,7 +77,7 @@ export default function CrmFinance() {
                 date,
                 description: description || null,
                 propertyId: null,
-                leadId: null,
+                leadId,
               });
             }}
             className="h-11 rounded-xl bg-[#d9ae4c] text-black hover:bg-[#c99a31]"
@@ -99,6 +104,7 @@ export default function CrmFinance() {
                 <th className="px-3 py-2">קטגוריה</th>
                 <th className="px-3 py-2">סכום</th>
                 <th className="px-3 py-2">תיאור</th>
+                <th className="px-3 py-2">לקוח / רחוב</th>
               </tr>
             </thead>
             <tbody>
@@ -109,6 +115,7 @@ export default function CrmFinance() {
                   <td className="px-3 py-2">{entry.category}</td>
                   <td className="px-3 py-2 font-black">₪{entry.amount.toLocaleString("he-IL")}</td>
                   <td className="px-3 py-2">{entry.description ?? "-"}</td>
+                  <td className="px-3 py-2 font-bold text-[#b98b2f]">{entry.leadId ? leadLabel((leadsQuery.data ?? []).find((lead) => lead.id === entry.leadId)) : "-"}</td>
                 </tr>
               ))}
             </tbody>

@@ -1230,7 +1230,7 @@ export type CrmLeadData = {
   tags: string;
   leadStatus: "חדש" | "פעיל" | "סגור" | "לא רלוונטי";
   source: string | null;
-  // Extended Airtable fields (optional for backwards compat with existing blob data)
+  // Extended CRM/import fields (optional for backwards compat with existing blob data)
   leadType?: string | null;
   budgetMin?: number | null;
   budgetMax?: number | null;
@@ -1243,9 +1243,22 @@ export type CrmLeadData = {
   meetingLocation?: string | null;
   propertyNeighborhood?: string | null;
   propertyStreet?: string | null;
+  propertyCity?: string | null;
   propertyRooms?: string | null;
   propertyType?: string | null;
   currentPropertyPrice?: number | null;
+  exclusivityStartDate?: string | null;
+  exclusivityEndDate?: string | null;
+  marketingPrice?: number | null;
+  ownerName?: string | null;
+  desiredNeighborhoods?: string[];
+  desiredRooms?: string | null;
+  desiredPropertyType?: string | null;
+  askingPrice?: number | null;
+  rentalPrice?: number | null;
+  dealDate?: string | null;
+  finalPrice?: number | null;
+  lastTransactionDate?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -1384,6 +1397,20 @@ export async function bulkImportCrmLeads(leads: Omit<CrmLeadData, "id" | "create
   return leads.length;
 }
 
+export async function replaceCrmLeads(leads: Omit<CrmLeadData, "id" | "createdAt" | "updatedAt">[]): Promise<number> {
+  const now = new Date().toISOString();
+  await writeCrmData({
+    nextId: leads.length + 1,
+    leads: leads.map((lead, index) => ({
+      ...lead,
+      id: index + 1,
+      createdAt: now,
+      updatedAt: now,
+    })),
+  });
+  return leads.length;
+}
+
 export async function deduplicateCrmLeads(): Promise<{ removed: number; remaining: number }> {
   const data = await readCrmData();
   const seen = new Set<string>();
@@ -1453,6 +1480,7 @@ export type MarketingAction = {
   year: number;
   templateId: number | null;
   customMessage: string | null;
+  marketingFields?: Record<string, string>;
   targetAudience: "all" | "buyers" | "sellers" | "investors";
   sentAt: string | null;
   recipientCount: number;
@@ -1807,7 +1835,44 @@ const defaultTemplatesSeed: Array<Omit<MessageTemplate, "id" | "createdAt" | "up
   {
     name: "בלעדיות שבועית",
     type: "exclusivity",
-    content: "היי {name}, הנכס הבלעדי השבועי שלנו: {address} במחיר {price}. לפרטים: {url}",
+    content: `שלום {שם הלקוח}, כמו בכל שבוע
+מצורף עדכון שבועי לנכס ב{כתובת הנכס}:
+
+📢 פלטפורמות פרסום פעילות:
+
+יד2: {יד2}
+צפיות יד2: {צפיות יד2}
+
+מדלן: {מדלן}
+צפיות מדלן: {צפיות מדלן}
+
+פייסבוק: {פייסבוק}
+
+אורגני דיגיטל: {אורגני דיגיטל}
+
+ממומן דיגיטל: {ממומן דיגיטל}
+
+וואטסאפ: {וואטסאפ}
+
+שת"פ מתווכים: {שת״פ מתווכים}
+
+פליירים: {פליירים}
+
+מכתבי שכנים: {מכתבי שכנים}
+
+עיתון מקומי: {עיתון מקומי}
+
+צילום: {צילום}
+
+שלטים: {שלטים}
+
+פניות טלפון: {פניות טלפון}
+
+בית פתוח: {בית פתוח}
+
+פעילות נוספת: {אחר}
+
+המשך שבוע מצוין לכולנו (:`,
     imageUrl: null,
     isActive: true,
   },
@@ -1905,6 +1970,7 @@ export async function createMarketingAction(input: Omit<MarketingAction, "id" | 
   const next: MarketingAction = {
     id: data.nextId++,
     ...input,
+    marketingFields: input.marketingFields ?? {},
     sentAt: input.sentAt ?? null,
     recipientCount: input.recipientCount ?? 0,
     createdAt: nowIso(),
@@ -2083,6 +2149,145 @@ function filterLeadsForAudience(
   return leads;
 }
 
+function normalizeCrmSearchValue(value: string | null | undefined) {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0591-\u05C7]/g, "")
+    .replace(/[^A-Za-z0-9\u0590-\u05FF]+/g, "")
+    .toLowerCase();
+}
+
+function isExclusiveCrmLead(lead: CrmLeadData) {
+  return /בלעדי|exclusive/i.test(`${lead.tags ?? ""} ${lead.leadType ?? ""}`);
+}
+
+function isOpenCrmLead(lead: CrmLeadData) {
+  return lead.leadStatus !== "לא רלוונטי" && lead.leadStatus !== "סגור";
+}
+
+function getPropertyDisplayAddress(property: PropertyListItem) {
+  return property.address || [property.street, property.neighborhood, property.city].filter(Boolean).join(", ");
+}
+
+function extractStreetFromLeadNotes(notes: string | null | undefined) {
+  const match = (notes ?? "").match(/רחוב\s*:\s*([^\n\r]+)/);
+  return match?.[1]?.trim() ?? null;
+}
+
+function leadMatchesExclusiveProperty(lead: CrmLeadData, property: PropertyListItem) {
+  const leadStreet = normalizeCrmSearchValue(lead.propertyStreet ?? extractStreetFromLeadNotes(lead.notes));
+  const leadNeighborhood = normalizeCrmSearchValue(lead.propertyNeighborhood ?? lead.neighborhood);
+  const propertyStreet = normalizeCrmSearchValue(property.street ?? property.address);
+  const propertyAddress = normalizeCrmSearchValue(property.address);
+  const propertyNeighborhood = normalizeCrmSearchValue(property.neighborhood);
+
+  const streetMatches =
+    Boolean(leadStreet && propertyStreet && (leadStreet.includes(propertyStreet) || propertyStreet.includes(leadStreet))) ||
+    Boolean(leadStreet && propertyAddress && (leadStreet.includes(propertyAddress) || propertyAddress.includes(leadStreet)));
+
+  const neighborhoodMatches =
+    Boolean(leadNeighborhood && propertyNeighborhood && (leadNeighborhood.includes(propertyNeighborhood) || propertyNeighborhood.includes(leadNeighborhood)));
+
+  return streetMatches || (streetMatches && neighborhoodMatches);
+}
+
+function renderMarketingTemplate(
+  template: string,
+  lead: CrmLeadData,
+  property: PropertyListItem,
+  marketingFields: Record<string, string> = {},
+) {
+  const address = getPropertyDisplayAddress(property);
+  const values: Record<string, string> = {
+    name: lead.name,
+    "שם הלקוח": lead.name,
+    phone: lead.phone,
+    address,
+    "כתובת הנכס": address,
+    street: property.street ?? property.address,
+    neighborhood: property.neighborhood,
+    city: property.city,
+    price: property.price ? `${property.price.toLocaleString("he-IL")} ₪` : "",
+    rooms: String(property.rooms ?? ""),
+    sqm: String(property.sqm ?? ""),
+    url: `/properties/${property.id}`,
+    propertyTitle: property.title,
+    ...marketingFields,
+  };
+  if (marketingFields["שת״פ מתווכים"] && !values["שת\"פ מתווכים"]) {
+    values["שת\"פ מתווכים"] = marketingFields["שת״פ מתווכים"];
+  }
+  if (marketingFields["שת\"פ מתווכים"] && !values["שת״פ מתווכים"]) {
+    values["שת״פ מתווכים"] = marketingFields["שת\"פ מתווכים"];
+  }
+  if (marketingFields["יד2"] && !values["יד 2"]) {
+    values["יד 2"] = marketingFields["יד2"];
+  }
+  if (marketingFields["יד 2"] && !values["יד2"]) {
+    values["יד2"] = marketingFields["יד 2"];
+  }
+  const yad2ViewsFromActivity = (marketingFields["יד2"] ?? marketingFields["יד 2"] ?? "").match(/^\s*(\d[\d,.\s]*)\s*(?:צפיות|צפייה)\s*$/)?.[1]?.trim();
+  const yad2Views = marketingFields["צפיות יד2"] ?? marketingFields["צפיות יד 2"] ?? marketingFields["יד2 צפיות"] ?? marketingFields["יד 2 צפיות"] ?? marketingFields["כמות צפיות יד2"] ?? yad2ViewsFromActivity;
+  if (yad2Views) {
+    values["צפיות יד2"] = yad2Views;
+    values["צפיות יד 2"] = yad2Views;
+    values["יד2 צפיות"] = yad2Views;
+    values["יד 2 צפיות"] = yad2Views;
+    values["כמות צפיות יד2"] = yad2Views;
+    if (yad2ViewsFromActivity && !marketingFields["צפיות יד2"] && !marketingFields["צפיות יד 2"]) {
+      values["יד2"] = "פעיל";
+      values["יד 2"] = "פעיל";
+    }
+  }
+  const madlanViews = marketingFields["צפיות מדלן"] ?? marketingFields["מדלן צפיות"] ?? marketingFields["כמות צפיות מדלן"];
+  if (madlanViews) {
+    values["צפיות מדלן"] = madlanViews;
+    values["מדלן צפיות"] = madlanViews;
+    values["כמות צפיות מדלן"] = madlanViews;
+  }
+
+  return cleanupRenderedMarketingMessage(
+    template.replace(/\{([^}]+)\}/g, (_match, key: string) => values[key.trim()] ?? ""),
+  );
+}
+
+const optionalMarketingLineLabels = [
+  "יד2",
+  "יד 2",
+  "צפיות יד2",
+  "צפיות יד 2",
+  "מדלן",
+  "צפיות מדלן",
+  "פייסבוק",
+  "אורגני דיגיטל",
+  "ממומן דיגיטל",
+  "וואטסאפ",
+  "שת\"פ מתווכים",
+  "שת״פ מתווכים",
+  "פליירים",
+  "מכתבי שכנים",
+  "עיתון מקומי",
+  "צילום",
+  "שלטים",
+  "פניות טלפון",
+  "בית פתוח",
+  "פעילות נוספת",
+  "אחר",
+];
+
+function cleanupRenderedMarketingMessage(message: string) {
+  const emptyLabelPatterns = optionalMarketingLineLabels.map((label) =>
+    new RegExp(`^(?:•\\s*)?${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*:\\s*$`),
+  );
+
+  return message
+    .split(/\r?\n/)
+    .filter((line) => !emptyLabelPatterns.some((pattern) => pattern.test(line.trim())))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export async function getWeeklyMarketingPayload(weekNumber?: number, year?: number) {
   const iso = getIsoWeekAndYear();
   const targetWeek = weekNumber ?? iso.weekNumber;
@@ -2103,12 +2308,28 @@ export async function getWeeklyMarketingPayload(weekNumber?: number, year?: numb
     const template = action.templateId
       ? templates.find((item) => item.id === action.templateId) ?? null
       : null;
-    const relevantLeads = filterLeadsForAudience(allLeads, action.targetAudience);
+    const isExclusiveProperty = property?.status === "בלעדי";
+    const relevantLeads = property && isExclusiveProperty
+      ? filterLeadsForAudience(allLeads, action.targetAudience).filter(
+          (lead) => isOpenCrmLead(lead) && isExclusiveCrmLead(lead) && leadMatchesExclusiveProperty(lead, property),
+        )
+      : [];
 
     const message =
       action.customMessage ??
       template?.content ??
       "היי {name}, מצורף נכס בלעדי השבוע: {address} במחיר {price}.";
+
+    const recipients = property && isExclusiveProperty
+      ? relevantLeads.map((lead) => ({
+          leadId: lead.id,
+          name: lead.name,
+          phone: lead.phone,
+          chatId: `${lead.phone.replace(/\D/g, "").startsWith("972") ? lead.phone.replace(/\D/g, "") : `972${lead.phone.replace(/\D/g, "").replace(/^0/, "")}`}@c.us`,
+          message: renderMarketingTemplate(message, lead, property, action.marketingFields ?? {}),
+          imageUrl: property.featuredImageUrl ?? template?.imageUrl ?? null,
+        }))
+      : [];
 
     return {
       marketingActionId: action.id,
@@ -2116,6 +2337,7 @@ export async function getWeeklyMarketingPayload(weekNumber?: number, year?: numb
       template,
       message,
       leads: relevantLeads,
+      recipients,
       targetAudience: action.targetAudience,
       weekNumber: action.weekNumber,
       year: action.year,
