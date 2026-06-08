@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { LANDSMAN_LOGO, TEAM_LOGO, WHATSAPP_LINK } from "@/lib/siteData";
+import { formatPropertyLocation, propertyStreetOnly } from "@/lib/property-display";
 
 type PropertyDetailsProps = {
   params?: {
@@ -83,7 +84,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
   const galleryImages = useMemo(() => (property ? getGalleryImages(property) : []), [property]);
   const selectedImageUrl = galleryImages[selectedImageIndex] ?? galleryImages[0] ?? property?.featuredImageUrl ?? null;
   const whatsappLink = homeQuery.data?.settings?.whatsappLink || WHATSAPP_LINK;
-  const headerLogoUrl = homeQuery.data?.settings?.headerLogoUrl || TEAM_LOGO;
+  const headerLogoUrl = TEAM_LOGO;
 
   useEffect(() => {
     setSelectedImageIndex(0);
@@ -115,7 +116,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
     return (
       <div className="min-h-screen bg-[#fff8e6] px-4 py-10 text-slate-950" dir="rtl">
         <div className="mx-auto max-w-4xl rounded-[36px] bg-white p-8 text-center shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
-          <img src={headerLogoUrl} alt="Team Shay" className="mx-auto h-16 w-auto object-contain" />
+          <img src={headerLogoUrl} alt="Team Shay" className="team-shay-logo mx-auto h-16 w-auto object-contain" />
           <h1 className="mt-6 text-3xl font-black">הנכס המבוקש לא נמצא</h1>
           <p className="mt-4 text-base leading-8 text-slate-600">
             ייתכן שהנכס הוסר מהאתר, אינו מפורסם כרגע או שהקישור שהוזן אינו תקין.
@@ -149,7 +150,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
 
             <div className="flex flex-col gap-4 lg:items-start">
               <div className="flex items-center gap-4">
-                <img src={headerLogoUrl} alt="Team Shay" className="h-20 w-auto object-contain md:h-28" />
+                <img src={headerLogoUrl} alt="Team Shay" className="team-shay-logo h-20 w-auto object-contain md:h-28" />
                 <div className="w-px h-14 bg-slate-200 shrink-0 mx-1" />
                 <img src={LANDSMAN_LOGO} alt="Landsman Jerusalem" className="h-16 w-auto object-contain md:h-20" />
               </div>
@@ -213,7 +214,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
                 </div>
                 <div className="mt-4 flex items-center gap-2 text-lg font-semibold text-slate-600">
                   <MapPin className="size-5 text-[#d9ae4c]" />
-                  {property.address}, {property.neighborhood}, {property.city}
+                  {formatPropertyLocation(property)}
                 </div>
               </div>
 
@@ -253,8 +254,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
                 <div className="mt-4 space-y-3 text-lg leading-8 text-slate-700">
                   <p><span className="font-black text-slate-950">שכונה:</span> {property.neighborhood}</p>
                   <p><span className="font-black text-slate-950">עיר:</span> {property.city}</p>
-                  <p><span className="font-black text-slate-950">כתובת:</span> {property.address}</p>
-                  {property.street ? <p><span className="font-black text-slate-950">רחוב:</span> {property.street}</p> : null}
+                  <p><span className="font-black text-slate-950">כתובת:</span> {propertyStreetOnly(property)}</p>
                   {property.outdoorSpace ? <p><span className="font-black text-slate-950">מרפסת / חוץ:</span> {property.outdoorSpace}</p> : null}
                 </div>
               </div>

@@ -155,7 +155,7 @@ export default function AgentLogin() {
         <section className="flex items-center justify-center px-4 py-12 md:px-6">
           <div className="w-full max-w-md rounded-[32px] border border-slate-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:p-10">
             <div className="text-center">
-              <img src={TEAM_LOGO} alt="Team Shay" className="mx-auto h-16 w-auto object-contain" />
+              <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo mx-auto h-16 w-auto object-contain" />
               <p className="mt-6 text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">התחברות סוכן</p>
               <h2 className="mt-3 text-3xl font-black text-black">כניסה למסך הניהול</h2>
               <p className="mt-4 text-base leading-7 text-slate-600">

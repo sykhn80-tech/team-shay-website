@@ -417,7 +417,7 @@ export default function AddProperty() {
       <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <img src={TEAM_LOGO} alt="Team Shay" className="h-14 w-auto object-contain" />
+            <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo h-14 w-auto object-contain" />
             <div>
               <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Agent CMS</p>
               <h1 className="mt-2 text-3xl font-black text-black md:text-4xl">

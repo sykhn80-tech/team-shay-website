@@ -429,7 +429,7 @@ export default function CmaAgent() {
               <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.05)] print:rounded-none print:border-0 print:shadow-none">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="flex items-center gap-3">
-                    <img src={TEAM_LOGO} alt="Team Shay" className="h-14 w-auto object-contain" />
+                    <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo h-14 w-auto object-contain" />
                     <div>
                       <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Team Shay | Landsman Jerusalem</p>
                       <h3 className="mt-1 text-2xl font-black text-slate-950">דוח CMA מקצועי</h3>

@@ -55,38 +55,38 @@ All global tokens should support a modern, clean, conversion-first interface.
 
 :root {
   --radius: 1.25rem;
-  --background: #ffffff;
+  --background: #fdf8f0;
   --foreground: #000000;
   --card: #ffffff;
   --card-foreground: #000000;
   --popover: #ffffff;
   --popover-foreground: #000000;
-  --primary: #d9ae4c;
-  --primary-foreground: #ffffff;
-  --secondary: #fff8e6;
+  --primary: #d4af37;
+  --primary-foreground: #1a1a1a;
+  --secondary: #fdf8f0;
   --secondary-foreground: #000000;
-  --muted: #f3f8fb;
-  --muted-foreground: #4b5563;
+  --muted: #f7f2e8;
+  --muted-foreground: #6b6b6b;
   --accent: #f7e4a8;
   --accent-foreground: #000000;
   --destructive: oklch(0.61 0.23 27);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: #d9e9f2;
+  --border: #eadfca;
   --input: #ffffff;
-  --ring: #d9ae4c;
-  --chart-1: #d9ae4c;
+  --ring: #d4af37;
+  --chart-1: #d4af37;
   --chart-2: #1ac7ff;
   --chart-3: #f7e4a8;
   --chart-4: #d9f4ff;
   --chart-5: #0d1c27;
   --sidebar: #ffffff;
   --sidebar-foreground: #000000;
-  --sidebar-primary: #d9ae4c;
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary: #d4af37;
+  --sidebar-primary-foreground: #1a1a1a;
   --sidebar-accent: #fff4d8;
   --sidebar-accent-foreground: #000000;
-  --sidebar-border: #d9e9f2;
-  --sidebar-ring: #d9ae4c;
+  --sidebar-border: #eadfca;
+  --sidebar-ring: #d4af37;
 }
 
 .dark {
@@ -181,6 +181,22 @@ All global tokens should support a modern, clean, conversion-first interface.
   input::-webkit-credentials-auto-fill-button {
     visibility: hidden;
     pointer-events: none;
+  }
+
+  [data-manus-id]::after,
+  [data-gemini]::after,
+  .gemini-sparkle,
+  .ai-icon,
+  .team-shay-logo + .ai-icon,
+  .team-shay-logo + .gemini-sparkle,
+  input + .ai-icon {
+    display: none !important;
+  }
+
+  .team-shay-logo::before,
+  .team-shay-logo::after {
+    display: none !important;
+    content: none !important;
   }
 
   img {

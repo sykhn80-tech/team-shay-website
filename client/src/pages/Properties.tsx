@@ -10,6 +10,7 @@ import {
   TEAM_LOGO,
   WHATSAPP_LINK,
 } from "@/lib/siteData";
+import { formatPropertyLocation } from "@/lib/property-display";
 
 const formatPrice = (value: number) => `₪${value.toLocaleString("he-IL")}`;
 
@@ -98,6 +99,7 @@ export default function Properties() {
           `${normalized.street || ""} ${normalized.neighborhood}`.trim() ||
           sampleProperties[index % sampleProperties.length]?.address ||
           "ירושלים",
+        street: normalized.street,
         neighborhood: normalized.neighborhood,
         city: normalized.city,
         price: normalized.price,
@@ -127,12 +129,12 @@ export default function Properties() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F8F8] text-slate-950" dir="rtl">
+    <div className="min-h-screen bg-[#FDF8F0] text-slate-950" dir="rtl">
       <section className="px-4 pb-12 pt-10 md:px-6 md:pb-16">
         <div className="mx-auto max-w-7xl overflow-hidden rounded-[36px] border border-slate-200 bg-white shadow-[0_24px_65px_rgba(15,23,42,0.08)]">
           <div className="flex flex-col gap-8 border-b border-[#D4AF37]/30 bg-white px-6 py-8 md:px-10 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
-              <img src={TEAM_LOGO} alt="Team Shay" className="h-16 w-auto object-contain" />
+              <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo h-16 w-auto object-contain" />
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">קטלוג נכסים</p>
                 <h1 className="mt-2 text-3xl font-black text-[#1A1A1A] md:text-5xl">כל הנכסים במקום אחד</h1>
@@ -233,10 +235,10 @@ export default function Properties() {
                   </div>
                 </div>
 
-                <div className="mt-6 rounded-[24px] bg-[#1A1A1A] p-5 text-[#D4AF37]">
-                  <p className="text-sm font-black uppercase tracking-[0.06em] text-white/60">תוצאה נוכחית</p>
+                <div className="mt-6 rounded-[24px] bg-[#D4AF37] p-5 text-[#1A1A1A]">
+                  <p className="text-sm font-black uppercase tracking-[0.06em] text-black/60">תוצאה נוכחית</p>
                   <p className="mt-3 text-4xl font-black">{filteredProperties.length}</p>
-                  <p className="mt-2 text-sm leading-7 text-white/70">נכסים תואמים לטווח המחיר ולאזור שבחרתם.</p>
+                  <p className="mt-2 text-sm leading-7 text-black/70">נכסים תואמים לטווח המחיר ולאזור שבחרתם.</p>
                 </div>
               </aside>
 
@@ -270,7 +272,7 @@ export default function Properties() {
                         <h3 className="mt-3 text-xl font-black text-slate-950">{property.title}</h3>
                         <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
                           <MapPin className="size-4 text-[#d9ae4c]" />
-                          {property.address}, {property.neighborhood}
+                          {formatPropertyLocation(property)}
                         </div>
 
                         <div className="mt-4 grid grid-cols-2 gap-3 text-sm font-bold text-slate-700">
@@ -282,7 +284,7 @@ export default function Properties() {
 
                         <div className="mt-5">
                           <Link href={`/properties/${property.id}`} className="block">
-                            <Button className="w-full rounded-full bg-[#1A1A1A] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black">
+                            <Button className="w-full rounded-full bg-[#D4AF37] text-[#1A1A1A] hover:bg-[#B8960C] hover:text-white">
                               לפרטים נוספים
                             </Button>
                           </Link>

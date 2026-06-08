@@ -20,7 +20,6 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   type CarouselApi,
@@ -41,6 +40,7 @@ import {
   TYPING_TEXT,
   WHATSAPP_LINK,
 } from "@/lib/siteData";
+import { formatPropertyLocation } from "@/lib/property-display";
 
 const navItems: Array<{ label: string; href: string; isRoute: boolean }> = [
   { label: "דף הבית", href: "#home", isRoute: false },
@@ -216,15 +216,6 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
 
 const normalizeTestimonialTitle = (value: string) => (value.trim() === "מאי אווריין" ? "מאי אוחיון" : value);
 
-const relativeDateLabel = (value: Date | string | null | undefined, fallbackWeeks: number) => {
-  if (!value) return `לפני ${fallbackWeeks} שבועות`;
-  const date = new Date(value);
-  const days = Math.max(1, Math.round((Date.now() - date.getTime()) / 86_400_000));
-  if (days < 7) return `לפני ${days} ימים`;
-  if (days < 35) return `לפני ${Math.max(1, Math.round(days / 7))} שבועות`;
-  return `לפני ${Math.max(1, Math.round(days / 30))} חודשים`;
-};
-
 const fallbackTestimonials = [
   {
     id: 1,
@@ -234,7 +225,6 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 1,
     whatsappImageUrl: "/restored-testimonials/shi-almakais.png",
-    createdAt: null,
   },
   {
     id: 2,
@@ -244,7 +234,6 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 2,
     whatsappImageUrl: "/restored-testimonials/linor-loberbaum.png",
-    createdAt: null,
   },
   {
     id: 3,
@@ -254,7 +243,6 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 3,
     whatsappImageUrl: "/restored-testimonials/mai-avorian.png",
-    createdAt: null,
   },
   {
     id: 4,
@@ -264,7 +252,6 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 4,
     whatsappImageUrl: "/restored-testimonials/bar-eluz.png",
-    createdAt: null,
   },
   {
     id: 5,
@@ -274,7 +261,6 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 5,
     whatsappImageUrl: "/restored-testimonials/natali-torgeman.png",
-    createdAt: null,
   },
   {
     id: 6,
@@ -284,7 +270,6 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 6,
     whatsappImageUrl: "/restored-testimonials/moiz-cohen.png",
-    createdAt: null,
   },
 ] as const;
 
@@ -362,6 +347,7 @@ export default function Home() {
       sqm: property.sqm,
       status: property.status,
       address: property.address,
+      street: property.street,
       agentId: property.agentId,
       image:
         property.featuredImageUrl ||
@@ -380,7 +366,6 @@ export default function Home() {
     const source = sold.length ? sold : featuredProperties.slice(0, 5);
     return source.map((property, index) => ({
       ...property,
-      daysToSale: 14 + ((property.id * 7 + index * 5) % 32),
       agentName: agentNamesById.get(property.agentId) || homepageAgents[index % homepageAgents.length]?.name || "Team Shay",
     }));
   }, [agentNamesById, featuredProperties, homepageAgents]);
@@ -450,7 +435,6 @@ export default function Home() {
           stars: testimonial.stars || 5,
           displayOrder: testimonial.displayOrder ?? 1,
           whatsappImageUrl: testimonial.whatsappImageUrl ?? null,
-          createdAt: testimonial.createdAt,
         }))
       : [...fallbackTestimonials];
 
@@ -594,7 +578,7 @@ export default function Home() {
                 <span className="block h-[2px] w-6 rounded-full bg-white" />
               </button>
               <div className="flex items-center justify-center">
-                <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt={settings?.siteName || "Team Shay"} className="h-16 w-auto md:h-20" />
+                <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt={settings?.siteName || "Team Shay"} className="team-shay-logo h-16 w-auto md:h-20" />
               </div>
             </div>
           </div>
@@ -616,7 +600,7 @@ export default function Home() {
           dir="rtl"
         >
           <div className="flex items-center justify-between px-5 py-5" style={{ backgroundColor: "#0d0d0d" }}>
-            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="h-14 w-auto brightness-200" />
+            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="team-shay-logo h-14 w-auto brightness-200" />
             <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#d9ae4c" }} className="p-2 rounded-lg transition" aria-label="סגור">
               <X className="size-5" />
             </button>
@@ -955,7 +939,7 @@ export default function Home() {
                             </div>
                             <h3 className="mt-3 text-[1.38rem] font-extrabold leading-snug text-slate-950">{property.title}</h3>
                             <p className="mt-3 text-base font-semibold text-slate-600">
-                              {property.neighborhood}, {property.city}
+                              {formatPropertyLocation(property)}
                             </p>
                             <div className="mt-4 grid grid-cols-2 gap-3 text-sm font-bold text-slate-700">
                               <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3">
@@ -1028,12 +1012,12 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="overflow-hidden bg-[#0a0a0a] px-4 py-20 text-white md:px-6 md:py-24">
+        <section className="overflow-hidden bg-[#FDF8F0] px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
               <p className="text-base font-black uppercase tracking-[0.08em] text-[#D4AF37]">הצלחות מהשטח</p>
-              <h2 className="mt-4 text-4xl font-black text-white md:text-[3.35rem]">נמכר לאחרונה — עסקאות שסגרנו</h2>
-              <p className="mx-auto mt-4 max-w-3xl text-lg font-semibold leading-8 text-white/65">
+              <h2 className="mt-4 text-4xl font-black text-[#1A1A1A] md:text-[3.35rem]">נמכר לאחרונה — עסקאות שסגרנו</h2>
+              <p className="mx-auto mt-4 max-w-3xl text-lg font-semibold leading-8 text-[#6B6B6B]">
                 הירושלמים בוחרים ב-Team Shay. התוצאות מדברות בעד עצמן.
               </p>
             </div>
@@ -1044,7 +1028,7 @@ export default function Home() {
                   {soldPropertiesTrack.map((property, index) => (
                     <article
                       key={`${property.id}-${index}`}
-                      className="w-[310px] shrink-0 overflow-hidden rounded-[28px] border border-[#D4AF37]/30 bg-[#151515] text-right shadow-[0_20px_50px_rgba(0,0,0,0.42)] [direction:rtl] md:w-[360px]"
+                      className="w-[310px] shrink-0 overflow-hidden rounded-[28px] border border-[#D4AF37]/30 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] transition hover:border-[#D4AF37] [direction:rtl] md:w-[360px]"
                     >
                       <div className="relative h-52 overflow-hidden">
                         <img src={property.image} alt={property.title} className="h-full w-full object-cover" loading="lazy" />
@@ -1053,12 +1037,10 @@ export default function Home() {
                         </span>
                       </div>
                       <div className="p-5">
-                        <h3 className="text-xl font-black text-white">{property.address || property.title}</h3>
-                        <p className="mt-1 text-sm font-bold text-white/55">{property.neighborhood}, {property.city}</p>
+                        <h3 className="text-xl font-black text-[#1A1A1A]">{formatPropertyLocation(property) || property.title}</h3>
                         <p className="mt-5 text-2xl font-black text-[#D4AF37]">₪{property.price.toLocaleString("he-IL")}</p>
-                        <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4 text-sm font-bold">
-                          <span className="text-white">נסגר תוך {property.daysToSale} ימים</span>
-                          <span className="text-white/55">{property.agentName}</span>
+                        <div className="mt-4 border-t border-[#D4AF37]/20 pt-4 text-sm font-bold">
+                          <span className="text-[#6B6B6B]">{property.agentName}</span>
                         </div>
                       </div>
                     </article>
@@ -1066,61 +1048,54 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <div className="mt-12 rounded-[28px] border border-dashed border-[#D4AF37]/40 p-8 text-center text-white/55">
+              <div className="mt-12 rounded-[28px] border border-dashed border-[#D4AF37]/40 bg-white p-8 text-center text-[#6B6B6B]">
                 עסקאות חדשות יופיעו כאן מיד כשהן מתעדכנות במערכת.
               </div>
             )}
           </div>
         </section>
 
-        <section id="testimonials" className="bg-[#0a0a0a] px-4 py-20 text-white md:px-6 md:py-24">
+        <section id="testimonials" className="bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-base font-black uppercase tracking-[0.08em] text-[#D4AF37]">WhatsApp Wall</p>
-              <h2 className="mt-4 text-4xl font-black text-white md:text-[3.35rem]">לקוחות משתפים מהלב</h2>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#D4AF37]" style={{fontSize: "24px"}}>המלצות</p>
+              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]" style={{fontSize: "70px"}}>לקוחות משתפים</h2>
             </div>
 
             <div className="mx-auto mt-12 max-w-7xl">
               {homeQuery.isLoading ? (
-                <div className="rounded-[30px] border border-white/10 bg-white/5 p-8 text-center text-white/55">
+                <div className="rounded-[30px] border border-slate-200 bg-white p-8 text-center text-slate-500">
                   טוענים המלצות מהמערכת...
                 </div>
               ) : visibleTestimonials.length ? (
-                <div className="columns-1 gap-6 md:columns-2 xl:columns-3" aria-label="קיר המלצות חי">
-                  {visibleTestimonials.map((testimonial, index) => (
-                    <motion.article
+                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3" aria-label="קיר המלצות חי">
+                  {visibleTestimonials.map((testimonial) => (
+                    <article
                       key={testimonial.id}
-                      initial={{ opacity: 0, y: 28 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, amount: 0.2 }}
-                      transition={{ duration: 0.5, delay: (index % 3) * 0.08 }}
-                      className={`relative mb-6 break-inside-avoid overflow-hidden rounded-[26px] border p-6 text-right shadow-[0_20px_55px_rgba(37,211,102,0.08)] ${
-                        index % 2 === 0
-                          ? "mr-auto border-[#25D366]/25 bg-[#10281a]"
-                          : "ml-auto border-white/10 bg-[#171717]"
-                      }`}
+                      className="flex min-h-[30rem] flex-col rounded-[30px] border border-slate-200 bg-white p-5 text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] md:p-6"
                     >
-                      <MessageCircle className="absolute -bottom-4 -left-3 size-24 text-[#25D366]/[0.06]" />
-                      <div className="relative flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-lg font-black text-white">{testimonial.title}</p>
-                          <p className="mt-1 text-xs font-bold text-[#25D366]">{testimonial.source}</p>
+                      {testimonial.whatsappImageUrl ? (
+                        <div className="h-40 overflow-hidden rounded-[24px] bg-slate-950">
+                          <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover object-top" loading="lazy" />
                         </div>
-                        <div className="flex items-center gap-0.5 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
+                      ) : null}
+                      <div className="mt-5 flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xl font-black text-slate-950">{testimonial.title}</p>
+                          <p className="mt-1 text-sm font-bold tracking-[0.02em] text-[#D4AF37]">{testimonial.source}</p>
+                        </div>
+                        <div className="flex items-center gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
                           {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
-                            <Star key={`${testimonial.id}-${starIndex}`} className="size-4 fill-current" />
+                            <Star key={`${testimonial.id}-${starIndex}`} className="size-5 fill-current" />
                           ))}
                         </div>
                       </div>
-                      <p className="relative mt-5 text-base font-semibold leading-8 text-white/82">{testimonial.quote}</p>
-                      <p className="relative mt-5 text-left text-xs font-bold text-white/35">
-                        {relativeDateLabel(testimonial.createdAt, index + 2)}
-                      </p>
-                    </motion.article>
+                      <p className="mt-4 flex-1 text-[1.04rem] font-semibold leading-8 text-slate-600">{testimonial.quote}</p>
+                    </article>
                   ))}
                 </div>
               ) : (
-                <div className="rounded-[30px] border border-dashed border-white/15 bg-white/5 p-8 text-center text-white/55">
+                <div className="rounded-[30px] border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
                   עדיין לא נוספו המלצות להצגה בדף הבית.
                 </div>
               )}
@@ -1278,7 +1253,7 @@ export default function Home() {
 
           <div className="flex flex-col items-end text-right md:absolute md:left-1/2 md:top-0 md:w-fit md:-translate-x-1/2 md:items-center md:text-center">
             <div className="rounded-[28px] bg-transparent px-4 py-2 md:px-6 md:py-3">
-              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt={settings?.siteName || "Team Shay"} className="h-24 w-auto object-contain md:h-32" loading="lazy" />
+              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt={settings?.siteName || "Team Shay"} className="team-shay-logo h-24 w-auto object-contain md:h-32" loading="lazy" />
             </div>
             <p className="mt-5 text-lg font-black text-white md:text-center" style={{ fontSize: "30px" }}>{footerSloganDisplay}</p>
           </div>
