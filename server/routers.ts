@@ -232,7 +232,7 @@ const messageTemplateSchema = z.object({
 });
 
 const marketingActionSchema = z.object({
-  propertyId: z.number().int().positive(),
+  propertyId: z.number().int().positive().optional().nullable(),
   weekNumber: z.number().int().min(1).max(53),
   year: z.number().int().min(2000).max(3000),
   templateId: z.number().int().positive().optional().nullable(),
@@ -1856,21 +1856,14 @@ export const appRouter = router({
           agentId: z.number().int().positive().optional(),
         })
       )
-      .query(async ({ ctx, input }) => {
-        const isAdmin = ctx.agentSession.accountRole === "admin";
-        const filterAgentId = isAdmin ? (input.agentId ?? null) : ctx.agentSession.id;
-        return listCrmLeads({ agentId: filterAgentId, search: input.search });
+      .query(async ({ input }) => {
+        return listCrmLeads({ agentId: input.agentId ?? null, search: input.search });
       }),
 
     getById: agentProcedure
       .input(z.object({ id: z.number().int().positive() }))
-      .query(async ({ ctx, input }) => {
-        const lead = await getCrmLeadById(input.id);
-        const isAdmin = ctx.agentSession.accountRole === "admin";
-        if (!isAdmin && (!lead || lead.agentId !== ctx.agentSession.id)) {
-          throw new Error("אין הרשאה לצפות בליד זה");
-        }
-        return lead;
+      .query(async ({ input }) => {
+        return getCrmLeadById(input.id);
       }),
 
     create: agentProcedure
@@ -2240,7 +2233,7 @@ export const appRouter = router({
         .mutation(async ({ ctx, input }) => {
           return createMarketingAction({
             agentId: ctx.agentSession.id,
-            propertyId: input.propertyId,
+            propertyId: input.propertyId ?? null,
             weekNumber: input.weekNumber,
             year: input.year,
             templateId: input.templateId ?? null,

@@ -488,18 +488,18 @@ export default function AddProperty() {
 
                   <label className="grid gap-2">
                     <span className="text-sm font-bold text-slate-700">שכונה</span>
-                    <select
+                    <Input
                       name="neighborhood"
                       value={form.neighborhood}
                       onChange={handleChange}
-                      className="h-13 rounded-2xl border border-slate-200 bg-white px-4 text-base text-black outline-none focus:border-[#d9ae4c]"
-                    >
-                      {neighborhoods.map((neighborhood) => (
-                        <option key={neighborhood} value={neighborhood}>
-                          {neighborhood}
-                        </option>
-                      ))}
-                    </select>
+                      autoComplete="off"
+                      placeholder="חיפוש או הקלדת שכונה"
+                      list="property-neighborhoods"
+                      className="h-13 rounded-2xl border-slate-200"
+                    />
+                    <datalist id="property-neighborhoods">
+                      {neighborhoods.map((neighborhood) => <option key={neighborhood} value={neighborhood} />)}
+                    </datalist>
                   </label>
 
                   <label className="grid gap-2">

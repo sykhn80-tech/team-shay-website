@@ -11,8 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-
-const WHITE_LOGO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png";
+import { TEAM_LOGO } from "@/lib/siteData";
 
 interface Props { children: React.ReactNode }
 
@@ -56,7 +55,7 @@ export default function AgentLayout({ children }: Props) {
       {/* Logo */}
       <div className="flex items-center justify-between gap-2 pb-5 border-b border-white/10">
         <img
-          src={WHITE_LOGO}
+          src={TEAM_LOGO}
           alt="Team Shay"
           className="team-shay-logo h-20 w-auto object-contain"
           style={{ filter: "brightness(10)" }}
@@ -97,7 +96,7 @@ export default function AgentLayout({ children }: Props) {
             <div>
               <p className={`text-sm font-black ${crmActive ? "text-black" : "text-white"}`}>CRM לידים</p>
               <p className={`text-[11px] font-medium ${crmActive ? "text-black/70" : "text-white/50"}`}>
-                {agent?.accountRole === "admin" ? "כל לידי הצוות" : "הלידים שלי"}
+                כל לידי הצוות
               </p>
             </div>
           </div>
@@ -152,7 +151,7 @@ export default function AgentLayout({ children }: Props) {
           <span className="block h-0.5 w-5 rounded-full bg-[#d9ae4c]" />
         </button>
         <img
-          src={WHITE_LOGO}
+          src={TEAM_LOGO}
           alt="Team Shay"
           className="team-shay-logo h-14 w-auto object-contain"
           style={{ filter: "brightness(10)" }}

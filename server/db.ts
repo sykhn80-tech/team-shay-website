@@ -1478,7 +1478,7 @@ export type PropertyMatch = {
 export type MarketingAction = {
   id: number;
   agentId: number;
-  propertyId: number;
+  propertyId: number | null;
   weekNumber: number;
   year: number;
   templateId: number | null;
@@ -2321,24 +2321,26 @@ function leadMatchesExclusiveProperty(lead: CrmLeadData, property: PropertyListI
 function renderMarketingTemplate(
   template: string,
   lead: CrmLeadData,
-  property: PropertyListItem,
+  property: PropertyListItem | null,
   marketingFields: Record<string, string> = {},
 ) {
-  const address = getPropertyDisplayAddress(property);
+  const address = property
+    ? getPropertyDisplayAddress(property)
+    : [lead.propertyStreet, lead.propertyNeighborhood ?? lead.neighborhood, lead.propertyCity].filter(Boolean).join(", ");
   const values: Record<string, string> = {
     name: lead.name,
     "שם הלקוח": lead.name,
     phone: lead.phone,
     address,
     "כתובת הנכס": address,
-    street: property.street ?? property.address,
-    neighborhood: property.neighborhood,
-    city: property.city,
-    price: property.price ? `${property.price.toLocaleString("he-IL")} ₪` : "",
-    rooms: String(property.rooms ?? ""),
-    sqm: String(property.sqm ?? ""),
-    url: `/properties/${property.id}`,
-    propertyTitle: property.title,
+    street: property?.street ?? lead.propertyStreet ?? "",
+    neighborhood: property?.neighborhood ?? lead.propertyNeighborhood ?? lead.neighborhood ?? "",
+    city: property?.city ?? lead.propertyCity ?? "",
+    price: property?.price ? `${property.price.toLocaleString("he-IL")} ₪` : "",
+    rooms: String(property?.rooms ?? lead.propertyRooms ?? ""),
+    sqm: String(property?.sqm ?? ""),
+    url: property ? `/properties/${property.id}` : "",
+    propertyTitle: property?.title ?? lead.ownerName ?? lead.name,
     ...marketingFields,
   };
   if (marketingFields["שת״פ מתווכים"] && !values["שת\"פ מתווכים"]) {
@@ -2431,30 +2433,35 @@ export async function getWeeklyMarketingPayload(weekNumber?: number, year?: numb
   const templates = await listMessageTemplates();
 
   const enriched = actions.map((action) => {
-    const property = propertiesData.find((item) => item.id === action.propertyId) ?? null;
+    const selectedLead = action.leadId ? allLeads.find((lead) => lead.id === action.leadId) ?? null : null;
+    const property = propertiesData.find((item) => item.id === action.propertyId)
+      ?? (selectedLead ? propertiesData.find((item) => item.status === "בלעדי" && leadMatchesExclusiveProperty(selectedLead, item)) : null)
+      ?? null;
     const template = action.templateId
       ? templates.find((item) => item.id === action.templateId) ?? null
       : null;
     const isExclusiveProperty = property?.status === "בלעדי";
-    const relevantLeads = property && isExclusiveProperty
-      ? filterLeadsForAudience(allLeads, action.targetAudience).filter(
+    const relevantLeads = selectedLead && isOpenCrmLead(selectedLead) && isExclusiveCrmLead(selectedLead)
+      ? [selectedLead]
+      : property && isExclusiveProperty
+        ? filterLeadsForAudience(allLeads, action.targetAudience).filter(
           (lead) => isOpenCrmLead(lead) && isExclusiveCrmLead(lead) && leadMatchesExclusiveProperty(lead, property),
         )
-      : [];
+        : [];
 
     const message =
       action.customMessage ??
       template?.content ??
       "היי {name}, מצורף נכס בלעדי השבוע: {address} במחיר {price}.";
 
-    const recipients = property && isExclusiveProperty
+    const recipients = relevantLeads.length
       ? relevantLeads.map((lead) => ({
           leadId: lead.id,
           name: lead.name,
           phone: lead.phone,
           chatId: `${lead.phone.replace(/\D/g, "").startsWith("972") ? lead.phone.replace(/\D/g, "") : `972${lead.phone.replace(/\D/g, "").replace(/^0/, "")}`}@c.us`,
           message: renderMarketingTemplate(message, lead, property, action.marketingFields ?? {}),
-          imageUrl: property.featuredImageUrl ?? template?.imageUrl ?? null,
+          imageUrl: property?.featuredImageUrl ?? template?.imageUrl ?? null,
         }))
       : [];
 

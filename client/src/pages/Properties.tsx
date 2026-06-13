@@ -285,7 +285,7 @@ export default function Properties() {
 
                         <div className="mt-5">
                           <Link href={`/properties/${property.id}`} className="block">
-                            <Button className="w-full rounded-full bg-[#D4AF37] text-[#1A1A1A] hover:bg-[#B8960C] hover:text-white">
+                            <Button className="w-full rounded-full bg-[#D4AF37] text-[#1A1A1A] hover:bg-[#B8960C] hover:text-black">
                               לפרטים נוספים
                             </Button>
                           </Link>

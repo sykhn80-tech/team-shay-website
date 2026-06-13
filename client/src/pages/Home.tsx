@@ -361,19 +361,13 @@ export default function Home() {
     [homepageProperties],
   );
 
-  const agentNamesById = useMemo(
-    () => new Map((homeQuery.data?.agents ?? []).map((agent) => [agent.id, agent.name])),
-    [homeQuery.data?.agents],
-  );
-
   const soldProperties = useMemo(() => {
     return homepageProperties
       .filter((property) => property.status.trim() === "נמכר")
-      .map((property, index) => ({
+      .map((property) => ({
       ...property,
-      agentName: agentNamesById.get(property.agentId) || homepageAgents[index % homepageAgents.length]?.name || "Team Shay",
     }));
-  }, [agentNamesById, homepageAgents, homepageProperties]);
+  }, [homepageProperties]);
 
   const soldPropertiesTrack = useMemo(() => [...soldProperties, ...soldProperties], [soldProperties]);
 
@@ -583,7 +577,7 @@ export default function Home() {
                 <span className="block h-[2px] w-6 rounded-full bg-white" />
               </button>
               <div className="flex items-center justify-center">
-                <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt={settings?.siteName || "Team Shay"} className="team-shay-logo h-16 w-auto md:h-20" />
+                <img src={TEAM_LOGO} alt={settings?.siteName || "Team Shay"} className="team-shay-logo h-16 w-auto brightness-0 invert md:h-20" />
               </div>
             </div>
           </div>
@@ -605,7 +599,7 @@ export default function Home() {
           dir="rtl"
         >
           <div className="flex items-center justify-between px-5 py-5" style={{ backgroundColor: "#0d0d0d" }}>
-            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt="Team Shay" className="team-shay-logo h-14 w-auto brightness-200" />
+            <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo h-14 w-auto brightness-0 invert" />
             <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#d9ae4c" }} className="p-2 rounded-lg transition" aria-label="סגור">
               <X className="size-5" />
             </button>
@@ -956,7 +950,7 @@ export default function Home() {
                                 <span>{property.sqm} מ״ר</span>
                               </div>
                             </div>
-                            <Link href={`/properties/${property.id}`} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#1A1A1A] px-4 py-3 text-sm font-black text-[#D4AF37] transition hover:bg-[#D4AF37] hover:text-black" aria-label={`פרטים נוספים ${property.title}`}>
+                            <Link href={`/properties/${property.id}`} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#D4AF37] px-4 py-3 text-sm font-black text-black transition hover:bg-[#B8960C] hover:text-black" aria-label={`פרטים נוספים ${property.title}`}>
                               פרטים נוספים
                               <ChevronLeft className="size-4" />
                             </Link>
@@ -1045,7 +1039,7 @@ export default function Home() {
                         <h3 className="text-xl font-black text-[#1A1A1A]">{formatPropertyLocation(property) || property.title}</h3>
                         <p className="mt-5 text-2xl font-black text-[#D4AF37]">₪{property.price.toLocaleString("he-IL")}</p>
                         <div className="mt-4 border-t border-[#D4AF37]/20 pt-4 text-sm font-bold">
-                          <span className="text-[#6B6B6B]">צוות שי</span>
+                          <span className="text-[#6B6B6B]">נמכר עם צוות שי</span>
                         </div>
                       </div>
                     </article>
@@ -1258,7 +1252,7 @@ export default function Home() {
 
           <div className="flex flex-col items-end text-right md:absolute md:left-1/2 md:top-0 md:w-fit md:-translate-x-1/2 md:items-center md:text-center">
             <div className="rounded-[28px] bg-transparent px-4 py-2 md:px-6 md:py-3">
-              <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png" alt={settings?.siteName || "Team Shay"} className="team-shay-logo h-24 w-auto object-contain md:h-32" loading="lazy" />
+              <img src={TEAM_LOGO} alt={settings?.siteName || "Team Shay"} className="team-shay-logo h-24 w-auto object-contain brightness-0 invert md:h-32" loading="lazy" />
             </div>
             <p className="mt-5 text-lg font-black text-white md:text-center" style={{ fontSize: "30px" }}>{footerSloganDisplay}</p>
           </div>

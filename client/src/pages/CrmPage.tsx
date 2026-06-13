@@ -405,7 +405,7 @@ function LeadModal({ initial, agents, isAdmin, currentAgentId, onClose, onSave, 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {["exclusive", "seller", "rental", "agreement", "buyer_and_seller"].includes(form.leadType) && field("רחוב ומספר", "propertyStreet")}
                   {["exclusive", "seller", "rental", "agreement", "buyer_and_seller"].includes(form.leadType) && field("עיר", "propertyCity")}
-                  {["exclusive", "seller", "rental", "agreement", "buyer_and_seller"].includes(form.leadType) && select("שכונה", "propertyNeighborhood", NEIGHBORHOOD_OPTIONS, { creatable: true })}
+                  {["exclusive", "seller", "rental", "agreement", "buyer_and_seller"].includes(form.leadType) && field("שכונה", "propertyNeighborhood")}
                   {["exclusive", "seller", "rental", "buyer_and_seller"].includes(form.leadType) && select("סוג נכס", "propertyType", PROPERTY_TYPE_OPTIONS)}
                   {["exclusive", "seller", "rental", "buyer_and_seller"].includes(form.leadType) && select("מספר חדרים", "propertyRooms", ROOM_OPTIONS)}
                   {form.leadType === "exclusive" && field("תחילת בלעדיות", "exclusivityStartDate", { type: "date" })}
@@ -499,10 +499,10 @@ export default function CrmPage({
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const agentsQuery = trpc.admin.listStaff.useQuery(undefined, { enabled: !!isAdmin });
+  const agentsQuery = trpc.admin.listStaff.useQuery();
   const agents = (agentsQuery.data ?? []) as Array<{ id: number; name: string }>;
 
-  const leadsQuery = trpc.crm.list.useQuery({ search: search || undefined, agentId: isAdmin ? filterAgentId : undefined });
+  const leadsQuery = trpc.crm.list.useQuery({ search: search || undefined, agentId: undefined });
   const leads = (leadsQuery.data ?? []) as Lead[];
   const utils = trpc.useUtils();
 
@@ -563,7 +563,8 @@ export default function CrmPage({
   };
 
   const filtered = leads.filter(l => {
-    if (filterNeighborhood && leadNeighborhood(l) !== filterNeighborhood) return false;
+    if (filterNeighborhood && !leadNeighborhood(l).toLowerCase().includes(filterNeighborhood.toLowerCase())) return false;
+    if (filterAgentId && l.agentId !== filterAgentId) return false;
     if (filterStatus && l.leadStatus !== filterStatus) return false;
     if (filterType && !leadMatchesType(l, filterType)) return false;
     if (filterSource && l.source !== filterSource) return false;
@@ -592,7 +593,7 @@ export default function CrmPage({
   const hasActiveFilters = filterStatus || filterType || filterSource || filterNeighborhood || filterTag !== initialTag;
 
   return (
-    <CrmLayout title={title} subtitle={subtitle ?? (isAdmin ? "כל לידי הצוות" : "הלידים שלי")}>
+    <CrmLayout title={title} subtitle={subtitle ?? "כל לידי הצוות במקום אחד"}>
       <div className="min-h-screen bg-[#f5f3ee] px-3 py-5 md:px-6 md:py-7" dir="rtl">
         <div className="mx-auto max-w-7xl">
 
@@ -666,8 +667,17 @@ export default function CrmPage({
                   className="w-full h-9 pr-8 pl-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 bg-slate-50"
                 />
               </div>
+              <div className="relative min-w-36">
+                <Search size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={filterNeighborhood}
+                  onChange={event => setFilterNeighborhood(event.target.value)}
+                  autoComplete="off"
+                  placeholder="חיפוש שכונה"
+                  className="h-11 w-full rounded-lg border-[1.5px] border-[#D4AF37] bg-[#FAFAFA] pr-8 pl-3 text-sm font-bold outline-none focus:shadow-[0_0_0_3px_rgba(212,175,55,0.2)]"
+                />
+              </div>
               {[
-                { val: filterNeighborhood, set: setFilterNeighborhood, opts: NEIGHBORHOOD_OPTIONS, placeholder: "כל השכונות" },
                 { val: filterStatus, set: setFilterStatus, opts: STATUS_OPTIONS.map(value => ({ value, label: value })), placeholder: "סטטוס" },
                 { val: filterType, set: setFilterType, opts: LEAD_TYPE_OPTIONS, placeholder: "סוג ליד" },
                 ...(sourceSet.length ? [{ val: filterSource, set: setFilterSource, opts: sourceSet.map(value => ({ value, label: value })), placeholder: "מקור" }] : []),
@@ -676,16 +686,14 @@ export default function CrmPage({
                   <CrmSearchSelect value={f.val} onChange={value => f.set(String(value ?? ""))} options={f.opts} placeholder={f.placeholder} />
                 </div>
               ))}
-              {isAdmin && (
-                <div className="min-w-36">
-                  <CrmSearchSelect
-                    value={filterAgentId}
-                    onChange={value => setFilterAgentId(value == null ? undefined : Number(value))}
-                    options={agents.map(agent => ({ value: agent.id, label: agent.name }))}
-                    placeholder="כל הסוכנים"
-                  />
-                </div>
-              )}
+              <div className="min-w-36">
+                <CrmSearchSelect
+                  value={filterAgentId}
+                  onChange={value => setFilterAgentId(value == null ? undefined : Number(value))}
+                  options={agents.map(agent => ({ value: agent.id, label: agent.name }))}
+                  placeholder="כל הסוכנים"
+                />
+              </div>
               {hasActiveFilters && (
                 <button onClick={resetFilters}
                   className="h-9 px-3 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 border border-slate-200 transition"
