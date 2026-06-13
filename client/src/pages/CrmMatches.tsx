@@ -1,150 +1,66 @@
-import CrmLayout from "@/components/CrmLayout";
-import { Button } from "@/components/ui/button";
-import { trpc } from "@/lib/trpc";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { leadLabel, leadLocation } from "@/lib/lead-display";
+import { Search, Sparkles } from "lucide-react";
+import CrmLayout from "@/components/CrmLayout";
 import { CrmSearchSelect } from "@/components/CrmSearchSelect";
+import { leadLocation } from "@/lib/lead-display";
+import { normalizeLeadType } from "@/lib/crm-options";
+import { trpc } from "@/lib/trpc";
 
 export default function CrmMatches() {
-  const utils = trpc.useUtils();
   const leadsQuery = trpc.crm.list.useQuery({ search: undefined, agentId: undefined });
-  const propertiesQuery = trpc.admin.listProperties.useQuery();
-  const matchesQuery = trpc.crm2.matches.list.useQuery();
+  const [sellerId, setSellerId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const leads = leadsQuery.data ?? [];
+  const sellers = leads.filter((lead) => ["seller", "exclusive", "buyer_and_seller"].includes(normalizeLeadType(lead.leadType)));
+  const selectedSeller = sellers.find((lead) => lead.id === sellerId) ?? null;
 
-  const [leadId, setLeadId] = useState<number | null>(null);
-  const [selectedPropertyIds, setSelectedPropertyIds] = useState<number[]>([]);
-  const [message, setMessage] = useState("");
-
-  const selectedLead = useMemo(
-    () => (leadsQuery.data ?? []).find((lead) => lead.id === leadId) ?? null,
-    [leadId, leadsQuery.data],
-  );
-
-  const filteredProperties = useMemo(() => {
-    const properties = propertiesQuery.data ?? [];
-    if (!selectedLead) return properties;
-
-    const budgetMin = selectedLead.budgetMin ?? null;
-    const budgetMax = selectedLead.budgetMax ?? null;
-
-    return properties.filter((property) => {
-      if (budgetMin != null && property.price < budgetMin) return false;
-      if (budgetMax != null && property.price > budgetMax) return false;
-      return property.isPublished;
-    });
-  }, [propertiesQuery.data, selectedLead]);
-
-  const leadsById = useMemo(
-    () => new Map((leadsQuery.data ?? []).map((lead) => [lead.id, lead])),
-    [leadsQuery.data],
-  );
-
-  const createMutation = trpc.crm2.matches.create.useMutation({
-    onSuccess: async () => {
-      await utils.crm2.matches.list.invalidate();
-      setSelectedPropertyIds([]);
-      toast.success("ההתאמות נשמרו בהצלחה.");
-    },
-    onError: (error) => toast.error(error.message),
-  });
-
-  const sendMutation = trpc.crm2.matches.sendViaWhatsApp.useMutation({
-    onSuccess: async () => {
-      await utils.crm2.matches.list.invalidate();
-      toast.success("ההודעה נשלחה ללקוח.");
-    },
-    onError: (error) => toast.error(error.message),
-  });
+  const matches = useMemo(() => {
+    if (!selectedSeller) return [];
+    const price = Number(selectedSeller.askingPrice ?? selectedSeller.marketingPrice ?? selectedSeller.currentPropertyPrice ?? 0);
+    const neighborhood = selectedSeller.propertyNeighborhood ?? selectedSeller.neighborhood ?? "";
+    return leads
+      .filter((lead) => ["buyer", "buyer_and_seller"].includes(normalizeLeadType(lead.leadType)))
+      .map((buyer) => {
+        const budget = Number(buyer.budgetMax ?? 0);
+        const budgetMatch = Boolean(price && budget >= price * 0.85);
+        const areaMatch = Boolean(neighborhood && (buyer.desiredNeighborhoods ?? []).some((area) => area.includes(neighborhood) || neighborhood.includes(area)));
+        return { buyer, budgetMatch, areaMatch, score: Number(budgetMatch) + Number(areaMatch) };
+      })
+      .filter((item) => item.budgetMatch)
+      .filter((item) => `${item.buyer.name} ${item.buyer.phone} ${item.buyer.desiredNeighborhoods?.join(" ")}`.toLowerCase().includes(search.toLowerCase()))
+      .sort((left, right) => right.score - left.score);
+  }, [leads, search, selectedSeller]);
 
   return (
-    <CrmLayout title="התאמות נכסים" subtitle="בחרו ליד, סמנו נכסים מתאימים ושלחו ללקוח ישירות ב-WhatsApp.">
+    <CrmLayout title="התאמות ✨" subtitle="מצא קונים מתאימים לנכסים של מוכרים">
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <label className="text-sm font-black text-slate-700">בחר ליד</label>
-        <CrmSearchSelect value={leadId} onChange={value => setLeadId(value == null ? null : Number(value))} placeholder="בחרו ליד"
-          className="mt-2" options={(leadsQuery.data ?? []).map(lead => ({ value: lead.id, label: `${leadLabel(lead)} · ${lead.phone}` }))} />
-      </section>
-
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
-        <h2 className="text-xl font-black text-slate-950">נכסים מתאימים לתקציב</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {filteredProperties.map((property) => {
-            const checked = selectedPropertyIds.includes(property.id);
-            return (
-              <button
-                key={property.id}
-                type="button"
-                onClick={() => {
-                  setSelectedPropertyIds((prev) =>
-                    prev.includes(property.id)
-                      ? prev.filter((id) => id !== property.id)
-                      : [...prev, property.id],
-                  );
-                }}
-                className={`rounded-2xl border p-4 text-right transition ${
-                  checked
-                    ? "border-[#d9ae4c] bg-[#fff8e6]"
-                    : "border-slate-200 bg-white hover:border-[#d9ae4c]/50"
-                }`}
-              >
-                <p className="text-lg font-black text-slate-950">{property.title}</p>
-                <p className="mt-1 text-sm text-slate-600">{property.address}</p>
-                <p className="mt-2 text-sm font-bold text-[#b98b2f]">₪{property.price.toLocaleString("he-IL")}</p>
-              </button>
-            );
-          })}
-        </div>
-
-        <textarea
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-          placeholder="הודעה מותאמת לשליחה (אופציונלי)"
-          className="mt-4 min-h-24 w-full rounded-xl border border-slate-200 p-3 text-sm"
-        />
-
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Button
-            onClick={() => {
-              if (!leadId || !selectedPropertyIds.length) {
-                toast.error("יש לבחור ליד ולפחות נכס אחד.");
-                return;
-              }
-              createMutation.mutate({ leadId, propertyIds: selectedPropertyIds, note: null });
-            }}
-            disabled={createMutation.isPending}
-            className="rounded-full bg-[#d9ae4c] text-black hover:bg-[#c99a31]"
-          >
-            שמור התאמות
-          </Button>
+        <h2 className="text-lg font-black">חיפוש מוכרים וקונים</h2>
+        <p className="mt-1 text-sm text-slate-500">חפש לפי שם, כתובת או שכונה — המערכת תמצא את ההתאמות האוטומטיות</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <CrmSearchSelect value={sellerId} onChange={(value) => setSellerId(value == null ? null : Number(value))} placeholder="בחר מוכר או נכס בבלעדיות" options={sellers.map((lead) => ({ value: lead.id, label: `${lead.ownerName || lead.name} — ${leadLocation(lead) || "ללא כתובת"}` }))} />
+          <div className="relative"><Search className="absolute right-3 top-3.5 size-4 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="חיפוש קונה..." className="w-full pr-9" /></div>
         </div>
       </section>
 
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
-        <h2 className="text-xl font-black text-slate-950">התאמות קיימות</h2>
-        <div className="mt-4 space-y-3">
-          {(matchesQuery.data ?? []).map((match) => (
-            <div key={match.id} className="rounded-xl border border-slate-200 bg-[#faf8f1] p-3">
-              <p className="text-sm font-black text-slate-800">{leadsById.get(match.leadId)?.name ?? `ליד #${match.leadId}`}</p>
-              {leadLocation(leadsById.get(match.leadId)) ? (
-                <p className="mt-1 text-xs font-bold text-[#b98b2f]">{leadLocation(leadsById.get(match.leadId))}</p>
-              ) : null}
-              <p className="mt-1 text-xs text-slate-600">נכס #{match.propertyId}</p>
-              <p className="mt-1 text-xs text-slate-600">סטטוס: {match.status}</p>
-              <div className="mt-2">
-                <Button
-                  size="sm"
-                  onClick={() => sendMutation.mutate({ matchId: match.id, message: message || undefined })}
-                  disabled={sendMutation.isPending}
-                  className="rounded-full bg-[#d9ae4c] text-black hover:bg-[#c99a31]"
-                >
-                  שלח ב-WhatsApp
-                </Button>
-              </div>
-            </div>
-          ))}
-          {!(matchesQuery.data ?? []).length ? <p className="text-sm text-slate-500">אין התאמות שמורות.</p> : null}
-        </div>
-      </section>
+      {selectedSeller ? (
+        <>
+          <section className="mt-5 rounded-2xl border border-[#D4AF37]/40 bg-white p-5 shadow-sm">
+            <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-black text-purple-700">מוכר</span>
+            <h2 className="mt-3 text-3xl font-black">{selectedSeller.ownerName || selectedSeller.name}</h2>
+            <p className="mt-2 font-bold text-slate-500">{leadLocation(selectedSeller) || "ללא כתובת"}</p>
+            <p className="mt-3 text-2xl font-black text-[#9a7319]">₪{Number(selectedSeller.askingPrice ?? selectedSeller.marketingPrice ?? selectedSeller.currentPropertyPrice ?? 0).toLocaleString("he-IL")}</p>
+            <p className="mt-3 flex items-center gap-2 font-black"><Sparkles className="size-4 text-[#D4AF37]" />{matches.length} קונים מתאימים</p>
+          </section>
+          <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+            <table className="w-full text-right text-sm">
+              <thead className="bg-slate-50 text-slate-500"><tr>{["שם הקונה", "טלפון", "תקציב", "אזור מבוקש", "התאמה"].map((title) => <th key={title} className="px-4 py-3 font-black">{title}</th>)}</tr></thead>
+              <tbody className="divide-y divide-slate-100">
+                {matches.map(({ buyer, areaMatch }) => <tr key={buyer.id}><td className="px-4 py-4 font-black text-blue-700">{buyer.name}</td><td className="px-4 py-4">{buyer.phone}</td><td className="px-4 py-4 font-black">₪{Number(buyer.budgetMax ?? 0).toLocaleString("he-IL")}</td><td className="px-4 py-4">{buyer.desiredNeighborhoods?.join(", ") || "לא הוזן"}</td><td className="px-4 py-4"><div className="flex gap-2"><span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-black text-blue-700">תקציב מתאים</span>{areaMatch ? <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-black text-emerald-700">אזור תואם</span> : null}</div></td></tr>)}
+              </tbody>
+            </table>
+          </section>
+        </>
+      ) : null}
     </CrmLayout>
   );
 }

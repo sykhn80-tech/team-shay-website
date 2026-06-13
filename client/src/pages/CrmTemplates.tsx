@@ -33,6 +33,9 @@ export default function CrmTemplates() {
     },
     onError: (error) => toast.error(error.message),
   });
+  const deleteMutation = trpc.crm2.templates.delete.useMutation({
+    onSuccess: async () => { await utils.crm2.templates.list.invalidate(); toast.success("התבנית נמחקה."); },
+  });
 
   return (
     <CrmLayout title="תבניות הודעות" subtitle="ניהול תבניות שבת שלום + בלעדיות שבועית + הודעות פולואפ.">
@@ -81,7 +84,16 @@ export default function CrmTemplates() {
         </Button>
       </section>
 
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+      <div className="mt-6 grid gap-6 xl:grid-cols-[340px_1fr]">
+      <aside className="rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 className="text-xl font-black">טיפים לתבניות דינמיות</h2>
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">חשוב! כדי שהתגיות יעבדו, צריך למלא את הנתונים בעמוד „פעולות שיווק” עבור הליד הרלוונטי.</div>
+        <h3 className="mt-5 font-black">תגיות ליד</h3>
+        <div className="mt-2 flex flex-wrap gap-2">{["{שם הלקוח}", "{כתובת הנכס}", "{טלפון}"].map((tag) => <code key={tag} className="rounded-lg bg-slate-100 px-2 py-1 text-xs">{tag}</code>)}</div>
+        <h3 className="mt-5 font-black">תגיות פעולות שיווק</h3>
+        <div className="mt-2 flex flex-wrap gap-2">{["יד2", "מדלן", "פייסבוק", "אורגני דיגיטל", "ממומן דיגיטל", "שת״פ מתווכים", "וואטסאפ", "פליירים", "מכתבי שכנים", "צילום", "עיתון מקומי", "בית פתוח", "פניות טלפון", "שלטים"].map((tag) => <code key={tag} className="rounded-lg bg-[#fff4d8] px-2 py-1 text-xs">{`{${tag}}`}</code>)}</div>
+      </aside>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-xl font-black text-slate-950">תבניות פעילות</h2>
         <div className="mt-4 space-y-4">
           {(templatesQuery.data ?? []).map((template) => (
@@ -89,6 +101,7 @@ export default function CrmTemplates() {
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-lg font-black text-slate-900">{template.name}</p>
                 <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-slate-600">{template.type}</span>
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">וואטסאפ</span>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${template.isActive ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"}`}>
                   {template.isActive ? "פעיל" : "לא פעיל"}
                 </span>
@@ -105,11 +118,13 @@ export default function CrmTemplates() {
                 >
                   {template.isActive ? "כבה" : "הפעל"}
                 </Button>
+                <Button size="sm" variant="outline" onClick={() => deleteMutation.mutate({ id: template.id })} className="mr-2 text-red-600">מחיקה</Button>
               </div>
             </article>
           ))}
         </div>
       </section>
+      </div>
     </CrmLayout>
   );
 }

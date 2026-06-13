@@ -77,6 +77,13 @@ import {
   getDocumentById,
   createDocument,
   deleteDocument,
+  listMeetings,
+  getMeetingById,
+  createMeeting,
+  updateMeeting,
+  deleteMeeting,
+  listActivityLog,
+  adjustActivityLog,
 } from "./db";
 import { storagePut } from "./storage";
 import { sendWhatsApp } from "./greenApi";
@@ -231,6 +238,10 @@ const marketingActionSchema = z.object({
   templateId: z.number().int().positive().optional().nullable(),
   customMessage: z.string().optional().nullable(),
   marketingFields: z.record(z.string(), z.string()).optional(),
+  leadId: z.number().int().positive().optional().nullable(),
+  actionDate: z.string().optional().nullable(),
+  maxOffer: z.number().nonnegative().optional().nullable(),
+  visitorsCount: z.number().int().nonnegative().optional().nullable(),
   targetAudience: z.enum(["all", "buyers", "sellers", "investors"]).default("all"),
   status: z.enum(["draft", "scheduled", "sent"]).default("draft"),
 });
@@ -239,6 +250,7 @@ const financeEntrySchema = z.object({
   type: z.enum(["income", "expense"]),
   category: z.string().min(1),
   amount: z.number().positive(),
+  vatAmount: z.number().nonnegative().optional(),
   date: z.string().min(1),
   description: z.string().optional().nullable(),
   propertyId: z.number().int().positive().optional().nullable(),
@@ -253,7 +265,19 @@ const documentUploadSchema = z.object({
   leadId: z.number().int().positive().optional().nullable(),
   propertyId: z.number().int().positive().optional().nullable(),
   notes: z.string().optional().nullable(),
+  folderId: z.number().int().positive().optional().nullable(),
+  folderName: z.string().optional(),
 });
+
+const meetingSchema = z.object({
+  leadId: z.number().int().positive().optional().nullable(),
+  title: z.string().min(2),
+  date: z.string().min(1),
+  time: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+
+const activityTypeSchema = z.enum(["meetings", "buyer_tours", "calls", "followups", "recruitments"]);
 
 const CMA_DEFAULT_CITY_NAME = "ישראל";
 const NADLAN_NEIGHBORHOOD_INDEX_TTL_MS = 1000 * 60 * 60 * 6;
@@ -1859,7 +1883,7 @@ export const appRouter = router({
           neighborhood: z.string().optional().nullable(),
           notes: z.string().optional().nullable(),
           tags: z.string().optional().default(""),
-          leadStatus: z.enum(["חדש", "פעיל", "סגור", "לא רלוונטי"]).optional().default("חדש"),
+          leadStatus: z.enum(["חדש", "פעיל", "ממתין", "סגור", "לא רלוונטי"]).optional().default("חדש"),
           source: z.string().optional().nullable(),
           agentId: z.number().int().positive().optional().nullable(),
           leadType: z.string().optional().nullable(),
@@ -1949,7 +1973,7 @@ export const appRouter = router({
           neighborhood: z.string().optional().nullable(),
           notes: z.string().optional().nullable(),
           tags: z.string().optional(),
-          leadStatus: z.enum(["חדש", "פעיל", "סגור", "לא רלוונטי"]).optional(),
+          leadStatus: z.enum(["חדש", "פעיל", "ממתין", "סגור", "לא רלוונטי"]).optional(),
           source: z.string().optional().nullable(),
           agentId: z.number().int().positive().optional().nullable(),
           leadType: z.string().optional().nullable(),
@@ -2022,7 +2046,7 @@ export const appRouter = router({
             neighborhood: z.string().optional().nullable(),
             notes: z.string().optional().nullable(),
             tags: z.string().optional().default(""),
-            leadStatus: z.enum(["חדש", "פעיל", "סגור", "לא רלוונטי"]).optional().default("חדש"),
+            leadStatus: z.enum(["חדש", "פעיל", "ממתין", "סגור", "לא רלוונטי"]).optional().default("חדש"),
             source: z.string().optional().nullable(),
             agentId: z.number().int().positive().optional().nullable(),
           })
@@ -2053,7 +2077,7 @@ export const appRouter = router({
   crm2: router({
     followups: router({
       list: agentProcedure.query(async ({ ctx }) => {
-        return listFollowUps(ctx.agentSession.id);
+        return listFollowUps(ctx.agentSession.accountRole === "admin" ? null : ctx.agentSession.id);
       }),
       create: agentProcedure
         .input(followupSchema)
@@ -2071,7 +2095,7 @@ export const appRouter = router({
         .input(z.object({ id: z.number().int().positive(), data: followupSchema.partial() }))
         .mutation(async ({ ctx, input }) => {
           const existing = await getFollowUpById(input.id);
-          if (!existing || existing.agentId !== ctx.agentSession.id) {
+          if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) {
             throw new Error("Follow-up not found");
           }
           return updateFollowUp(input.id, input.data);
@@ -2080,7 +2104,7 @@ export const appRouter = router({
         .input(z.object({ id: z.number().int().positive() }))
         .mutation(async ({ ctx, input }) => {
           const existing = await getFollowUpById(input.id);
-          if (!existing || existing.agentId !== ctx.agentSession.id) {
+          if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) {
             throw new Error("Follow-up not found");
           }
           await deleteFollowUp(input.id);
@@ -2090,7 +2114,7 @@ export const appRouter = router({
 
     tasks: router({
       list: agentProcedure.query(async ({ ctx }) => {
-        return listTasks(ctx.agentSession.id);
+        return listTasks(ctx.agentSession.accountRole === "admin" ? null : ctx.agentSession.id);
       }),
       create: agentProcedure
         .input(taskSchema)
@@ -2110,7 +2134,7 @@ export const appRouter = router({
         .input(z.object({ id: z.number().int().positive(), data: taskSchema.partial() }))
         .mutation(async ({ ctx, input }) => {
           const existing = await getTaskById(input.id);
-          if (!existing || existing.agentId !== ctx.agentSession.id) {
+          if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) {
             throw new Error("Task not found");
           }
           return updateTask(input.id, input.data);
@@ -2119,7 +2143,7 @@ export const appRouter = router({
         .input(z.object({ id: z.number().int().positive() }))
         .mutation(async ({ ctx, input }) => {
           const existing = await getTaskById(input.id);
-          if (!existing || existing.agentId !== ctx.agentSession.id) {
+          if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) {
             throw new Error("Task not found");
           }
           await deleteTask(input.id);
@@ -2129,7 +2153,7 @@ export const appRouter = router({
 
     matches: router({
       list: agentProcedure.query(async ({ ctx }) => {
-        return listPropertyMatches(ctx.agentSession.id);
+        return listPropertyMatches(ctx.agentSession.accountRole === "admin" ? null : ctx.agentSession.id);
       }),
       create: agentProcedure
         .input(z.object({
@@ -2158,7 +2182,7 @@ export const appRouter = router({
         }))
         .mutation(async ({ ctx, input }) => {
           const existing = await getPropertyMatchById(input.id);
-          if (!existing || existing.agentId !== ctx.agentSession.id) {
+          if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) {
             throw new Error("Match not found");
           }
           return updatePropertyMatch(input.id, {
@@ -2173,7 +2197,7 @@ export const appRouter = router({
         }))
         .mutation(async ({ ctx, input }) => {
           const match = await getPropertyMatchById(input.matchId);
-          if (!match || match.agentId !== ctx.agentSession.id) {
+          if (!match || (ctx.agentSession.accountRole !== "admin" && match.agentId !== ctx.agentSession.id)) {
             throw new Error("Match not found");
           }
 
@@ -2199,7 +2223,7 @@ export const appRouter = router({
         .input(z.object({ id: z.number().int().positive() }))
         .mutation(async ({ ctx, input }) => {
           const existing = await getPropertyMatchById(input.id);
-          if (!existing || existing.agentId !== ctx.agentSession.id) {
+          if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) {
             throw new Error("Match not found");
           }
           await deletePropertyMatch(input.id);
@@ -2209,7 +2233,7 @@ export const appRouter = router({
 
     marketing: router({
       list: agentProcedure.query(async ({ ctx }) => {
-        return listMarketingActions(ctx.agentSession.id);
+        return listMarketingActions(ctx.agentSession.accountRole === "admin" ? null : ctx.agentSession.id);
       }),
       create: agentProcedure
         .input(marketingActionSchema)
@@ -2222,6 +2246,10 @@ export const appRouter = router({
             templateId: input.templateId ?? null,
             customMessage: input.customMessage ?? null,
             marketingFields: input.marketingFields ?? {},
+            leadId: input.leadId ?? null,
+            actionDate: input.actionDate ?? new Date().toISOString().slice(0, 10),
+            maxOffer: input.maxOffer ?? null,
+            visitorsCount: input.visitorsCount ?? null,
             targetAudience: input.targetAudience,
             status: input.status,
           });
@@ -2233,7 +2261,7 @@ export const appRouter = router({
         }))
         .mutation(async ({ ctx, input }) => {
           const existing = await getMarketingActionById(input.id);
-          if (!existing || existing.agentId !== ctx.agentSession.id) {
+          if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) {
             throw new Error("Marketing action not found");
           }
           return updateMarketingAction(input.id, input.data);
@@ -2294,7 +2322,7 @@ export const appRouter = router({
 
     finance: router({
       list: agentProcedure.query(async ({ ctx }) => {
-        return listFinanceEntries(ctx.agentSession.id);
+        return listFinanceEntries(ctx.agentSession.accountRole === "admin" ? null : ctx.agentSession.id);
       }),
       create: agentProcedure
         .input(financeEntrySchema)
@@ -2304,6 +2332,7 @@ export const appRouter = router({
             type: input.type,
             category: input.category,
             amount: input.amount,
+            vatAmount: input.vatAmount ?? Math.round(input.amount * 0.18),
             date: input.date,
             description: input.description ?? null,
             propertyId: input.propertyId ?? null,
@@ -2317,7 +2346,7 @@ export const appRouter = router({
         }))
         .mutation(async ({ ctx, input }) => {
           const existing = await getFinanceEntryById(input.id);
-          if (!existing || existing.agentId !== ctx.agentSession.id) {
+          if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) {
             throw new Error("Finance entry not found");
           }
           return updateFinanceEntry(input.id, input.data);
@@ -2326,7 +2355,7 @@ export const appRouter = router({
         .input(z.object({ id: z.number().int().positive() }))
         .mutation(async ({ ctx, input }) => {
           const existing = await getFinanceEntryById(input.id);
-          if (!existing || existing.agentId !== ctx.agentSession.id) {
+          if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) {
             throw new Error("Finance entry not found");
           }
           await deleteFinanceEntry(input.id);
@@ -2338,13 +2367,13 @@ export const appRouter = router({
           year: z.number().int().min(2000).max(3000).optional(),
         }).optional())
         .query(async ({ ctx, input }) => {
-          return summarizeFinanceEntries(ctx.agentSession.id, input?.month, input?.year);
+          return summarizeFinanceEntries(ctx.agentSession.accountRole === "admin" ? null : ctx.agentSession.id, input?.month, input?.year);
         }),
     }),
 
     documents: router({
       list: agentProcedure.query(async ({ ctx }) => {
-        return listDocuments(ctx.agentSession.id);
+        return listDocuments(ctx.agentSession.accountRole === "admin" ? null : ctx.agentSession.id);
       }),
       upload: agentProcedure
         .input(documentUploadSchema)
@@ -2364,18 +2393,61 @@ export const appRouter = router({
             leadId: input.leadId ?? null,
             propertyId: input.propertyId ?? null,
             notes: input.notes ?? null,
+            folderId: input.folderId ?? null,
+            folderName: input.folderName ?? "כל המסמכים",
+            fileKey: null,
           });
         }),
       delete: agentProcedure
         .input(z.object({ id: z.number().int().positive() }))
         .mutation(async ({ ctx, input }) => {
           const existing = await getDocumentById(input.id);
-          if (!existing || existing.agentId !== ctx.agentSession.id) {
+          if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) {
             throw new Error("Document not found");
           }
           await deleteDocument(input.id);
           return { success: true } as const;
-        }),
+      }),
+    }),
+
+    meetings: router({
+      list: agentProcedure.query(async ({ ctx }) => {
+        return listMeetings(ctx.agentSession.accountRole === "admin" ? null : ctx.agentSession.id);
+      }),
+      create: agentProcedure.input(meetingSchema).mutation(async ({ ctx, input }) => {
+        return createMeeting({
+          agentId: ctx.agentSession.id,
+          leadId: input.leadId ?? null,
+          title: input.title,
+          date: input.date,
+          time: input.time ?? null,
+          notes: input.notes ?? null,
+        });
+      }),
+      update: agentProcedure.input(z.object({ id: z.number().int().positive(), data: meetingSchema.partial() })).mutation(async ({ ctx, input }) => {
+        const existing = await getMeetingById(input.id);
+        if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) throw new Error("Meeting not found");
+        return updateMeeting(input.id, input.data);
+      }),
+      delete: agentProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+        const existing = await getMeetingById(input.id);
+        if (!existing || (ctx.agentSession.accountRole !== "admin" && existing.agentId !== ctx.agentSession.id)) throw new Error("Meeting not found");
+        await deleteMeeting(input.id);
+        return { success: true } as const;
+      }),
+    }),
+
+    activity: router({
+      list: agentProcedure.query(async ({ ctx }) => {
+        return listActivityLog(ctx.agentSession.accountRole === "admin" ? null : ctx.agentSession.id);
+      }),
+      adjust: agentProcedure.input(z.object({
+        activityType: activityTypeSchema,
+        date: z.string().min(1),
+        delta: z.number().int().min(-1).max(1),
+      })).mutation(async ({ ctx, input }) => {
+        return adjustActivityLog(ctx.agentSession.id, input.activityType, input.date, input.delta);
+      }),
     }),
   }),
 });

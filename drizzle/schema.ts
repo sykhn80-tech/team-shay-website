@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   int,
+  json,
   mysqlEnum,
   mysqlTable,
   text,
@@ -172,6 +173,87 @@ export const crmLeadsRelations = relations(crmLeads, ({ one }) => ({
   }),
 }));
 
+export const tasks = mysqlTable("tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  agentId: int("agentId").notNull().references(() => agentAccounts.id, { onDelete: "cascade" }),
+  leadId: int("leadId"),
+  text: text("text").notNull(),
+  dueDate: varchar("dueDate", { length: 32 }),
+  status: mysqlEnum("status", ["open", "in_progress", "done"]).default("open").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high"]).default("medium").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const meetings = mysqlTable("meetings", {
+  id: int("id").autoincrement().primaryKey(),
+  agentId: int("agentId").notNull().references(() => agentAccounts.id, { onDelete: "cascade" }),
+  leadId: int("leadId"),
+  title: varchar("title", { length: 255 }).notNull(),
+  date: varchar("date", { length: 16 }).notNull(),
+  time: varchar("time", { length: 16 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const marketingActions = mysqlTable("marketingActions", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId"),
+  agentId: int("agentId").notNull().references(() => agentAccounts.id, { onDelete: "cascade" }),
+  actionDate: varchar("actionDate", { length: 16 }).notNull(),
+  channelData: json("channelData").$type<Record<string, string>>().notNull(),
+  maxOffer: int("maxOffer"),
+  visitorsCount: int("visitorsCount"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const activityLog = mysqlTable("activityLog", {
+  id: int("id").autoincrement().primaryKey(),
+  agentId: int("agentId").notNull().references(() => agentAccounts.id, { onDelete: "cascade" }),
+  activityType: varchar("activityType", { length: 64 }).notNull(),
+  date: varchar("date", { length: 16 }).notNull(),
+  count: int("count").default(0).notNull(),
+});
+
+export const transactions = mysqlTable("transactions", {
+  id: int("id").autoincrement().primaryKey(),
+  agentId: int("agentId").notNull().references(() => agentAccounts.id, { onDelete: "cascade" }),
+  leadId: int("leadId"),
+  type: mysqlEnum("type", ["income", "expense"]).notNull(),
+  amount: int("amount").notNull(),
+  vatAmount: int("vatAmount").default(0).notNull(),
+  description: text("description"),
+  date: varchar("date", { length: 16 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const messageTemplates = mysqlTable("messageTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  agentId: int("agentId").references(() => agentAccounts.id, { onDelete: "set null" }),
+  name: varchar("name", { length: 180 }).notNull(),
+  channel: mysqlEnum("channel", ["whatsapp", "email"]).default("whatsapp").notNull(),
+  frequency: mysqlEnum("frequency", ["weekly", "monthly", "once"]).default("once").notNull(),
+  bodyText: text("bodyText").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+});
+
+export const documentFolders = mysqlTable("documentFolders", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 180 }).notNull(),
+  isDefault: boolean("isDefault").default(false).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+});
+
+export const documents = mysqlTable("documents", {
+  id: int("id").autoincrement().primaryKey(),
+  agentId: int("agentId").notNull().references(() => agentAccounts.id, { onDelete: "cascade" }),
+  leadId: int("leadId"),
+  folderId: int("folderId").references(() => documentFolders.id, { onDelete: "set null" }),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  fileUrl: varchar("fileUrl", { length: 1024 }).notNull(),
+  fileKey: varchar("fileKey", { length: 512 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
@@ -195,3 +277,11 @@ export type InsertPropertyImage = typeof propertyImages.$inferInsert;
 
 export type CrmLead = typeof crmLeads.$inferSelect;
 export type InsertCrmLead = typeof crmLeads.$inferInsert;
+export type TaskRow = typeof tasks.$inferSelect;
+export type MeetingRow = typeof meetings.$inferSelect;
+export type MarketingActionRow = typeof marketingActions.$inferSelect;
+export type ActivityLogRow = typeof activityLog.$inferSelect;
+export type TransactionRow = typeof transactions.$inferSelect;
+export type MessageTemplateRow = typeof messageTemplates.$inferSelect;
+export type DocumentRow = typeof documents.$inferSelect;
+export type DocumentFolderRow = typeof documentFolders.$inferSelect;

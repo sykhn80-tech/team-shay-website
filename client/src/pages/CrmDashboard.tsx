@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { AlertTriangle, ArrowDown, ArrowUp, Clock3, KeyRound, UserPlus, Users } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowUp, Clock3, Handshake, Home, KeyRound, Receipt, UserCheck, UserPlus, Users } from "lucide-react";
 import CrmLayout from "@/components/CrmLayout";
 import { trpc } from "@/lib/trpc";
 import { leadLocation } from "@/lib/lead-display";
@@ -20,17 +20,19 @@ function StatCard({
   value,
   icon: Icon,
   change,
+  color = "bg-[#fff8e6] text-[#b98b2f]",
 }: {
   label: string;
   value: string | number;
   icon: typeof Users;
   change?: number;
+  color?: string;
 }) {
   const positive = (change ?? 0) >= 0;
   return (
     <article className="rounded-[24px] border border-[#d4af37]/25 bg-white p-5 shadow-[0_14px_32px_rgba(15,23,42,0.06)]">
       <div className="flex items-center justify-between gap-3">
-        <span className="flex size-11 items-center justify-center rounded-2xl bg-[#fff8e6] text-[#b98b2f]"><Icon className="size-5" /></span>
+        <span className={`flex size-11 items-center justify-center rounded-2xl ${color}`}><Icon className="size-5" /></span>
         {change !== undefined ? (
           <span className={`inline-flex items-center gap-1 text-xs font-black ${positive ? "text-emerald-600" : "text-red-600"}`}>
             {positive ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" />}
@@ -45,6 +47,7 @@ function StatCard({
 }
 
 export default function CrmDashboard() {
+  const agentQuery = trpc.agent.me.useQuery();
   const leadsQuery = trpc.crm.list.useQuery({ search: undefined, agentId: undefined });
   const tasksQuery = trpc.crm2.tasks.list.useQuery();
   const followupsQuery = trpc.crm2.followups.list.useQuery();
@@ -67,6 +70,13 @@ export default function CrmDashboard() {
   }).length;
   const weeklyChange = newLastWeek ? Math.round(((newThisWeek - newLastWeek) / newLastWeek) * 100) : newThisWeek ? 100 : 0;
   const activeExclusivities = leads.filter((lead) => normalizeLeadType(lead.leadType) === "exclusive" && lead.leadStatus !== "סגור").length;
+  const buyers = leads.filter((lead) => ["buyer", "buyer_and_seller"].includes(normalizeLeadType(lead.leadType))).length;
+  const sellers = leads.filter((lead) => ["seller", "buyer_and_seller"].includes(normalizeLeadType(lead.leadType))).length;
+  const agreements = leads.filter((lead) => normalizeLeadType(lead.leadType) === "agreement").length;
+  const rentals = leads.filter((lead) => normalizeLeadType(lead.leadType) === "rental").length;
+  const pastClients = leads.filter((lead) => normalizeLeadType(lead.leadType) === "past_client").length;
+  const referrals = leads.filter((lead) => /הפניה|referral/i.test(lead.source ?? "")).length;
+  const potentialCommission = leads.reduce((sum, lead) => sum + Math.round(Number(lead.marketingPrice ?? lead.askingPrice ?? 0) * 0.02), 0);
   const waitingForCare = leads.filter((lead) => lead.leadStatus === "חדש" && Date.now() - new Date(lead.createdAt).getTime() > 3 * DAY).length;
   const upcomingExpirations = leads
     .filter((lead) => {
@@ -86,12 +96,33 @@ export default function CrmDashboard() {
   const maxValue = Math.max(1, ...bars.map((item) => Math.max(item.income, item.expense)));
 
   return (
-    <CrmLayout title="דשבורד CRM" subtitle="תמונת מצב ברורה של הלידים, הבלעדיות והמשימות שדורשות טיפול עכשיו.">
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="לידים חדשים השבוע" value={newThisWeek} change={weeklyChange} icon={UserPlus} />
-        <StatCard label="בלעדיות פעילות" value={activeExclusivities} icon={KeyRound} />
-        <StatCard label="ממתינים לטיפול מעל 3 ימים" value={waitingForCare} icon={Clock3} />
-        <StatCard label="הכנסות החודש" value={`₪${(financeSummary?.income ?? 0).toLocaleString("he-IL")}`} icon={Users} />
+    <CrmLayout title={`שלום ${agentQuery.data?.name ?? "סוכן"}${agentQuery.data?.accountRole === "admin" ? " (ראש צוות)" : ""}`} subtitle="תמונת מצב חיה של כל פעילות הצוות.">
+      <div className="mb-5 flex justify-end">
+        <Link href="/agent-dashboard/crm/leads" className="rounded-full bg-[#D4AF37] px-5 py-3 text-sm font-black text-black shadow-sm">ליד חדש +</Link>
+      </div>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <StatCard label={'סה"כ לידים'} value={leads.length} icon={Users} color="bg-slate-100 text-slate-700" />
+        <StatCard label="קונים" value={buyers} icon={UserCheck} color="bg-blue-100 text-blue-700" />
+        <StatCard label="מוכרים" value={sellers} icon={Home} color="bg-purple-100 text-purple-700" />
+        <StatCard label="לקוחות בבלעדיות" value={activeExclusivities} icon={KeyRound} color="bg-orange-100 text-orange-700" />
+        <StatCard label="הסכמה" value={agreements} icon={Handshake} color="bg-teal-100 text-teal-700" />
+        <StatCard label="שכירויות" value={rentals} icon={Home} color="bg-cyan-100 text-cyan-700" />
+        <StatCard label="שימור לקוחות" value={pastClients} icon={UserPlus} color="bg-pink-100 text-pink-700" />
+        <StatCard label="פוטנציאל עמלות" value={`₪${potentialCommission.toLocaleString("he-IL")}`} icon={Receipt} color="bg-emerald-100 text-emerald-700" />
+        <StatCard label="הפניות" value={referrals} icon={Users} color="bg-amber-100 text-amber-700" />
+      </section>
+
+      <section className="mt-6 rounded-[24px] border border-slate-200 bg-white p-5">
+        <div className="flex items-center justify-between"><h2 className="text-xl font-black">משימות פתוחות</h2><Link href="/agent-dashboard/crm/tasks" className="text-sm font-black text-[#9a7319]">כל המשימות</Link></div>
+        <div className="mt-4 divide-y divide-slate-100">
+          {tasks.filter((task) => task.status !== "done").slice(0, 7).map((task) => (
+            <div key={task.id} className="flex items-center justify-between gap-4 py-3">
+              <div><p className="font-black text-slate-800">{task.title}</p><p className="mt-1 text-xs font-bold text-[#9a7319]">{task.leadId ? leadsById.get(task.leadId)?.name ?? `ליד #${task.leadId}` : "משימה כללית"}</p></div>
+              <span className="text-xs font-bold text-slate-400">{task.dueDate ? new Date(task.dueDate).toLocaleDateString("he-IL") : "ללא תאריך"}</span>
+            </div>
+          ))}
+          {!tasks.some((task) => task.status !== "done") ? <p className="py-4 text-sm text-slate-500">אין משימות פתוחות.</p> : null}
+        </div>
       </section>
 
       <section className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">

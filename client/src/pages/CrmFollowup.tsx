@@ -1,150 +1,71 @@
+import { useMemo, useState } from "react";
+import { MapPin, Phone, Plus } from "lucide-react";
+import { toast } from "sonner";
 import CrmLayout from "@/components/CrmLayout";
 import { Button } from "@/components/ui/button";
+import { leadLocation } from "@/lib/lead-display";
 import { trpc } from "@/lib/trpc";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { leadLabel, leadLocation } from "@/lib/lead-display";
-import { CrmSearchSelect } from "@/components/CrmSearchSelect";
 
-const typeOptions = [
-  { value: "call", label: "שיחה" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "email", label: "Email" },
-  { value: "meeting", label: "פגישה" },
-] as const;
+function taskTiming(dueDate?: string | null) {
+  if (!dueDate) return { label: "בזמן", className: "bg-emerald-100 text-emerald-700", order: 2 };
+  const difference = new Date(dueDate).getTime() - Date.now();
+  if (difference < 0) return { label: "אחור", className: "bg-red-100 text-red-700", order: 0 };
+  if (difference < 86_400_000) return { label: "איחור", className: "bg-orange-100 text-orange-700", order: 1 };
+  return { label: "בזמן", className: "bg-emerald-100 text-emerald-700", order: 2 };
+}
 
 export default function CrmFollowup() {
   const utils = trpc.useUtils();
   const leadsQuery = trpc.crm.list.useQuery({ search: undefined, agentId: undefined });
-  const followupsQuery = trpc.crm2.followups.list.useQuery();
+  const tasksQuery = trpc.crm2.tasks.list.useQuery();
+  const [drafts, setDrafts] = useState<Record<number, string>>({});
 
-  const [leadId, setLeadId] = useState<number | null>(null);
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [type, setType] = useState<(typeof typeOptions)[number]["value"]>("call");
-  const [note, setNote] = useState("");
-
-  const createMutation = trpc.crm2.followups.create.useMutation({
+  const createTask = trpc.crm2.tasks.create.useMutation({
     onSuccess: async () => {
-      await utils.crm2.followups.list.invalidate();
-      setLeadId(null);
-      setScheduledDate("");
-      setType("call");
-      setNote("");
-      toast.success("פולואפ נוסף.");
+      await utils.crm2.tasks.list.invalidate();
+      setDrafts({});
+      toast.success("המשימה נוספה לליד.");
     },
-    onError: (error) => toast.error(error.message),
   });
 
-  const updateMutation = trpc.crm2.followups.update.useMutation({
-    onSuccess: async () => {
-      await utils.crm2.followups.list.invalidate();
-      toast.success("סטטוס עודכן.");
-    },
-    onError: (error) => toast.error(error.message),
-  });
-
-  const groupedByDate = useMemo(() => {
-    type FollowUpItem = NonNullable<typeof followupsQuery.data>[number];
-    const map = new Map<string, FollowUpItem[]>();
-    for (const item of followupsQuery.data ?? []) {
-      const key = new Date(item.scheduledDate).toLocaleDateString("he-IL");
-      const bucket = map.get(key) ?? [];
-      bucket.push(item);
-      map.set(key, bucket);
-    }
-    return Array.from(map.entries());
-  }, [followupsQuery.data]);
-
-  const leadsById = useMemo(
-    () => new Map((leadsQuery.data ?? []).map((lead) => [lead.id, lead])),
-    [leadsQuery.data],
-  );
+  const cards = useMemo(() => {
+    const leads = new Map((leadsQuery.data ?? []).map((lead) => [lead.id, lead]));
+    return (tasksQuery.data ?? [])
+      .filter((task) => task.status !== "done" && task.leadId && leads.has(task.leadId))
+      .map((task) => ({ task, lead: leads.get(task.leadId!)!, timing: taskTiming(task.dueDate) }))
+      .sort((left, right) => left.timing.order - right.timing.order || String(left.task.dueDate ?? "").localeCompare(String(right.task.dueDate ?? "")));
+  }, [leadsQuery.data, tasksQuery.data]);
 
   return (
-    <CrmLayout title="פולואפ" subtitle="ניהול פולואפים שבועי לפי לידים: שיחות, וואטסאפ, אימייל ופגישות.">
-      <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <h2 className="text-lg font-black text-slate-950">+ פולואפ חדש</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <CrmSearchSelect value={leadId} onChange={value => setLeadId(value == null ? null : Number(value))} placeholder="בחר ליד"
-            options={(leadsQuery.data ?? []).map(lead => ({ value: lead.id, label: leadLabel(lead) }))} />
-
-          <input
-            type="datetime-local"
-            value={scheduledDate}
-            onChange={(event) => setScheduledDate(event.target.value)}
-            className="h-11 rounded-xl border border-slate-200 px-3"
-          />
-
-          <CrmSearchSelect value={type} onChange={value => setType((value ?? "call") as (typeof typeOptions)[number]["value"])}
-            options={[...typeOptions]} isClearable={false} />
-
-          <Button
-            onClick={() => {
-              if (!leadId || !scheduledDate) {
-                toast.error("יש לבחור ליד ותאריך.");
-                return;
-              }
-              createMutation.mutate({
-                leadId,
-                scheduledDate: new Date(scheduledDate).toISOString(),
-                type,
-                note: note || null,
-                status: "pending",
-              });
-            }}
-            disabled={createMutation.isPending}
-            className="h-11 rounded-xl bg-[#d9ae4c] text-black hover:bg-[#c99a31]"
-          >
-            הוסף פולואפ
-          </Button>
-        </div>
-
-        <textarea
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          placeholder="הערה לפולואפ (אופציונלי)"
-          className="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-3 text-sm"
-        />
-      </section>
-
-      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
-        <h2 className="text-lg font-black text-slate-950">פולואפים ממתינים</h2>
-        <div className="mt-4 space-y-4">
-          {groupedByDate.map(([date, items]) => (
-            <div key={date}>
-              <p className="text-sm font-black text-[#b98b2f]">{date}</p>
-              <div className="mt-2 space-y-2">
-                {items?.map((item) => (
-                  <div key={item.id} className="rounded-xl border border-slate-200 bg-[#faf8f1] p-3">
-                    <p className="text-sm font-black text-slate-800">{leadsById.get(item.leadId)?.name ?? `ליד #${item.leadId}`}</p>
-                    {leadLocation(leadsById.get(item.leadId)) ? (
-                      <p className="mt-1 text-xs font-bold text-[#b98b2f]">{leadLocation(leadsById.get(item.leadId))}</p>
-                    ) : null}
-                    <p className="mt-1 text-xs text-slate-500">{item.type}</p>
-                    {item.note ? <p className="mt-1 text-sm text-slate-600">{item.note}</p> : null}
-                    <div className="mt-2 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateMutation.mutate({ id: item.id, data: { status: "done" } })}
-                      >
-                        בוצע
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => updateMutation.mutate({ id: item.id, data: { status: "cancelled" } })}
-                      >
-                        ביטול
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+    <CrmLayout title="פולאפ" subtitle="לידים עם משימות פתוחות, עבוד על כל ליד ועדכן את הסטטוס.">
+      <section className="space-y-4">
+        {cards.map(({ task, lead, timing }) => (
+          <article key={task.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <a href="/agent-dashboard/crm/leads" className="text-lg font-black text-blue-700 hover:underline">{lead.name}</a>
+                <div className="mt-2 flex flex-wrap gap-4 text-sm font-bold text-[#9a7319]">
+                  <a href={`tel:${lead.phone}`} className="flex items-center gap-1"><Phone className="size-4" />{lead.phone}</a>
+                  {leadLocation(lead) ? <span className="flex items-center gap-1"><MapPin className="size-4" />{leadLocation(lead)}</span> : null}
+                </div>
               </div>
+              <span className={`rounded-full px-3 py-1 text-xs font-black ${timing.className}`}>{timing.label}</span>
             </div>
-          ))}
-          {!groupedByDate.length ? <p className="text-sm text-slate-500">אין פולואפים כרגע.</p> : null}
-        </div>
+            <div className="mt-4 rounded-xl bg-[#F8F8F5] p-4">
+              <p className="font-black text-slate-800">{task.title}</p>
+              {task.dueDate ? <p className="mt-1 text-xs text-slate-500">{new Date(task.dueDate).toLocaleString("he-IL")}</p> : null}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <input value={drafts[lead.id] ?? ""} onChange={(event) => setDrafts((current) => ({ ...current, [lead.id]: event.target.value }))} placeholder="הוסף משימה חדשה לליד זה..." className="flex-1" />
+              <Button size="icon" onClick={() => {
+                const text = drafts[lead.id]?.trim();
+                if (!text) return;
+                createTask.mutate({ title: text, description: null, dueDate: null, priority: "medium", status: "open", leadId: lead.id, propertyId: null });
+              }} className="bg-[#D4AF37] text-black"><Plus className="size-4" /></Button>
+            </div>
+          </article>
+        ))}
+        {!cards.length ? <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">אין לידים עם משימות פתוחות כרגע.</div> : null}
       </section>
     </CrmLayout>
   );

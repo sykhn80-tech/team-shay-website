@@ -1228,7 +1228,7 @@ export type CrmLeadData = {
   neighborhood: string | null;
   notes: string | null;
   tags: string;
-  leadStatus: "חדש" | "פעיל" | "סגור" | "לא רלוונטי";
+  leadStatus: "חדש" | "פעיל" | "ממתין" | "סגור" | "לא רלוונטי";
   source: string | null;
   // Extended CRM/import fields (optional for backwards compat with existing blob data)
   leadType?: string | null;
@@ -1352,7 +1352,10 @@ export async function listCrmLeads(options?: {
       (l) =>
         l.name.toLowerCase().includes(term) ||
         l.phone.includes(term) ||
-        (l.neighborhood ?? "").toLowerCase().includes(term)
+        (l.neighborhood ?? "").toLowerCase().includes(term) ||
+        (l.propertyStreet ?? "").toLowerCase().includes(term) ||
+        (l.propertyCity ?? "").toLowerCase().includes(term) ||
+        (l.propertyNeighborhood ?? "").toLowerCase().includes(term)
     );
   }
 
@@ -1481,6 +1484,10 @@ export type MarketingAction = {
   templateId: number | null;
   customMessage: string | null;
   marketingFields?: Record<string, string>;
+  leadId?: number | null;
+  actionDate?: string | null;
+  maxOffer?: number | null;
+  visitorsCount?: number | null;
   targetAudience: "all" | "buyers" | "sellers" | "investors";
   sentAt: string | null;
   recipientCount: number;
@@ -1496,6 +1503,9 @@ export type MessageTemplate = {
   content: string;
   imageUrl: string | null;
   isActive: boolean;
+  agentId?: number | null;
+  channel?: "whatsapp" | "email";
+  frequency?: "weekly" | "monthly" | "once";
   createdAt: string;
   updatedAt: string;
 };
@@ -1507,6 +1517,7 @@ export type FinanceEntry = {
   type: "income" | "expense";
   category: string;
   amount: number;
+  vatAmount?: number;
   date: string;
   description: string | null;
   propertyId: number | null;
@@ -1524,7 +1535,31 @@ export type Document = {
   leadId: number | null;
   propertyId: number | null;
   notes: string | null;
+  folderId?: number | null;
+  folderName?: string;
+  fileKey?: string | null;
   uploadedAt: string;
+};
+
+export type Meeting = {
+  id: number;
+  agentId: number;
+  leadId: number | null;
+  title: string;
+  date: string;
+  time: string | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ActivityLog = {
+  id: number;
+  agentId: number;
+  activityType: "meetings" | "buyer_tours" | "calls" | "followups" | "recruitments";
+  date: string;
+  count: number;
+  updatedAt: string;
 };
 
 // נתיבי Blob
@@ -1535,6 +1570,8 @@ const MARKETING_KEY = "crm/team-shay/marketing.json";
 const TEMPLATES_KEY = "crm/team-shay/templates.json";
 const FINANCE_KEY = "crm/team-shay/finance.json";
 const DOCUMENTS_KEY = "crm/team-shay/documents.json";
+const MEETINGS_KEY = "crm/team-shay/meetings.json";
+const ACTIVITY_LOG_KEY = "crm/team-shay/activity-log.json";
 
 type IdCollection<T> = {
   nextId: number;
@@ -1662,6 +1699,8 @@ const marketingCache = createCollectionCache<MarketingAction>();
 const templatesCache = createCollectionCache<MessageTemplate>();
 const financeCache = createCollectionCache<FinanceEntry>();
 const documentsCache = createCollectionCache<Document>();
+const meetingsCache = createCollectionCache<Meeting>();
+const activityLogCache = createCollectionCache<ActivityLog>();
 
 const followupsLocalPath = path.join(crm2LocalRoot, "crm-followups.json");
 const tasksLocalPath = path.join(crm2LocalRoot, "crm-tasks.json");
@@ -1670,6 +1709,8 @@ const marketingLocalPath = path.join(crm2LocalRoot, "crm-marketing.json");
 const templatesLocalPath = path.join(crm2LocalRoot, "crm-templates.json");
 const financeLocalPath = path.join(crm2LocalRoot, "crm-finance.json");
 const documentsLocalPath = path.join(crm2LocalRoot, "crm-documents.json");
+const meetingsLocalPath = path.join(crm2LocalRoot, "crm-meetings.json");
+const activityLogLocalPath = path.join(crm2LocalRoot, "crm-activity-log.json");
 
 async function readFollowups() {
   return readCollection<FollowUp>(FOLLOWUPS_KEY, followupsLocalPath, followupsCache);
@@ -1678,10 +1719,10 @@ async function saveFollowups(data: IdCollection<FollowUp>) {
   return writeCollection<FollowUp>(FOLLOWUPS_KEY, followupsLocalPath, followupsCache, data);
 }
 
-export async function listFollowUps(agentId: number): Promise<FollowUp[]> {
+export async function listFollowUps(agentId: number | null): Promise<FollowUp[]> {
   const data = await readFollowups();
   return data.items
-    .filter((item) => item.agentId === agentId)
+    .filter((item) => agentId == null || item.agentId === agentId)
     .sort((left, right) => new Date(left.scheduledDate).getTime() - new Date(right.scheduledDate).getTime());
 }
 
@@ -1721,10 +1762,10 @@ async function saveTasks(data: IdCollection<Task>) {
   return writeCollection<Task>(TASKS_KEY, tasksLocalPath, tasksCache, data);
 }
 
-export async function listTasks(agentId: number): Promise<Task[]> {
+export async function listTasks(agentId: number | null): Promise<Task[]> {
   const data = await readTasks();
   return data.items
-    .filter((item) => item.agentId === agentId)
+    .filter((item) => agentId == null || item.agentId === agentId)
     .sort((left, right) => {
       const leftDate = left.dueDate ? new Date(left.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
       const rightDate = right.dueDate ? new Date(right.dueDate).getTime() : Number.MAX_SAFE_INTEGER;
@@ -1768,10 +1809,10 @@ async function saveMatches(data: IdCollection<PropertyMatch>) {
   return writeCollection<PropertyMatch>(MATCHES_KEY, matchesLocalPath, matchesCache, data);
 }
 
-export async function listPropertyMatches(agentId: number) {
+export async function listPropertyMatches(agentId: number | null) {
   const data = await readMatches();
   return data.items
-    .filter((item) => item.agentId === agentId)
+    .filter((item) => agentId == null || item.agentId === agentId)
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
 }
 
@@ -1947,10 +1988,10 @@ async function saveMarketing(data: IdCollection<MarketingAction>) {
   return writeCollection<MarketingAction>(MARKETING_KEY, marketingLocalPath, marketingCache, data);
 }
 
-export async function listMarketingActions(agentId: number) {
+export async function listMarketingActions(agentId: number | null) {
   const data = await readMarketing();
   return data.items
-    .filter((item) => item.agentId === agentId)
+    .filter((item) => agentId == null || item.agentId === agentId)
     .sort((left, right) => {
       if (left.year !== right.year) return right.year - left.year;
       return right.weekNumber - left.weekNumber;
@@ -2010,10 +2051,10 @@ async function saveFinance(data: IdCollection<FinanceEntry>) {
   return writeCollection<FinanceEntry>(FINANCE_KEY, financeLocalPath, financeCache, data);
 }
 
-export async function listFinanceEntries(agentId: number) {
+export async function listFinanceEntries(agentId: number | null) {
   const data = await readFinance();
   return data.items
-    .filter((item) => item.agentId === agentId)
+    .filter((item) => agentId == null || item.agentId === agentId)
     .sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime());
 }
 
@@ -2045,7 +2086,7 @@ export async function deleteFinanceEntry(id: number) {
   await saveFinance(data);
 }
 
-export async function summarizeFinanceEntries(agentId: number, month?: number, year?: number) {
+export async function summarizeFinanceEntries(agentId: number | null, month?: number, year?: number) {
   const entries = await listFinanceEntries(agentId);
   const now = new Date();
   const targetMonth = month ?? (now.getMonth() + 1);
@@ -2100,10 +2141,10 @@ async function saveDocuments(data: IdCollection<Document>) {
   return writeCollection<Document>(DOCUMENTS_KEY, documentsLocalPath, documentsCache, data);
 }
 
-export async function listDocuments(agentId: number) {
+export async function listDocuments(agentId: number | null) {
   const data = await readDocuments();
   return data.items
-    .filter((item) => item.agentId === agentId)
+    .filter((item) => agentId == null || item.agentId === agentId)
     .sort((left, right) => new Date(right.uploadedAt).getTime() - new Date(left.uploadedAt).getTime());
 }
 
@@ -2124,6 +2165,92 @@ export async function deleteDocument(id: number) {
   const data = await readDocuments();
   data.items = data.items.filter((item) => item.id !== id);
   await saveDocuments(data);
+}
+
+async function readMeetings() {
+  return readCollection<Meeting>(MEETINGS_KEY, meetingsLocalPath, meetingsCache);
+}
+
+async function saveMeetings(data: IdCollection<Meeting>) {
+  return writeCollection<Meeting>(MEETINGS_KEY, meetingsLocalPath, meetingsCache, data);
+}
+
+export async function listMeetings(agentId: number | null) {
+  const data = await readMeetings();
+  return data.items
+    .filter((item) => agentId == null || item.agentId === agentId)
+    .sort((left, right) => `${left.date} ${left.time ?? ""}`.localeCompare(`${right.date} ${right.time ?? ""}`));
+}
+
+export async function getMeetingById(id: number) {
+  const data = await readMeetings();
+  return data.items.find((item) => item.id === id) ?? null;
+}
+
+export async function createMeeting(input: Omit<Meeting, "id" | "createdAt" | "updatedAt">) {
+  const data = await readMeetings();
+  const timestamp = nowIso();
+  const meeting: Meeting = { ...input, id: data.nextId++, createdAt: timestamp, updatedAt: timestamp };
+  data.items.push(meeting);
+  await saveMeetings(data);
+  return meeting;
+}
+
+export async function updateMeeting(id: number, input: Partial<Omit<Meeting, "id" | "createdAt">>) {
+  const data = await readMeetings();
+  const index = data.items.findIndex((item) => item.id === id);
+  if (index < 0) return null;
+  data.items[index] = { ...data.items[index], ...input, updatedAt: nowIso() };
+  await saveMeetings(data);
+  return data.items[index];
+}
+
+export async function deleteMeeting(id: number) {
+  const data = await readMeetings();
+  data.items = data.items.filter((item) => item.id !== id);
+  await saveMeetings(data);
+}
+
+async function readActivityLog() {
+  return readCollection<ActivityLog>(ACTIVITY_LOG_KEY, activityLogLocalPath, activityLogCache);
+}
+
+async function saveActivityLog(data: IdCollection<ActivityLog>) {
+  return writeCollection<ActivityLog>(ACTIVITY_LOG_KEY, activityLogLocalPath, activityLogCache, data);
+}
+
+export async function listActivityLog(agentId: number | null) {
+  const data = await readActivityLog();
+  return data.items
+    .filter((item) => agentId == null || item.agentId === agentId)
+    .sort((left, right) => right.date.localeCompare(left.date));
+}
+
+export async function adjustActivityLog(
+  agentId: number,
+  activityType: ActivityLog["activityType"],
+  date: string,
+  delta: number,
+) {
+  const data = await readActivityLog();
+  const existing = data.items.find((item) => item.agentId === agentId && item.activityType === activityType && item.date === date);
+  if (existing) {
+    existing.count = Math.max(0, existing.count + delta);
+    existing.updatedAt = nowIso();
+    await saveActivityLog(data);
+    return existing;
+  }
+  const item: ActivityLog = {
+    id: data.nextId++,
+    agentId,
+    activityType,
+    date,
+    count: Math.max(0, delta),
+    updatedAt: nowIso(),
+  };
+  data.items.push(item);
+  await saveActivityLog(data);
+  return item;
 }
 
 function filterLeadsForAudience(

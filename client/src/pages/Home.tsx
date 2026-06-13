@@ -1045,7 +1045,7 @@ export default function Home() {
                         <h3 className="text-xl font-black text-[#1A1A1A]">{formatPropertyLocation(property) || property.title}</h3>
                         <p className="mt-5 text-2xl font-black text-[#D4AF37]">₪{property.price.toLocaleString("he-IL")}</p>
                         <div className="mt-4 border-t border-[#D4AF37]/20 pt-4 text-sm font-bold">
-                          <span className="text-[#6B6B6B]">{property.agentName}</span>
+                          <span className="text-[#6B6B6B]">צוות שי</span>
                         </div>
                       </div>
                     </article>

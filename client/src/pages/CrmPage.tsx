@@ -5,14 +5,18 @@ import { Input } from "@/components/ui/input";
 import CrmLayout from "@/components/CrmLayout";
 import {
   Check,
+  Copy,
   Download,
   MapPin,
+  MessageCircle,
   Phone,
   Plus,
   Pencil,
+  RefreshCw,
   Search,
   Trash2,
   User,
+  UserRoundCog,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -40,7 +44,7 @@ type Lead = {
   neighborhood: string | null;
   notes: string | null;
   tags: string;
-  leadStatus: "חדש" | "פעיל" | "סגור" | "לא רלוונטי";
+  leadStatus: "חדש" | "פעיל" | "ממתין" | "סגור" | "לא רלוונטי";
   source: string | null;
   leadType?: string | null;
   budgetMin?: number | null;
@@ -77,7 +81,7 @@ type Lead = {
 type FormState = {
   name: string; phone: string; secondaryPhone: string; email: string;
   neighborhood: string; notes: string; tags: string;
-  leadStatus: "חדש" | "פעיל" | "סגור" | "לא רלוונטי";
+  leadStatus: "חדש" | "פעיל" | "ממתין" | "סגור" | "לא רלוונטי";
   source: string; agentId: number | null;
   leadType: string; budgetMin: string; budgetMax: string; desiredBudget: string;
   processStage: string; lastContact: string;
@@ -91,13 +95,14 @@ type FormState = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STATUS_OPTIONS = ["חדש", "פעיל", "סגור", "לא רלוונטי"] as const;
+const STATUS_OPTIONS = ["חדש", "פעיל", "ממתין", "סגור", "לא רלוונטי"] as const;
 const PROCESS_STAGES = ["יצירת קשר ראשוני","פגישת היכרות","בדיקת נכסים","הצעת מחיר","משא ומתן","חתימת חוזה","סגירת עסקה","לא רלוונטי"];
 const SOURCE_OPTIONS = ["יד2","הומלי","פייסבוק","אינסטגרם","Organic","ממולץ","Google","אחר"];
 
 const STATUS_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
   "חדש":         { bg: "bg-blue-50",    text: "text-blue-700",    dot: "bg-blue-400" },
   "פעיל":        { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-400" },
+  "ממתין":       { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-400" },
   "סגור":        { bg: "bg-slate-100",  text: "text-slate-500",   dot: "bg-slate-400" },
   "לא רלוונטי": { bg: "bg-red-50",     text: "text-red-500",     dot: "bg-red-400" },
 };
@@ -227,6 +232,25 @@ function exportCsv(leads: Lead[], agentName: (id: number | null) => string) {
   const a = document.createElement("a");
   a.href = url; a.download = `crm-leads-${new Date().toISOString().slice(0,10)}.csv`;
   a.click(); URL.revokeObjectURL(url);
+}
+
+async function exportXlsx(leads: Lead[], agentName: (id: number | null) => string) {
+  const XLSX = await import("xlsx");
+  const rows = leads.map((lead) => ({
+    "שם": lead.name,
+    "טלפון": lead.phone,
+    "סוג ליד": leadTypeLabel(lead.leadType),
+    "סטטוס": lead.leadStatus,
+    "בעלים": agentName(lead.agentId),
+    "מקור": lead.source ?? "",
+    "רחוב": leadStreet(lead),
+    "שכונה": leadNeighborhood(lead),
+    "עיר": lead.propertyCity ?? "",
+    "תאריך יצירה": fmtDate(lead.createdAt),
+  }));
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "לידים");
+  XLSX.writeFile(workbook, `team-shay-leads-${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 // ─── Lead modal ───────────────────────────────────────────────────────────────
@@ -469,6 +493,7 @@ export default function CrmPage({
   const [filterStatus, setFilterStatus] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterSource, setFilterSource] = useState("");
+  const [filterNeighborhood, setFilterNeighborhood] = useState("");
   const [filterTag, setFilterTag] = useState(initialTag);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -538,6 +563,7 @@ export default function CrmPage({
   };
 
   const filtered = leads.filter(l => {
+    if (filterNeighborhood && leadNeighborhood(l) !== filterNeighborhood) return false;
     if (filterStatus && l.leadStatus !== filterStatus) return false;
     if (filterType && !leadMatchesType(l, filterType)) return false;
     if (filterSource && l.source !== filterSource) return false;
@@ -559,10 +585,11 @@ export default function CrmPage({
     setFilterStatus("");
     setFilterType("");
     setFilterSource("");
+    setFilterNeighborhood("");
     setFilterTag(initialTag);
   };
 
-  const hasActiveFilters = filterStatus || filterType || filterSource || filterTag !== initialTag;
+  const hasActiveFilters = filterStatus || filterType || filterSource || filterNeighborhood || filterTag !== initialTag;
 
   return (
     <CrmLayout title={title} subtitle={subtitle ?? (isAdmin ? "כל לידי הצוות" : "הלידים שלי")}>
@@ -577,11 +604,11 @@ export default function CrmPage({
             <div className="flex gap-2 flex-wrap">
               <Button
                 variant="outline"
-                onClick={() => exportCsv(filtered, agentName)}
+                onClick={() => void exportXlsx(filtered, agentName)}
                 className="rounded-full border-slate-200 text-slate-600 font-bold h-9 px-4 text-sm hover:bg-white"
               >
                 <Download size={14} />
-                ייצוא CSV
+                XLSX ({filtered.length})
               </Button>
               <Button
                 onClick={() => { setEditingLead(null); setModalOpen(true); }}
@@ -640,6 +667,7 @@ export default function CrmPage({
                 />
               </div>
               {[
+                { val: filterNeighborhood, set: setFilterNeighborhood, opts: NEIGHBORHOOD_OPTIONS, placeholder: "כל השכונות" },
                 { val: filterStatus, set: setFilterStatus, opts: STATUS_OPTIONS.map(value => ({ value, label: value })), placeholder: "סטטוס" },
                 { val: filterType, set: setFilterType, opts: LEAD_TYPE_OPTIONS, placeholder: "סוג ליד" },
                 ...(sourceSet.length ? [{ val: filterSource, set: setFilterSource, opts: sourceSet.map(value => ({ value, label: value })), placeholder: "מקור" }] : []),
@@ -690,7 +718,7 @@ export default function CrmPage({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-100">
-                        {["שם, רחוב ושכונה","טלפון","סוג / שלב","תקציב","סטטוס","מקור","תאריך","סוכן","פעולות"].map((h,i) => (
+                        {["לקוח","יצירת קשר","סוג וסטטוס","בעלים","מקור","תאריך יצירה","פעולות"].map((h,i) => (
                           <th key={i} className={`text-right px-4 py-3 font-black text-slate-400 text-[11px] uppercase tracking-wide ${h === "פעולות" ? "w-24 text-center" : ""}`}>{h}</th>
                         ))}
                       </tr>
@@ -727,25 +755,18 @@ export default function CrmPage({
                             )}
                           </td>
 
-                          {/* Type + stage */}
+                          {/* Type + status */}
                           <td className="px-4 py-3">
                             <div className="flex flex-col gap-1">
                               <TypeBadge type={lead.leadType} />
-                              {lead.processStage && (
-                                <span className="text-[10px] text-slate-500 font-medium leading-tight">{lead.processStage}</span>
-                              )}
+                              <StatusBadge status={lead.leadStatus} />
                             </div>
                           </td>
 
-                          {/* Budget */}
+                          {/* Agent */}
                           <td className="px-4 py-3">
-                            {fmtBudget(lead.budgetMin, lead.budgetMax)
-                              ? <span className="text-xs font-black text-[#d9ae4c]">{fmtBudget(lead.budgetMin, lead.budgetMax)}</span>
-                              : <span className="text-slate-300 text-xs">—</span>}
+                            <span className="text-xs font-black text-[#b98b2f]">{agentName(lead.agentId)}</span>
                           </td>
-
-                          {/* Status */}
-                          <td className="px-4 py-3"><StatusBadge status={lead.leadStatus} /></td>
 
                           {/* Source */}
                           <td className="px-4 py-3">
@@ -758,20 +779,10 @@ export default function CrmPage({
                             {lead.lastContact && <p className="text-[10px] text-slate-300">קשר: {fmtDate(lead.lastContact)}</p>}
                           </td>
 
-                          {/* Agent */}
-                          <td className="px-4 py-3">
-                            <span className="text-xs text-slate-500 font-bold">{agentName(lead.agentId)}</span>
-                          </td>
-
                           {/* Actions */}
                           <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
-                            <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <a href={`tel:${lead.phone}`}
-                                className="p-1.5 rounded-lg hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition"
-                                title="התקשר"
-                              >
-                                <Phone size={13} />
-                              </a>
+                            <div className="flex items-center justify-center gap-1 transition-opacity">
+                              <a href={`https://wa.me/${lead.phone.replace(/\D/g, "").replace(/^0/, "972")}`} target="_blank" rel="noreferrer" className="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-600" title="WhatsApp"><MessageCircle size={13} /></a>
                               <button
                                 onClick={() => openEdit(lead)}
                                 className="p-1.5 rounded-lg hover:bg-amber-50 text-slate-400 hover:text-amber-600 transition"
@@ -779,6 +790,13 @@ export default function CrmPage({
                               >
                                 <Pencil size={13} />
                               </button>
+                              <button onClick={() => updateMutation.mutate({ id: lead.id, lastContact: new Date().toISOString().slice(0, 10) })} className="p-1.5 rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600" title="רענן קשר"><RefreshCw size={13} /></button>
+                              <button onClick={() => openEdit(lead)} className="p-1.5 rounded-lg text-slate-400 hover:bg-purple-50 hover:text-purple-600" title="העבר לסוכן"><UserRoundCog size={13} /></button>
+                              <button onClick={() => createMutation.mutate({
+                                name: `${lead.name} - עותק`, phone: lead.phone, secondaryPhone: lead.secondaryPhone ?? null, email: lead.email,
+                                neighborhood: lead.neighborhood, notes: lead.notes, tags: lead.tags, leadStatus: lead.leadStatus,
+                                source: lead.source, agentId: lead.agentId, leadType: lead.leadType ?? null,
+                              })} className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700" title="שכפל"><Copy size={13} /></button>
                               <button
                                 onClick={() => setDeletingId(lead.id)}
                                 className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition"

@@ -9,6 +9,7 @@ import AgentDashboard from "./pages/AgentDashboard";
 import AgentLogin from "./pages/AgentLogin";
 import CmaAgent from "./pages/CmaAgent";
 import CrmDashboard from "./pages/CrmDashboard";
+import CrmCalendar from "./pages/CrmCalendar";
 import CrmDocuments from "./pages/CrmDocuments";
 import CrmExclusivities from "./pages/CrmExclusivities";
 import CrmFinance from "./pages/CrmFinance";
@@ -19,6 +20,7 @@ import CrmPage from "./pages/CrmPage";
 import CrmTasks from "./pages/CrmTasks";
 import CrmTemplates from "./pages/CrmTemplates";
 import CrmImport from "./pages/CrmImport";
+import CrmGoals from "./pages/CrmGoals";
 import Home from "./pages/Home";
 import MarketingAgent from "./pages/MarketingAgent";
 import NotFound from "./pages/NotFound";
@@ -51,11 +53,15 @@ function Router() {
       <Route path="/crm/finance" component={CrmFinance} />
       <Route path="/crm/templates" component={CrmTemplates} />
       <Route path="/crm/documents" component={CrmDocuments} />
-      <Route path="/agent-dashboard/crm" component={CrmLeadsRoute} />
+      <Route path="/agent-dashboard/crm" component={CrmDashboard} />
+      <Route path="/agent-dashboard/crm/leads" component={CrmLeadsRoute} />
       <Route path="/agent-dashboard/crm/dashboard" component={CrmDashboard} />
       <Route path="/agent-dashboard/crm/exclusivities" component={CrmExclusivities} />
       <Route path="/agent-dashboard/crm/matches" component={CrmMatches} />
+      <Route path="/agent-dashboard/crm/matching" component={CrmMatches} />
       <Route path="/agent-dashboard/crm/followup" component={CrmFollowup} />
+      <Route path="/agent-dashboard/crm/goals" component={CrmGoals} />
+      <Route path="/agent-dashboard/crm/calendar" component={CrmCalendar} />
       <Route path="/agent-dashboard/crm/tasks" component={CrmTasks} />
       <Route path="/agent-dashboard/crm/marketing" component={CrmMarketing} />
       <Route path="/agent-dashboard/crm/finance" component={CrmFinance} />

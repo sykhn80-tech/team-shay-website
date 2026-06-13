@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { leadLabel } from "@/lib/lead-display";
 import { CrmSearchSelect } from "@/components/CrmSearchSelect";
+import { ArrowDown, ArrowUp, Landmark, Scale } from "lucide-react";
 
 export default function CrmFinance() {
   const utils = trpc.useUtils();
@@ -18,6 +19,8 @@ export default function CrmFinance() {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState("");
   const [leadId, setLeadId] = useState<number | null>(null);
+  const vatIncome = (entriesQuery.data ?? []).filter((entry) => entry.type === "income").reduce((sum, entry) => sum + Number(entry.vatAmount ?? Math.round(entry.amount * 0.18)), 0);
+  const vatExpense = (entriesQuery.data ?? []).filter((entry) => entry.type === "expense").reduce((sum, entry) => sum + Number(entry.vatAmount ?? Math.round(entry.amount * 0.18)), 0);
 
   const createMutation = trpc.crm2.finance.create.useMutation({
     onSuccess: async () => {
@@ -34,23 +37,29 @@ export default function CrmFinance() {
   });
 
   return (
-    <CrmLayout title="הכנסות והוצאות" subtitle="ניהול פיננסי לסוכן: עמלות, פרסום, נסיעות והוצאות תפעול.">
+    <CrmLayout title="הכנסות והוצאות" subtitle="ניהול פיננסי מלא של הפעילות העסקית · נתונים אישיים">
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <h2 className="text-xl font-black text-slate-950">סיכום</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
+        <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-xl font-black text-slate-950">סיכום</h2><div className="flex gap-2"><Button onClick={() => setType("income")} className="bg-blue-600 text-white">עסקה +</Button><Button onClick={() => setType("expense")} className="bg-red-500 text-white">הוצאה −</Button></div></div>
+        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-xl bg-[#f8f6f1] p-3">
-            <p className="text-sm font-black text-slate-600">הכנסות החודש</p>
+            <p className="flex items-center gap-2 text-sm font-black text-emerald-700"><ArrowUp className="size-4" />הכנסות הסוכן</p>
             <p className="mt-1 text-2xl font-black text-slate-950">₪{(summaryQuery.data?.income ?? 0).toLocaleString("he-IL")}</p>
           </div>
           <div className="rounded-xl bg-[#f8f6f1] p-3">
-            <p className="text-sm font-black text-slate-600">הוצאות החודש</p>
+            <p className="flex items-center gap-2 text-sm font-black text-red-700"><ArrowDown className="size-4" />הוצאות</p>
             <p className="mt-1 text-2xl font-black text-slate-950">₪{(summaryQuery.data?.expense ?? 0).toLocaleString("he-IL")}</p>
           </div>
           <div className="rounded-xl bg-[#f8f6f1] p-3">
-            <p className="text-sm font-black text-slate-600">רווח</p>
+            <p className="flex items-center gap-2 text-sm font-black text-emerald-700"><Scale className="size-4" />רווח נקי</p>
             <p className="mt-1 text-2xl font-black text-[#b98b2f]">₪{(summaryQuery.data?.profit ?? 0).toLocaleString("he-IL")}</p>
           </div>
+          <div className="rounded-xl bg-blue-50 p-3"><p className="flex items-center gap-2 text-sm font-black text-blue-700"><Landmark className="size-4" />יתרה לתשלום</p><p className="mt-1 text-2xl font-black text-blue-900">₪{Math.max(0, vatIncome - vatExpense).toLocaleString("he-IL")}</p></div>
         </div>
+      </section>
+
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+        <h2 className="text-xl font-black">פירוט מע״מ</h2>
+        <div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-xl bg-slate-50 p-4"><p className="text-sm font-bold">מע״מ על הכנסות (חובה)</p><p className="mt-2 text-xl font-black">₪{vatIncome.toLocaleString("he-IL")}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-sm font-bold">מע״מ על הוצאות (זיכוי)</p><p className="mt-2 text-xl font-black">₪{vatExpense.toLocaleString("he-IL")}</p></div><div className="rounded-xl bg-[#fff4d8] p-4"><p className="text-sm font-bold">יתרה לתשלום</p><p className="mt-2 text-xl font-black">₪{Math.max(0, vatIncome - vatExpense).toLocaleString("he-IL")}</p></div></div>
       </section>
 
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
