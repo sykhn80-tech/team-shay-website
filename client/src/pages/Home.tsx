@@ -257,7 +257,7 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       phone: OFFICE_PHONE,
       expertise: "מומחית אזור ברסקו, סן סימון וקריית שמואל",
       image: HODIYA_IMAGE_URL,
-      imagePosition: "center 12%",
+      imagePosition: "center 34%",
     },
   ],
   [
@@ -267,7 +267,7 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       phone: OFFICE_PHONE,
       expertise: "מומחית אזור ברסקו, סן סימון וקריית שמואל",
       image: HODIYA_IMAGE_URL,
-      imagePosition: "center 12%",
+      imagePosition: "center 34%",
     },
   ],
 ]);

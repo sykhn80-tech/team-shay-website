@@ -83,7 +83,7 @@ export const agents = [
     email: "",
     phone: OFFICE_PHONE,
     image: "/agents/hodiya-card.png",
-    imagePosition: "center 12%",
+    imagePosition: "center 34%",
   },
 ] as const;
 
