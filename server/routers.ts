@@ -19,6 +19,7 @@ import {
   ensureDefaultAgentAccounts,
   getAgentPropertyById,
   getHomepagePayload,
+  getMarketingSection,
   getPropertyById,
   getSiteSettings,
   listAgentProperties,
@@ -29,6 +30,7 @@ import {
   passwordFromAgentEmail,
   listStaffAccounts,
   updateAgentProperty,
+  updateMarketingSection as saveMarketingSection,
   updatePropertyById,
   updateSiteSettings,
   updateStaffAccount,
@@ -91,11 +93,13 @@ import { sendWhatsApp } from "./greenApi";
 
 const imageInputSchema = z.object({
   name: z.string().min(1),
-  mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  mimeType: z.enum(["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm", "video/quicktime"]),
   dataBase64: z.string().min(1),
 });
 
 const storedOrUploadedImageSchema = z.union([imageInputSchema, z.string().url(), z.null()]).optional();
+const mediaInputSchema = imageInputSchema;
+const storedOrUploadedMediaSchema = z.union([mediaInputSchema, z.string().min(1), z.null()]).optional();
 
 const propertyInputSchema = z.object({
   agentId: z.number().int().positive().optional(),
@@ -159,6 +163,23 @@ const siteSettingsInputSchema = z.object({
   landsmanTitle: z.string().min(2).optional(),
   landsmanBody: z.string().min(2).optional(),
   footerSlogan: z.string().min(2).optional(),
+});
+
+const marketingSectionItemInputSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  type: z.enum(["image", "video"]),
+  mediaUrl: storedOrUploadedMediaSchema,
+  posterUrl: storedOrUploadedMediaSchema,
+});
+
+const marketingSectionInputSchema = z.object({
+  eyebrow: z.string().min(1),
+  title: z.string().min(1),
+  subtitle: z.string().min(1),
+  highlights: z.array(z.string()).min(1).max(8),
+  items: z.array(marketingSectionItemInputSchema).min(1).max(8),
 });
 
 const leadInputSchema = z.object({
@@ -1303,6 +1324,24 @@ async function resolveStoredImage(
   return upload.url;
 }
 
+async function resolveStoredMedia(
+  storagePath: string,
+  media: z.infer<typeof storedOrUploadedMediaSchema>,
+  fallbackName: string,
+) {
+  if (!media) return null;
+  if (typeof media === "string") return media;
+
+  const binary = decodeBase64File(media.dataBase64);
+  const upload = await storagePut(
+    `${storagePath}/${Date.now()}-${slugifyFilename(media.name || fallbackName)}`,
+    binary,
+    media.mimeType,
+  );
+
+  return upload.url;
+}
+
 async function uploadImagesForProperty(ownerId: number, images: Array<z.infer<typeof imageInputSchema>>) {
   return Promise.all(
     images.map(async (image, index) => {
@@ -1660,16 +1699,18 @@ export const appRouter = router({
     }),
     dashboard: agentProcedure.query(async () => {
       await ensureCmsSeedData();
-      const [settings, testimonialsRows, staff, propertiesRows, leads] = await Promise.all([
+      const [settings, testimonialsRows, staff, propertiesRows, leads, marketingSection] = await Promise.all([
         getSiteSettings(),
         listAllTestimonials(),
         listStaffAccounts(),
         listAllProperties(),
         listLeadSubmissions(),
+        getMarketingSection(),
       ]);
 
       return {
         settings,
+        marketingSection,
         testimonials: testimonialsRows,
         staff,
         properties: propertiesRows,
@@ -1687,6 +1728,22 @@ export const appRouter = router({
       };
       await updateSiteSettings(resolvedInput);
       return { success: true } as const;
+    }),
+    updateMarketingSection: agentProcedure.input(marketingSectionInputSchema).mutation(async ({ input }) => {
+      const resolvedItems = await Promise.all(
+        input.items.map(async (item, index) => ({
+          ...item,
+          mediaUrl:
+            (await resolveStoredMedia(`team-shay/marketing-section/${item.id}`, item.mediaUrl, `marketing-${index + 1}`)) || "",
+          posterUrl: await resolveStoredMedia(
+            `team-shay/marketing-section/${item.id}/poster`,
+            item.posterUrl,
+            `marketing-poster-${index + 1}`,
+          ),
+        })),
+      );
+      const marketingSection = await saveMarketingSection({ ...input, items: resolvedItems });
+      return { success: true, marketingSection } as const;
     }),
     listStaff: agentProcedure.query(async () => listStaffAccounts()),
     createStaff: agentProcedure.input(staffInputSchema).mutation(async ({ input }) => {

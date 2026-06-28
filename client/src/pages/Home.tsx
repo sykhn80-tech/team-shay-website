@@ -359,6 +359,14 @@ export default function Home() {
   const officePhone = settings?.officePhone || OFFICE_PHONE;
   const officePhoneLink = officePhone.replace(/\D/g, "") || OFFICE_PHONE_LINK;
   const trustBadges = heroTrustBadges.slice(0, 3);
+  const marketingSection = homeQuery.data?.marketingSection ?? {
+    eyebrow: "שיטות השיווק שלנו",
+    title: "לא רק מעלים מודעה — בונים חוויית מכירה",
+    subtitle:
+      "כאן נרכז את סרטוני ההדמיה, תמונות מהעיתון, בתים פתוחים, שלטים ופעולות שטח. כל מדיה שתעלה תוכל להיות מוצגת ככרטיס חי, עם צפייה ישירה באתר.",
+    highlights: ["וידאו שנפתח בלחיצה", "גלריות לפני/אחרי", "כרטיסי קמפיין מודגשים", "תיעוד שטח מבתים פתוחים"],
+    items: marketingMethodItems.map((item, index) => ({ ...item, id: `fallback-${index + 1}` })),
+  };
 
   const homepageAgents = useMemo(() => {
     const dbAgents = homeQuery.data?.agents ?? [];
@@ -945,43 +953,42 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="marketing-methods" className="bg-[#FDF8F0] px-4 py-20 md:px-6 md:py-24">
+        <section id="marketing-methods" className="bg-[#FDF8F0] px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
-            <div className="overflow-hidden rounded-[40px] bg-[#111111] p-5 text-white shadow-[0_28px_80px_rgba(15,23,42,0.22)] md:p-8">
-              <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-                <div className="p-3 md:p-6">
-                  <p className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-2 text-sm font-black text-[#D4AF37]">
-                    <Play className="size-4 fill-current" />
-                    שיטות השיווק שלנו
-                  </p>
-                  <h2 className="mt-5 text-4xl font-extrabold leading-tight md:text-[3.4rem]">
-                    לא רק מעלים מודעה — בונים חוויית מכירה
-                  </h2>
-                  <p className="mt-5 text-lg font-semibold leading-8 text-white/70">
-                    כאן נרכז את סרטוני ההדמיה, תמונות מהעיתון, בתים פתוחים, שלטים ופעולות שטח. כל מדיה שתעלה תוכל להיות מוצגת ככרטיס חי, עם צפייה ישירה באתר.
-                  </p>
-                  <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                    {["וידאו שנפתח בלחיצה", "גלריות לפני/אחרי", "כרטיסי קמפיין מודגשים", "תיעוד שטח מבתים פתוחים"].map((item) => (
-                      <div key={item} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-white/80">
-                        {item}
-                      </div>
-                    ))}
+            <div className="flex flex-col gap-5 text-center md:items-center">
+              <p className="inline-flex items-center justify-center gap-2 self-center rounded-full border border-[#D4AF37]/40 bg-white px-5 py-2 text-sm font-black text-[#B8960C] shadow-sm">
+                <Play className="size-4 fill-current" />
+                {marketingSection.eyebrow}
+              </p>
+              <h2 className="text-4xl font-extrabold leading-tight md:text-[3.4rem]">
+                {marketingSection.title}
+              </h2>
+              <p className="max-w-4xl text-lg font-semibold leading-8 text-slate-600">
+                {marketingSection.subtitle}
+              </p>
+              <div className="flex max-w-5xl flex-wrap justify-center gap-3">
+                {marketingSection.highlights.map((item) => (
+                  <div key={item} className="rounded-full border border-[#D4AF37]/25 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm">
+                    {item}
                   </div>
-                </div>
+                ))}
+              </div>
+            </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {marketingMethodItems.map((item, index) => {
-                    const Icon = item.icon;
+            <div className="-mx-4 mt-12 overflow-x-auto px-4 pb-4 [scrollbar-width:thin] md:-mx-6 md:px-6">
+              <div className="flex min-w-full gap-5">
+                  {marketingSection.items.map((item, index) => {
+                    const Icon = item.type === "video" ? Video : index === 1 ? Newspaper : index === 2 ? Building2 : Megaphone;
                     return (
                       <article
-                        key={item.title}
-                        className={`group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.08] shadow-[0_18px_40px_rgba(0,0,0,0.22)] transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37] ${index === 0 ? "sm:col-span-2" : ""}`}
+                        key={item.id || item.title}
+                        className="group w-[82vw] shrink-0 overflow-hidden rounded-[30px] border border-[#D4AF37]/25 bg-white shadow-[0_18px_46px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:shadow-[0_24px_60px_rgba(212,175,55,0.18)] sm:w-[420px] lg:w-[470px]"
                       >
-                        <div className={index === 0 ? "aspect-[16/8.2]" : "aspect-[4/3]"}>
+                        <div className="aspect-[16/10] bg-slate-100">
                           {item.type === "video" ? (
                             <video
                               src={item.mediaUrl}
-                              poster={item.posterUrl}
+                              poster={item.posterUrl ?? undefined}
                               controls
                               playsInline
                               className="h-full w-full object-cover"
@@ -990,21 +997,20 @@ export default function Home() {
                             <img src={item.mediaUrl} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />
                           )}
                         </div>
-                        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-5">
-                          <div className="flex items-center gap-3">
-                            <span className="flex size-10 items-center justify-center rounded-2xl bg-[#D4AF37] text-black">
+                        <div className="p-5 text-right">
+                          <div className="flex items-start gap-3">
+                            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#D4AF37] text-black shadow-[0_10px_20px_rgba(212,175,55,0.28)]">
                               <Icon className="size-5" />
                             </span>
                             <div>
-                              <h3 className="text-lg font-black text-white">{item.title}</h3>
-                              <p className="mt-1 text-sm font-semibold leading-6 text-white/70">{item.description}</p>
+                              <h3 className="text-xl font-black text-slate-950">{item.title}</h3>
+                              <p className="mt-2 text-sm font-semibold leading-7 text-slate-600">{item.description}</p>
                             </div>
                           </div>
                         </div>
                       </article>
                     );
                   })}
-                </div>
               </div>
             </div>
           </div>

@@ -20,10 +20,11 @@ import { trpc } from "@/lib/trpc";
 import AgentLayout from "@/components/AgentLayout";
 
 type UploadMimeType = "image/jpeg" | "image/png" | "image/webp";
+type UploadMediaMimeType = UploadMimeType | "video/mp4" | "video/webm" | "video/quicktime";
 
 type UploadImagePayload = {
   name: string;
-  mimeType: UploadMimeType;
+  mimeType: UploadMediaMimeType;
   dataBase64: string;
 };
 
@@ -75,6 +76,21 @@ type SiteSettingsFormState = {
   footerSlogan: string;
 };
 
+type MarketingSectionFormState = {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  highlightsText: string;
+  items: Array<{
+    id: string;
+    title: string;
+    description: string;
+    type: "image" | "video";
+    mediaUrl: ImageFieldState;
+    posterUrl: ImageFieldState;
+  }>;
+};
+
 type PropertyGalleryDraft = {
   previewUrls: string[];
   uploads: UploadImagePayload[];
@@ -82,6 +98,7 @@ type PropertyGalleryDraft = {
 };
 
 const allowedMimeTypes: UploadMimeType[] = ["image/jpeg", "image/png", "image/webp"];
+const allowedMediaMimeTypes: UploadMediaMimeType[] = ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm", "video/quicktime"];
 
 const buildImageField = (url?: string | null): ImageFieldState => ({
   storedUrl: url ?? "",
@@ -131,6 +148,14 @@ const emptySettingsForm: SiteSettingsFormState = {
   footerSlogan: "",
 };
 
+const emptyMarketingSectionForm: MarketingSectionFormState = {
+  eyebrow: "שיטות השיווק שלנו",
+  title: "לא רק מעלים מודעה — בונים חוויית מכירה",
+  subtitle: "כאן נרכז את סרטוני ההדמיה, תמונות מהעיתון, בתים פתוחים, שלטים ופעולות שטח.",
+  highlightsText: "וידאו שנפתח בלחיצה\nגלריות לפני/אחרי\nכרטיסי קמפיין מודגשים\nתיעוד שטח מבתים פתוחים",
+  items: [],
+};
+
 async function fileToBase64(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -141,8 +166,8 @@ async function fileToBase64(file: File) {
 }
 
 async function buildUploadImagePayload(file: File): Promise<UploadImagePayload> {
-  const mimeType: UploadMimeType = allowedMimeTypes.includes(file.type as UploadMimeType)
-    ? (file.type as UploadMimeType)
+  const mimeType: UploadMediaMimeType = allowedMediaMimeTypes.includes(file.type as UploadMediaMimeType)
+    ? (file.type as UploadMediaMimeType)
     : "image/jpeg";
 
   return {
@@ -212,10 +237,65 @@ function ImageUploadField({
   );
 }
 
+function MediaUploadField({
+  label,
+  hint,
+  value,
+  onFileSelected,
+}: {
+  label: string;
+  hint: string;
+  value: ImageFieldState;
+  onFileSelected: (file: File | null) => Promise<void> | void;
+}) {
+  const isVideo = value.previewUrl && /\.(mp4|webm|mov)(\?|$)/i.test(value.previewUrl);
+
+  return (
+    <div className="rounded-[24px] border border-slate-200 bg-[#fbfdff] p-4">
+      <div className="flex items-center gap-2 text-[#d9ae4c]">
+        <ImagePlus className="size-4" />
+        <p className="text-sm font-black">{label}</p>
+      </div>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{hint}</p>
+      <label className="mt-4 flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[#d9ae4c]/35 bg-white px-4 text-sm font-bold text-[#b98b2f] transition hover:bg-[#fff4d8]">
+        <Upload className="size-4" />
+        בחירת תמונה או וידאו
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0] ?? null;
+            void onFileSelected(file);
+            event.currentTarget.value = "";
+          }}
+        />
+      </label>
+      {value.previewUrl ? (
+        <div className="mt-4 overflow-hidden rounded-[20px] border border-slate-200 bg-white">
+          {isVideo ? (
+            <video src={value.previewUrl} className="h-40 w-full object-cover" controls playsInline />
+          ) : (
+            <img src={value.previewUrl} alt={label} className="h-40 w-full object-cover" />
+          )}
+        </div>
+      ) : (
+        <div className="mt-4 rounded-[20px] border border-dashed border-slate-200 bg-white p-5 text-sm text-slate-400">
+          עדיין לא נבחר קובץ.
+        </div>
+      )}
+      <p className="mt-3 text-xs font-semibold text-slate-500">
+        תומך JPG, PNG, WebP, MP4, WebM ו-MOV. אחרי שמירה הקובץ יעלה לאחסון הקבוע.
+      </p>
+    </div>
+  );
+}
+
 export default function AdminPanel() {
   const utils = trpc.useUtils();
   const [, navigate] = useLocation();
   const [settingsForm, setSettingsForm] = useState<SiteSettingsFormState>(emptySettingsForm);
+  const [marketingSectionForm, setMarketingSectionForm] = useState<MarketingSectionFormState>(emptyMarketingSectionForm);
   const [newStaff, setNewStaff] = useState<StaffFormState>(emptyStaffForm);
   const [newTestimonial, setNewTestimonial] = useState<TestimonialFormState>(emptyTestimonialForm);
   const [editingStaffId, setEditingStaffId] = useState<number | null>(null);
@@ -234,6 +314,13 @@ export default function AdminPanel() {
       toast.success("הגדרות האתר נשמרו והתמונות קושרו למסד.");
     },
     onError: (error) => toast.error(error.message || "שמירת ההגדרות נכשלה."),
+  });
+  const updateMarketingSectionMutation = trpc.admin.updateMarketingSection.useMutation({
+    onSuccess: async () => {
+      await Promise.all([utils.admin.dashboard.invalidate(), utils.publicSite.home.invalidate()]);
+      toast.success("סקשן שיטות השיווק נשמר ועודכן באתר.");
+    },
+    onError: (error) => toast.error(error.message || "שמירת סקשן השיווק נכשלה."),
   });
   const createStaffMutation = trpc.admin.createStaff.useMutation({
     onSuccess: async () => {
@@ -334,6 +421,26 @@ export default function AdminPanel() {
     });
   }, [dashboardQuery.data?.settings]);
 
+  useEffect(() => {
+    const section = dashboardQuery.data?.marketingSection;
+    if (!section) return;
+
+    setMarketingSectionForm({
+      eyebrow: section.eyebrow,
+      title: section.title,
+      subtitle: section.subtitle,
+      highlightsText: section.highlights.join("\n"),
+      items: section.items.map((item) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        type: item.type,
+        mediaUrl: buildImageField(item.mediaUrl),
+        posterUrl: buildImageField(item.posterUrl ?? ""),
+      })),
+    });
+  }, [dashboardQuery.data?.marketingSection]);
+
   const activeStaff = useMemo(() => dashboardQuery.data?.staff ?? [], [dashboardQuery.data?.staff]);
   const testimonials = useMemo(() => dashboardQuery.data?.testimonials ?? [], [dashboardQuery.data?.testimonials]);
   const properties = useMemo(() => dashboardQuery.data?.properties ?? [], [dashboardQuery.data?.properties]);
@@ -362,8 +469,8 @@ export default function AdminPanel() {
     apply: (updater: (previous: ImageFieldState) => ImageFieldState) => void,
   ) => {
     if (!file) return;
-    if (!allowedMimeTypes.includes(file.type as UploadMimeType)) {
-      toast.error("אפשר להעלות רק קבצי JPG, PNG או WebP.");
+    if (!allowedMediaMimeTypes.includes(file.type as UploadMediaMimeType)) {
+      toast.error("אפשר להעלות JPG, PNG, WebP, MP4, WebM או MOV.");
       return;
     }
 
@@ -394,6 +501,29 @@ export default function AdminPanel() {
       landsmanTitle: settingsForm.landsmanTitle,
       landsmanBody: settingsForm.landsmanBody,
       footerSlogan: settingsForm.footerSlogan,
+    });
+  };
+
+  const handleSaveMarketingSection = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const highlights = marketingSectionForm.highlightsText
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    await updateMarketingSectionMutation.mutateAsync({
+      eyebrow: marketingSectionForm.eyebrow,
+      title: marketingSectionForm.title,
+      subtitle: marketingSectionForm.subtitle,
+      highlights,
+      items: marketingSectionForm.items.map((item) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        type: item.type,
+        mediaUrl: serializeImageField(item.mediaUrl) || item.mediaUrl.previewUrl,
+        posterUrl: serializeImageField(item.posterUrl),
+      })),
     });
   };
 
@@ -827,9 +957,160 @@ export default function AdminPanel() {
                 );
               })}
             </div>
-          </section>
+        </section>
 
-          <section id="admin-testimonials" className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
+        <form
+          id="admin-marketing-section"
+          onSubmit={handleSaveMarketingSection}
+          className="rounded-[32px] border border-[#D4AF37]/25 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex items-center gap-3">
+              <ImagePlus className="size-5 text-[#d9ae4c]" />
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#d9ae4c]">Marketing Section</p>
+                <h2 className="mt-1 text-2xl font-black text-slate-950">סקשן שיטות השיווק באתר</h2>
+                <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
+                  כאן אפשר לשנות כותרות, טקסטים, הדגשים, תמונות וסרטונים שמופיעים מתחת ל״השיטה״ בדף הבית.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="submit"
+              disabled={updateMarketingSectionMutation.isPending}
+              className="rounded-full bg-[#d9ae4c] px-8 text-black hover:bg-[#c99a31]"
+            >
+              {updateMarketingSectionMutation.isPending ? "שומרים..." : "שמירת סקשן השיווק"}
+            </Button>
+          </div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
+            {[
+              ["eyebrow", "כותרת קטנה"],
+              ["title", "כותרת ראשית"],
+            ].map(([key, label]) => (
+              <label key={key} className="grid gap-2">
+                <span className="text-sm font-bold text-slate-700">{label}</span>
+                <input
+                  value={marketingSectionForm[key as "eyebrow" | "title"]}
+                  onChange={(event) => setMarketingSectionForm((prev) => ({ ...prev, [key]: event.target.value }))}
+                  className="h-12 rounded-2xl border border-slate-200 px-4 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                />
+              </label>
+            ))}
+            <label className="grid gap-2 md:col-span-2">
+              <span className="text-sm font-bold text-slate-700">תיאור הסקשן</span>
+              <textarea
+                value={marketingSectionForm.subtitle}
+                onChange={(event) => setMarketingSectionForm((prev) => ({ ...prev, subtitle: event.target.value }))}
+                rows={3}
+                className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+              />
+            </label>
+            <label className="grid gap-2 md:col-span-2">
+              <span className="text-sm font-bold text-slate-700">תגיות / הדגשים — שורה לכל הדגש</span>
+              <textarea
+                value={marketingSectionForm.highlightsText}
+                onChange={(event) => setMarketingSectionForm((prev) => ({ ...prev, highlightsText: event.target.value }))}
+                rows={4}
+                className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+              />
+            </label>
+          </div>
+
+          <div className="mt-8 grid gap-5 xl:grid-cols-2">
+            {marketingSectionForm.items.map((item, index) => (
+              <article key={item.id} className="rounded-[28px] border border-slate-200 bg-[#fbfdff] p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-lg font-black text-slate-950">כרטיס שיווק #{index + 1}</p>
+                  <select
+                    value={item.type}
+                    onChange={(event) =>
+                      setMarketingSectionForm((prev) => ({
+                        ...prev,
+                        items: prev.items.map((current, currentIndex) =>
+                          currentIndex === index ? { ...current, type: event.target.value as "image" | "video" } : current,
+                        ),
+                      }))
+                    }
+                    className="h-10 rounded-2xl border border-[#D4AF37]/50 bg-white px-3 text-sm font-bold outline-none"
+                  >
+                    <option value="image">תמונה</option>
+                    <option value="video">וידאו</option>
+                  </select>
+                </div>
+
+                <div className="mt-5 grid gap-4">
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-slate-700">כותרת הכרטיס</span>
+                    <input
+                      value={item.title}
+                      onChange={(event) =>
+                        setMarketingSectionForm((prev) => ({
+                          ...prev,
+                          items: prev.items.map((current, currentIndex) =>
+                            currentIndex === index ? { ...current, title: event.target.value } : current,
+                          ),
+                        }))
+                      }
+                      className="h-12 rounded-2xl border border-slate-200 px-4 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                    />
+                  </label>
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-slate-700">תיאור הכרטיס</span>
+                    <textarea
+                      value={item.description}
+                      onChange={(event) =>
+                        setMarketingSectionForm((prev) => ({
+                          ...prev,
+                          items: prev.items.map((current, currentIndex) =>
+                            currentIndex === index ? { ...current, description: event.target.value } : current,
+                          ),
+                        }))
+                      }
+                      rows={3}
+                      className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                    />
+                  </label>
+                  <MediaUploadField
+                    label="קובץ מדיה לכרטיס"
+                    hint="אפשר להעלות תמונה או סרטון. אם לא מעלים קובץ חדש, הקובץ הקיים נשאר."
+                    value={item.mediaUrl}
+                    onFileSelected={(file) =>
+                      handleSingleImageSelection(file, (updater) =>
+                        setMarketingSectionForm((prev) => ({
+                          ...prev,
+                          items: prev.items.map((current, currentIndex) =>
+                            currentIndex === index ? { ...current, mediaUrl: updater(current.mediaUrl) } : current,
+                          ),
+                        })),
+                      )
+                    }
+                  />
+                  {item.type === "video" ? (
+                    <MediaUploadField
+                      label="תמונת פתיחה לווידאו"
+                      hint="אופציונלי — תמונה שתופיע לפני הפעלת הסרטון."
+                      value={item.posterUrl}
+                      onFileSelected={(file) =>
+                        handleSingleImageSelection(file, (updater) =>
+                          setMarketingSectionForm((prev) => ({
+                            ...prev,
+                            items: prev.items.map((current, currentIndex) =>
+                              currentIndex === index ? { ...current, posterUrl: updater(current.posterUrl) } : current,
+                            ),
+                          })),
+                        )
+                      }
+                    />
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        </form>
+
+        <section id="admin-testimonials" className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center gap-3">
               <MessageSquareQuote className="size-5 text-[#d9ae4c]" />
               <div>

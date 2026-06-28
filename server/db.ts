@@ -199,6 +199,67 @@ export type HomepagePayload = {
   agents: Awaited<ReturnType<typeof listFeaturedAgents>>;
   testimonials: Awaited<ReturnType<typeof listPublishedTestimonials>>;
   properties: Awaited<ReturnType<typeof listPublishedProperties>>;
+  marketingSection: MarketingSectionData;
+};
+
+export type MarketingSectionItem = {
+  id: string;
+  title: string;
+  description: string;
+  type: "image" | "video";
+  mediaUrl: string;
+  posterUrl?: string | null;
+};
+
+export type MarketingSectionData = {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  highlights: string[];
+  items: MarketingSectionItem[];
+};
+
+export const defaultMarketingSection: MarketingSectionData = {
+  eyebrow: "שיטות השיווק שלנו",
+  title: "לא רק מעלים מודעה — בונים חוויית מכירה",
+  subtitle:
+    "כאן נרכז את סרטוני ההדמיה, תמונות מהעיתון, בתים פתוחים, שלטים ופעולות שטח. כל מדיה שתעלה תוכל להיות מוצגת ככרטיס חי, עם צפייה ישירה באתר.",
+  highlights: ["וידאו שנפתח בלחיצה", "גלריות לפני/אחרי", "כרטיסי קמפיין מודגשים", "תיעוד שטח מבתים פתוחים"],
+  items: [
+    {
+      id: "render-videos",
+      title: "סרטוני הדמיה ונכסי פרימיום",
+      description: "וידאו קצר שמכניס קונים לאווירה של הנכס עוד לפני הסיור.",
+      type: "video",
+      mediaUrl: "/media/hero-animation.mp4",
+      posterUrl:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/properties-showcase-nZ8KutRYQxJJWaU7x2YbHk.webp",
+    },
+    {
+      id: "newspaper",
+      title: "כתבות וחשיפה בעיתון",
+      description: "נראות מקומית שמחזקת אמון ומגיעה לקהל שמחפש בירושלים באמת.",
+      type: "image",
+      mediaUrl:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/47825_tumb_750Xauto_fd1226b4.jpg",
+    },
+    {
+      id: "open-house",
+      title: "בתים פתוחים שמייצרים תנועה",
+      description: "אירועי מכירה מתוזמנים שמייצרים דחיפות, ביקושים ושיחות שטח.",
+      type: "image",
+      mediaUrl:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/kidmat-gonen-shtila-0284_0-8k-300dpi-1024x576_611a59cc.jpg",
+    },
+    {
+      id: "signs",
+      title: "שלטים ונוכחות בשטח",
+      description: "שילוט מדויק בשכונה, קשרי שכנים וחשיפה פיזית שלא נשארת רק בדיגיטל.",
+      type: "image",
+      mediaUrl:
+        "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/IMG_7825_20a7e895.jpg",
+    },
+  ],
 };
 
 type LocalPropertyImage = {
@@ -219,13 +280,17 @@ type LocalCmsData = {
 };
 
 const localCmsDataPath = path.join(process.cwd(), ".local-cms-data", "cms.json");
+const localMarketingSectionPath = path.join(process.cwd(), ".local-cms-data", "marketing-section.json");
 const blobCmsDataPrefix = "cms/team-shay/cms-";
 const blobCmsCurrentPath = "cms/team-shay/current.json";
+const blobMarketingSectionPath = "cms/team-shay/marketing-section.json";
 const blobCmsCacheTtlMs = 30_000;
 
 let cachedBlobCmsData: LocalCmsData | null = null;
 let cachedBlobCmsEtag: string | null = null;
 let cachedBlobCmsFetchedAt = 0;
+let cachedMarketingSection: MarketingSectionData | null = null;
+let cachedMarketingSectionFetchedAt = 0;
 
 function hasBlobStorage() {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
@@ -397,6 +462,94 @@ async function writeLocalCmsData(data: LocalCmsData) {
   if (blobSaved || localSaved) return;
 
   throw new Error("CMS write failed: Blob is unavailable and local filesystem is read-only.");
+}
+
+function normalizeMarketingSection(input: Partial<MarketingSectionData> | null | undefined): MarketingSectionData {
+  return {
+    eyebrow: input?.eyebrow?.trim() || defaultMarketingSection.eyebrow,
+    title: input?.title?.trim() || defaultMarketingSection.title,
+    subtitle: input?.subtitle?.trim() || defaultMarketingSection.subtitle,
+    highlights: (input?.highlights ?? defaultMarketingSection.highlights)
+      .map((highlight) => highlight.trim())
+      .filter(Boolean)
+      .slice(0, 8),
+    items: (input?.items ?? defaultMarketingSection.items)
+      .map<MarketingSectionItem>((item, index) => ({
+        id: item.id?.trim() || `marketing-${index + 1}`,
+        title: item.title?.trim() || defaultMarketingSection.items[index]?.title || "פעולת שיווק",
+        description: item.description?.trim() || "",
+        type: item.type === "video" ? "video" : "image",
+        mediaUrl: item.mediaUrl?.trim() || defaultMarketingSection.items[index]?.mediaUrl || defaultMarketingSection.items[0].mediaUrl,
+        posterUrl: item.posterUrl?.trim() || null,
+      }))
+      .slice(0, 8),
+  };
+}
+
+export async function getMarketingSection(): Promise<MarketingSectionData> {
+  if (cachedMarketingSection && Date.now() - cachedMarketingSectionFetchedAt < blobCmsCacheTtlMs) {
+    return cachedMarketingSection;
+  }
+
+  if (hasBlobStorage()) {
+    try {
+      const result = await blobGet(blobMarketingSectionPath, { access: "public" });
+      if (result?.statusCode === 200 && result.stream) {
+        const parsed = JSON.parse(await streamToText(result.stream)) as Partial<MarketingSectionData>;
+        cachedMarketingSection = normalizeMarketingSection(parsed);
+        cachedMarketingSectionFetchedAt = Date.now();
+        return cachedMarketingSection;
+      }
+    } catch (error) {
+      console.warn("[MarketingSection] Failed to read Blob config:", error);
+    }
+  }
+
+  try {
+    const rawData = await readFile(localMarketingSectionPath, "utf8");
+    cachedMarketingSection = normalizeMarketingSection(JSON.parse(rawData) as Partial<MarketingSectionData>);
+    cachedMarketingSectionFetchedAt = Date.now();
+    return cachedMarketingSection;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      console.warn("[MarketingSection] Failed to read local config:", error);
+    }
+    return defaultMarketingSection;
+  }
+}
+
+export async function updateMarketingSection(input: MarketingSectionData): Promise<MarketingSectionData> {
+  const normalized = normalizeMarketingSection(input);
+  const payload = `${JSON.stringify(normalized, null, 2)}\n`;
+  let saved = false;
+
+  if (hasBlobStorage()) {
+    try {
+      await blobPut(blobMarketingSectionPath, payload, {
+        access: "public",
+        allowOverwrite: true,
+        addRandomSuffix: false,
+        contentType: "application/json",
+      });
+      saved = true;
+    } catch (error) {
+      console.warn("[MarketingSection] Failed to save Blob config:", error);
+    }
+  }
+
+  if (canWriteLocalCmsBackup()) {
+    await mkdir(path.dirname(localMarketingSectionPath), { recursive: true });
+    await writeFile(localMarketingSectionPath, payload);
+    saved = true;
+  }
+
+  if (!saved) {
+    throw new Error("שמירת סקשן השיווק נכשלה.");
+  }
+
+  cachedMarketingSection = normalized;
+  cachedMarketingSectionFetchedAt = Date.now();
+  return normalized;
 }
 
 function sortByNewestProperty(left: Property, right: Property) {
@@ -1134,11 +1287,12 @@ export async function deletePropertyById(propertyId: number) {
 export async function getHomepagePayload(): Promise<HomepagePayload> {
   await ensureCmsSeedData();
 
-  const [settings, agents, testimonialsRows, propertyRows] = await Promise.all([
+  const [settings, agents, testimonialsRows, propertyRows, marketingSection] = await Promise.all([
     getSiteSettings(),
     listFeaturedAgents(),
     listPublishedTestimonials(),
     listPublishedProperties(),
+    getMarketingSection(),
   ]);
 
   return {
@@ -1146,6 +1300,7 @@ export async function getHomepagePayload(): Promise<HomepagePayload> {
     agents,
     testimonials: testimonialsRows,
     properties: propertyRows,
+    marketingSection,
   };
 }
 
