@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { TEAM_LOGO } from "@/lib/siteData";
+import { LANDSMAN_LOGO, TEAM_LOGO } from "@/lib/siteData";
 import {
   BarChart2,
   CirclePlus,
@@ -430,6 +430,8 @@ export default function CmaAgent() {
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="flex items-center gap-3">
                     <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo h-14 w-auto object-contain" />
+                    <span className="h-10 w-px bg-slate-200" aria-hidden="true" />
+                    <img src={LANDSMAN_LOGO} alt="Landsman ירושלים" className="h-12 w-auto object-contain print:h-14" />
                     <div>
                       <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Team Shay | Landsman Jerusalem</p>
                       <h3 className="mt-1 text-2xl font-black text-slate-950">דוח CMA מקצועי</h3>

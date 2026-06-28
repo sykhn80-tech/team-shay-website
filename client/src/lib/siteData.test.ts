@@ -15,6 +15,7 @@ describe("siteData", () => {
       "ronen",
       "eliya",
       "yarden",
+      "hodiya",
     ]);
 
     const shay = agents.find((agent) => agent.id === "shay");
@@ -23,7 +24,7 @@ describe("siteData", () => {
 
     expect(shay?.image).toContain("tryiton__gray_suit_white_shirt_black_tie_office_plants_198335");
     expect(yarden?.image).toContain("WhatsAppImage2026-04-13at17.31.35");
-    expect(aviad?.imagePosition).toBe("center 34%");
+    expect(aviad?.imagePosition).toBe("center center");
   });
 
   it("keeps the verified hero trust badges while testimonials are sourced from the database only", () => {

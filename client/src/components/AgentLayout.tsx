@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   LogOut,
   Megaphone,
-  Users,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -34,11 +33,6 @@ export default function AgentLayout({ children }: Props) {
     return location === href || location.startsWith(href + "/");
   }
 
-  const crmActive =
-    location === "/crm" ||
-    location.startsWith("/crm/") ||
-    location === "/agent-dashboard/crm" ||
-    location.startsWith("/agent-dashboard/crm/");
   const navItems = useMemo(() => {
     const overviewHref = agent?.accountRole === "admin" ? "/admin" : "/agent-dashboard";
     return [
@@ -81,27 +75,6 @@ export default function AgentLayout({ children }: Props) {
           </span>
         )}
       </div>
-
-      {/* CRM — gold block */}
-      <Link href="/crm" onClick={onNav}>
-        <div className={`mt-4 rounded-2xl p-3.5 transition-all cursor-pointer border ${
-          crmActive
-            ? "bg-[#d9ae4c] border-[#d9ae4c] shadow-lg shadow-[#d9ae4c]/20"
-            : "bg-white/5 border-white/10 hover:bg-white/10 hover:border-[#d9ae4c]/60"
-        }`}>
-          <div className="flex items-center gap-3">
-            <div className={`rounded-xl p-2 ${crmActive ? "bg-black/20" : "bg-[#d9ae4c]/20"}`}>
-              <Users className={`size-5 ${crmActive ? "text-black" : "text-[#d9ae4c]"}`} />
-            </div>
-            <div>
-              <p className={`text-sm font-black ${crmActive ? "text-black" : "text-white"}`}>CRM לידים</p>
-              <p className={`text-[11px] font-medium ${crmActive ? "text-black/70" : "text-white/50"}`}>
-                כל לידי הצוות
-              </p>
-            </div>
-          </div>
-        </div>
-      </Link>
 
       {/* Nav */}
       <nav className="mt-2 space-y-0.5">
@@ -156,12 +129,7 @@ export default function AgentLayout({ children }: Props) {
           className="team-shay-logo h-14 w-auto object-contain"
           style={{ filter: "brightness(10)" }}
         />
-        <Link href="/crm">
-          <span className="flex items-center gap-1.5 rounded-xl bg-[#d9ae4c] px-3 py-1.5 text-xs font-black text-black shadow-md">
-            <Users className="size-3.5" />
-            CRM
-          </span>
-        </Link>
+        <span className="w-10" aria-hidden="true" />
       </div>
 
       {/* ── Mobile overlay ───────────────────────────────── */}

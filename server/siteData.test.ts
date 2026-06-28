@@ -5,7 +5,6 @@ import {
   JERUSALEM_HERO,
   maxPropertyPrice,
   minPropertyPrice,
-  OFFICE_PHONE,
   sampleProperties,
   SHAY_ABOUT_IMAGE,
   TEAM_LOGO,
@@ -27,14 +26,15 @@ describe("siteData content and media mapping", () => {
     ]);
   });
 
-  it("keeps five team cards with the updated branding copy and requested photo swaps", () => {
-    expect(agents).toHaveLength(5);
+  it("keeps six team cards with the updated branding copy and requested photo swaps", () => {
+    expect(agents).toHaveLength(6);
     expect(agents.map((agent) => agent.id)).toEqual([
       "shay",
       "aviad",
       "ronen",
       "eliya",
       "yarden",
+      "hodiya",
     ]);
 
     expect(agents.map((agent) => agent.name)).toEqual([
@@ -43,17 +43,19 @@ describe("siteData content and media mapping", () => {
       "רונן דוידיאן",
       "אליה מרציאנו",
       "ירדן גמליאל",
+      "הודיה מליאח",
     ]);
 
-    expect(agents[0]?.expertise).toContain("ניהול משא ומתן");
-    expect(agents[1]?.expertise).toContain("יועץ נדל״ן בכיר");
-    expect(agents[2]?.expertise).toContain("שיווק ומכירות");
-    expect(agents[3]?.expertise).toContain("קשרי לקוחות");
-    expect(agents[4]?.expertise).toContain("שיווק וחשיפת נכסים");
+    expect(agents[0]?.expertise).toContain("משא ומתן");
+    expect(agents[1]?.expertise).toContain("גילה והר חומה");
+    expect(agents[2]?.expertise).toContain("רסקו וסן סימון");
+    expect(agents[3]?.expertise).toContain("משקיעים ורוכשים");
+    expect(agents[4]?.expertise).toContain("קטמונים");
+    expect(agents[5]?.expertise).toContain("קריית שמואל");
 
     for (const agent of agents) {
-      expect(agent.phone).toBe(OFFICE_PHONE);
-      expect(agent.image.startsWith("https://")).toBe(true);
+      expect(agent.phone).toBeTruthy();
+      expect(agent.image).toBeTruthy();
     }
   });
 

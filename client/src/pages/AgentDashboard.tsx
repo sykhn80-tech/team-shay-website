@@ -8,7 +8,6 @@ import {
   Pencil,
   Plus,
   Trash2,
-  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import AgentLayout from "@/components/AgentLayout";
@@ -104,28 +103,6 @@ export default function AgentDashboard() {
               </article>
             ))}
           </div>
-
-          {/* Admin CRM shortcut */}
-          {agent?.accountRole === "admin" && (
-            <Link href="/agent-dashboard/crm">
-              <div className="mt-6 rounded-[24px] bg-gradient-to-l from-[#d9ae4c]/10 to-[#fff4d8] border border-[#f3dfb0] p-5 hover:border-[#d9ae4c] transition cursor-pointer group">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="rounded-2xl bg-[#d9ae4c] p-3 shadow-md shadow-amber-200/50">
-                      <Users className="size-6 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-lg font-black text-slate-800">CRM לידים — כל הצוות</p>
-                      <p className="text-sm text-slate-500 mt-0.5">צפה ונהל את כל לידי הצוות במקום אחד</p>
-                    </div>
-                  </div>
-                  <span className="text-[#d9ae4c] font-black text-sm group-hover:translate-x-[-4px] transition-transform">
-                    כניסה ←
-                  </span>
-                </div>
-              </div>
-            </Link>
-          )}
 
           {/* Properties grid */}
           <section className="mt-8 grid gap-6 xl:grid-cols-[1fr_360px]">

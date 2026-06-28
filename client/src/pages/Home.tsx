@@ -13,10 +13,13 @@ import {
   Megaphone,
   Menu,
   MessageCircle,
+  Newspaper,
   Phone,
+  Play,
   Ruler,
   ShieldCheck,
   Star,
+  Video,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +38,7 @@ import {
   LANDSMAN_LOGO,
   OFFICE_PHONE,
   OFFICE_PHONE_LINK,
+  propertyImages,
   SHAY_ABOUT_IMAGE,
   TEAM_LOGO,
   TYPING_TEXT,
@@ -46,6 +50,7 @@ const navItems: Array<{ label: string; href: string; isRoute: boolean }> = [
   { label: "דף הבית", href: "#home", isRoute: false },
   { label: "אודות", href: "#about", isRoute: false },
   { label: "שיטה", href: "#method", isRoute: false },
+  { label: "שיווק", href: "#marketing-methods", isRoute: false },
   { label: "נכסים", href: "/properties", isRoute: true },
   { label: "התחברות סוכנים", href: "/agent-login", isRoute: true },
 ];
@@ -56,6 +61,7 @@ const HERO_LOOP_START_SECONDS = 0.02;
 const HERO_LOOP_TARGET_SECONDS = 8;
 const ELIYA_IMAGE_URL = "/agents/eliya-card.jpeg";
 const AVIAD_IMAGE_URL = "/agents/aviad-card.jpeg";
+const HODIYA_IMAGE_URL = "/agents/hodiya-card.png";
 const HERO_TYPING_PHRASES = [
   "מוכרים בלעדיות. קונים בחכמה.",
   "מתחברים לשוק הנכסים של ירושלים.",
@@ -135,6 +141,38 @@ const valueSteps = [
   },
 ];
 
+const marketingMethodItems = [
+  {
+    title: "סרטוני הדמיה ונכסי פרימיום",
+    description: "וידאו קצר שמכניס קונים לאווירה של הנכס עוד לפני הסיור.",
+    type: "video",
+    mediaUrl: HERO_VIDEO_URL,
+    posterUrl: propertyImages.four,
+    icon: Video,
+  },
+  {
+    title: "כתבות וחשיפה בעיתון",
+    description: "נראות מקומית שמחזקת אמון ומגיעה לקהל שמחפש בירושלים באמת.",
+    type: "image",
+    mediaUrl: propertyImages.two,
+    icon: Newspaper,
+  },
+  {
+    title: "בתים פתוחים שמייצרים תנועה",
+    description: "אירועי מכירה מתוזמנים שמייצרים דחיפות, ביקושים ושיחות שטח.",
+    type: "image",
+    mediaUrl: propertyImages.one,
+    icon: Building2,
+  },
+  {
+    title: "שלטים ונוכחות בשטח",
+    description: "שילוט מדויק בשכונה, קשרי שכנים וחשיפה פיזית שלא נשארת רק בדיגיטל.",
+    type: "image",
+    mediaUrl: propertyImages.three,
+    icon: Megaphone,
+  },
+] as const;
+
 const normalizeAgentName = (value: string) => value.replace(/\s+/g, "");
 
 type AgentDisplayOverride = {
@@ -210,6 +248,26 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       email: "yardeen12@gmail.com",
       phone: "050-253-5095",
       expertise: "סוכן מוכרים. מומחה לאזור קטמונים, קטמון, סן סימון ורסקו",
+    },
+  ],
+  [
+    "הודיהמליאח",
+    {
+      email: "",
+      phone: OFFICE_PHONE,
+      expertise: "מומחית אזור ברסקו, סן סימון וקריית שמואל",
+      image: HODIYA_IMAGE_URL,
+      imagePosition: "center 12%",
+    },
+  ],
+  [
+    "הודיה",
+    {
+      email: "",
+      phone: OFFICE_PHONE,
+      expertise: "מומחית אזור ברסקו, סן סימון וקריית שמואל",
+      image: HODIYA_IMAGE_URL,
+      imagePosition: "center 12%",
     },
   ],
 ]);
@@ -524,9 +582,7 @@ export default function Home() {
         notes: null,
       });
 
-      const message = `שלום, אני ${formData.fullName} ורוצה שתחזרו אליי לגבי הנכס.%0A%0Aשכונה: ${formData.neighborhood}%0Aמספר חדרים: ${formData.rooms}%0Aמ״ר: ${formData.sqm}%0Aטלפון: ${formData.phone}`;
-      window.open(`${whatsappLink}?text=${message}`, "_blank", "noopener,noreferrer");
-      toast.success("הפרטים נשמרו ונפתחה שיחת WhatsApp להמשך טיפול.");
+      toast.success("הפרטים נשלחו למייל ונחזור אליכם בהקדם.");
       setFormData({ neighborhood: "", rooms: "", sqm: "", fullName: "", phone: "" });
       setLeadStep(1);
     } catch {
@@ -885,6 +941,71 @@ export default function Home() {
                   ) : null}
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="marketing-methods" className="bg-[#FDF8F0] px-4 py-20 md:px-6 md:py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="overflow-hidden rounded-[40px] bg-[#111111] p-5 text-white shadow-[0_28px_80px_rgba(15,23,42,0.22)] md:p-8">
+              <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+                <div className="p-3 md:p-6">
+                  <p className="inline-flex items-center gap-2 rounded-full border border-[#D4AF37]/40 bg-[#D4AF37]/10 px-4 py-2 text-sm font-black text-[#D4AF37]">
+                    <Play className="size-4 fill-current" />
+                    שיטות השיווק שלנו
+                  </p>
+                  <h2 className="mt-5 text-4xl font-extrabold leading-tight md:text-[3.4rem]">
+                    לא רק מעלים מודעה — בונים חוויית מכירה
+                  </h2>
+                  <p className="mt-5 text-lg font-semibold leading-8 text-white/70">
+                    כאן נרכז את סרטוני ההדמיה, תמונות מהעיתון, בתים פתוחים, שלטים ופעולות שטח. כל מדיה שתעלה תוכל להיות מוצגת ככרטיס חי, עם צפייה ישירה באתר.
+                  </p>
+                  <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                    {["וידאו שנפתח בלחיצה", "גלריות לפני/אחרי", "כרטיסי קמפיין מודגשים", "תיעוד שטח מבתים פתוחים"].map((item) => (
+                      <div key={item} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-white/80">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {marketingMethodItems.map((item, index) => {
+                    const Icon = item.icon;
+                    return (
+                      <article
+                        key={item.title}
+                        className={`group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.08] shadow-[0_18px_40px_rgba(0,0,0,0.22)] transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37] ${index === 0 ? "sm:col-span-2" : ""}`}
+                      >
+                        <div className={index === 0 ? "aspect-[16/8.2]" : "aspect-[4/3]"}>
+                          {item.type === "video" ? (
+                            <video
+                              src={item.mediaUrl}
+                              poster={item.posterUrl}
+                              controls
+                              playsInline
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <img src={item.mediaUrl} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />
+                          )}
+                        </div>
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-5">
+                          <div className="flex items-center gap-3">
+                            <span className="flex size-10 items-center justify-center rounded-2xl bg-[#D4AF37] text-black">
+                              <Icon className="size-5" />
+                            </span>
+                            <div>
+                              <h3 className="text-lg font-black text-white">{item.title}</h3>
+                              <p className="mt-1 text-sm font-semibold leading-6 text-white/70">{item.description}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </section>

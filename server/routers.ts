@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { z } from "zod";
 import { createAgentSessionToken } from "./_core/agentSession";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { sendLeadNotificationEmail } from "./_core/email";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, agentProcedure, publicProcedure, router } from "./_core/trpc";
 import {
@@ -1391,10 +1392,20 @@ export const appRouter = router({
         sqm: input.sqm,
         notes: input.notes ?? null,
       });
+      const emailSent = await sendLeadNotificationEmail({
+        leadId,
+        fullName: input.fullName,
+        phone: input.phone,
+        neighborhood: input.neighborhood,
+        rooms: input.rooms,
+        sqm: input.sqm,
+        notes: input.notes ?? null,
+      });
 
       return {
         success: true,
         leadId,
+        emailSent,
       } as const;
     }),
   }),

@@ -76,6 +76,15 @@ export const agents = [
       "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/WhatsAppImage2026-04-13at17.31.35_58f082a2.jpeg",
     imagePosition: "center 26%",
   },
+  {
+    id: "hodiya",
+    name: "הודיה מליאח",
+    expertise: "מומחית אזור ברסקו, סן סימון וקריית שמואל",
+    email: "",
+    phone: OFFICE_PHONE,
+    image: "/agents/hodiya-card.png",
+    imagePosition: "center 12%",
+  },
 ] as const;
 
 export const methodSteps = [

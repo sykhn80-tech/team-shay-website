@@ -8,28 +8,11 @@ import AdminPanel from "./pages/AdminPanel";
 import AgentDashboard from "./pages/AgentDashboard";
 import AgentLogin from "./pages/AgentLogin";
 import CmaAgent from "./pages/CmaAgent";
-import CrmDashboard from "./pages/CrmDashboard";
-import CrmCalendar from "./pages/CrmCalendar";
-import CrmDocuments from "./pages/CrmDocuments";
-import CrmExclusivities from "./pages/CrmExclusivities";
-import CrmFinance from "./pages/CrmFinance";
-import CrmFollowup from "./pages/CrmFollowup";
-import CrmMarketing from "./pages/CrmMarketing";
-import CrmMatches from "./pages/CrmMatches";
-import CrmPage from "./pages/CrmPage";
-import CrmTasks from "./pages/CrmTasks";
-import CrmTemplates from "./pages/CrmTemplates";
-import CrmImport from "./pages/CrmImport";
-import CrmGoals from "./pages/CrmGoals";
 import Home from "./pages/Home";
 import MarketingAgent from "./pages/MarketingAgent";
 import NotFound from "./pages/NotFound";
 import PropertyDetails from "./pages/PropertyDetails";
 import Properties from "./pages/Properties";
-
-function CrmLeadsRoute() {
-  return <CrmPage />;
-}
 
 function Router() {
   return (
@@ -43,31 +26,6 @@ function Router() {
       <Route path="/agent-dashboard/cma" component={CmaAgent} />
       <Route path="/agent-dashboard/marketing" component={MarketingAgent} />
       <Route path="/agent-dashboard/new-property" component={AddProperty} />
-      <Route path="/crm" component={CrmLeadsRoute} />
-      <Route path="/crm/dashboard" component={CrmDashboard} />
-      <Route path="/crm/exclusivities" component={CrmExclusivities} />
-      <Route path="/crm/matches" component={CrmMatches} />
-      <Route path="/crm/followup" component={CrmFollowup} />
-      <Route path="/crm/tasks" component={CrmTasks} />
-      <Route path="/crm/marketing" component={CrmMarketing} />
-      <Route path="/crm/finance" component={CrmFinance} />
-      <Route path="/crm/templates" component={CrmTemplates} />
-      <Route path="/crm/documents" component={CrmDocuments} />
-      <Route path="/agent-dashboard/crm" component={CrmDashboard} />
-      <Route path="/agent-dashboard/crm/leads" component={CrmLeadsRoute} />
-      <Route path="/agent-dashboard/crm/dashboard" component={CrmDashboard} />
-      <Route path="/agent-dashboard/crm/exclusivities" component={CrmExclusivities} />
-      <Route path="/agent-dashboard/crm/matches" component={CrmMatches} />
-      <Route path="/agent-dashboard/crm/matching" component={CrmMatches} />
-      <Route path="/agent-dashboard/crm/followup" component={CrmFollowup} />
-      <Route path="/agent-dashboard/crm/goals" component={CrmGoals} />
-      <Route path="/agent-dashboard/crm/calendar" component={CrmCalendar} />
-      <Route path="/agent-dashboard/crm/tasks" component={CrmTasks} />
-      <Route path="/agent-dashboard/crm/marketing" component={CrmMarketing} />
-      <Route path="/agent-dashboard/crm/finance" component={CrmFinance} />
-      <Route path="/agent-dashboard/crm/templates" component={CrmTemplates} />
-      <Route path="/agent-dashboard/crm/documents" component={CrmDocuments} />
-      <Route path="/crm-import" component={CrmImport} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
