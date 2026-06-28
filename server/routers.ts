@@ -1423,14 +1423,24 @@ export const appRouter = router({
         return property;
       }),
     submitLead: publicProcedure.input(leadInputSchema).mutation(async ({ input }) => {
-      const leadId = await createLeadSubmission({
-        fullName: input.fullName,
-        phone: input.phone,
-        neighborhood: input.neighborhood,
-        rooms: input.rooms,
-        sqm: input.sqm,
-        notes: input.notes ?? null,
-      });
+      let leadId = 0;
+      let leadSaved = false;
+
+      try {
+        leadId = await createLeadSubmission({
+          fullName: input.fullName,
+          phone: input.phone,
+          neighborhood: input.neighborhood,
+          rooms: input.rooms,
+          sqm: input.sqm,
+          notes: input.notes ?? null,
+        });
+        leadSaved = true;
+      } catch (error) {
+        console.warn("[LeadSubmission] Lead was not saved, continuing with email notification:", error);
+        leadId = Date.now();
+      }
+
       const emailSent = await sendLeadNotificationEmail({
         leadId,
         fullName: input.fullName,
@@ -1443,6 +1453,7 @@ export const appRouter = router({
 
       return {
         success: true,
+        leadSaved,
         leadId,
         emailSent,
       } as const;
