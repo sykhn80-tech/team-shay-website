@@ -143,7 +143,7 @@ const valueSteps = [
 
 const marketingMethodItems = [
   {
-    title: "סרטוני הדמיה ונכסי פרימיום",
+    title: "סרטוני הדמיה",
     description: "וידאו קצר שמכניס קונים לאווירה של הנכס עוד לפני הסיור.",
     type: "video",
     mediaUrl: HERO_VIDEO_URL,
@@ -151,22 +151,22 @@ const marketingMethodItems = [
     icon: Video,
   },
   {
-    title: "כתבות וחשיפה בעיתון",
+    title: "עיתון מקומי, פליירים ומכתבי שכנים",
     description: "נראות מקומית שמחזקת אמון ומגיעה לקהל שמחפש בירושלים באמת.",
     type: "image",
     mediaUrl: propertyImages.two,
     icon: Newspaper,
   },
   {
-    title: "בתים פתוחים שמייצרים תנועה",
+    title: "בתים פתוחים לקונים ומתווכים",
     description: "אירועי מכירה מתוזמנים שמייצרים דחיפות, ביקושים ושיחות שטח.",
     type: "image",
     mediaUrl: propertyImages.one,
     icon: Building2,
   },
   {
-    title: "שלטים ונוכחות בשטח",
-    description: "שילוט מדויק בשכונה, קשרי שכנים וחשיפה פיזית שלא נשארת רק בדיגיטל.",
+    title: "פרסום אגרסיבי ברשתות",
+    description: "קמפיינים ממומנים, אורגני, חשיפה ברשתות וחזרה חכמה לקהל שמתעניין.",
     type: "image",
     mediaUrl: propertyImages.three,
     icon: Megaphone,
@@ -338,6 +338,7 @@ export default function Home() {
   const [propertyCarouselApi, setPropertyCarouselApi] = useState<CarouselApi | null>(null);
   const [selectedPropertySlide, setSelectedPropertySlide] = useState(0);
   const [isPropertyCarouselPaused, setIsPropertyCarouselPaused] = useState(false);
+  const [selectedMarketingIndex, setSelectedMarketingIndex] = useState(0);
   const [formData, setFormData] = useState({
     neighborhood: "",
     rooms: "",
@@ -367,6 +368,7 @@ export default function Home() {
     highlights: ["וידאו שנפתח בלחיצה", "גלריות לפני/אחרי", "כרטיסי קמפיין מודגשים", "תיעוד שטח מבתים פתוחים"],
     items: marketingMethodItems.map((item, index) => ({ ...item, id: `fallback-${index + 1}` })),
   };
+  const selectedMarketingItem = marketingSection.items[selectedMarketingIndex] ?? marketingSection.items[0];
 
   const homepageAgents = useMemo(() => {
     const dbAgents = homeQuery.data?.agents ?? [];
@@ -484,6 +486,12 @@ export default function Home() {
     return () => window.clearInterval(autoplay);
   }, [featuredPropertyTrack.length, isPropertyCarouselPaused, propertyCarouselApi]);
 
+  useEffect(() => {
+    if (selectedMarketingIndex >= marketingSection.items.length) {
+      setSelectedMarketingIndex(0);
+    }
+  }, [marketingSection.items.length, selectedMarketingIndex]);
+
   const heroPlaybackRate = useMemo(
     () => Math.max(0.25, Math.min(1, (HERO_LOOP_END_SECONDS - HERO_LOOP_START_SECONDS) / HERO_LOOP_TARGET_SECONDS)),
     [],
@@ -581,7 +589,7 @@ export default function Home() {
     }
 
     try {
-      await submitLeadMutation.mutateAsync({
+      const result = await submitLeadMutation.mutateAsync({
         fullName: formData.fullName,
         phone: formData.phone,
         neighborhood: formData.neighborhood,
@@ -590,7 +598,11 @@ export default function Home() {
         notes: null,
       });
 
-      toast.success("הפרטים נשלחו למייל ונחזור אליכם בהקדם.");
+      if (result.emailSent) {
+        toast.success("הפרטים נשלחו למייל ונחזור אליכם בהקדם.");
+      } else {
+        toast.warning("הפרטים נשמרו, אבל המייל לא נשלח. צריך להגדיר RESEND_API_KEY ב-Vercel.");
+      }
       setFormData({ neighborhood: "", rooms: "", sqm: "", fullName: "", phone: "" });
       setLeadStep(1);
     } catch {
@@ -877,13 +889,13 @@ export default function Home() {
               <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">הכירו את הסוכנים שלנו</h2>
             </div>
 
-            <div className="mt-12 grid gap-6 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {homepageAgents.map((agent) => (
                 <article
                   key={agent.id}
                   className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_16px_36px_rgba(15,23,42,0.06)] transition duration-300 hover:scale-[1.02] hover:shadow-[0_24px_56px_rgba(15,23,42,0.14)]"
                 >
-                  <div className="h-56 overflow-hidden bg-white">
+                  <div className="h-48 overflow-hidden bg-white">
                     <img
                       src={agent.image}
                       alt={agent.name}
@@ -894,7 +906,7 @@ export default function Home() {
                   </div>
                   <div className="p-3 text-center">
                     <h3 className="text-[1.3rem] font-extrabold text-slate-950">{agent.name}</h3>
-                    <p className="mt-1.5 min-h-[72px] text-sm font-semibold leading-6 text-slate-600 text-center">{agent.expertise}</p>
+                    <p className="mt-1.5 min-h-[84px] text-xs font-semibold leading-5 text-slate-600 text-center">{agent.expertise}</p>
                     <div className="mt-2 flex flex-col items-center gap-1.5 border-t border-slate-100 pt-2.5">
                       {agent.email ? (
                         <a
@@ -975,42 +987,83 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="-mx-4 mt-12 overflow-x-auto px-4 pb-4 [scrollbar-width:thin] md:-mx-6 md:px-6">
-              <div className="flex min-w-full gap-5">
+            <div className="mt-12 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-stretch">
+              <article className="overflow-hidden rounded-[34px] border border-[#D4AF37]/35 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
+                <div className="relative aspect-[16/9] bg-slate-100">
+                  {selectedMarketingItem?.type === "video" ? (
+                    <video
+                      key={selectedMarketingItem.mediaUrl}
+                      src={selectedMarketingItem.mediaUrl}
+                      poster={selectedMarketingItem.posterUrl ?? undefined}
+                      controls
+                      playsInline
+                      className="h-full w-full object-cover"
+                    />
+                  ) : selectedMarketingItem ? (
+                    <img src={selectedMarketingItem.mediaUrl} alt={selectedMarketingItem.title} className="h-full w-full object-cover" loading="lazy" />
+                  ) : null}
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent p-5">
+                    <span className="inline-flex rounded-full bg-[#D4AF37] px-4 py-1.5 text-xs font-black text-black">
+                      {String(selectedMarketingIndex + 1).padStart(2, "0")} / {marketingSection.items.length}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid gap-4 p-6 text-right md:grid-cols-[auto_1fr] md:items-start">
+                  <span className="flex size-12 items-center justify-center rounded-2xl bg-[#D4AF37] text-black shadow-[0_12px_24px_rgba(212,175,55,0.24)]">
+                    {selectedMarketingItem?.type === "video" ? <Video className="size-6" /> : <Megaphone className="size-6" />}
+                  </span>
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-950">{selectedMarketingItem?.title}</h3>
+                    <p className="mt-2 text-base font-semibold leading-8 text-slate-600">{selectedMarketingItem?.description}</p>
+                  </div>
+                </div>
+              </article>
+
+              <div className="relative overflow-hidden rounded-[34px] border border-[#D4AF37]/20 bg-white/70 p-4 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
+                <div className="pointer-events-none absolute left-0 top-0 h-full w-14 bg-gradient-to-r from-[#FDF8F0] to-transparent" />
+                <div className="grid max-h-[620px] gap-3 overflow-y-auto pr-1 [scrollbar-width:thin] sm:grid-cols-2 lg:grid-cols-1">
                   {marketingSection.items.map((item, index) => {
                     const Icon = item.type === "video" ? Video : index === 1 ? Newspaper : index === 2 ? Building2 : Megaphone;
+                    const isActive = index === selectedMarketingIndex;
                     return (
-                      <article
+                      <button
                         key={item.id || item.title}
-                        className="group w-[82vw] shrink-0 overflow-hidden rounded-[30px] border border-[#D4AF37]/25 bg-white shadow-[0_18px_46px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:shadow-[0_24px_60px_rgba(212,175,55,0.18)] sm:w-[420px] lg:w-[470px]"
+                        type="button"
+                        onClick={() => setSelectedMarketingIndex(index)}
+                        className={`group grid grid-cols-[104px_1fr] items-center gap-3 rounded-[24px] border p-2 text-right transition duration-300 ${
+                          isActive
+                            ? "border-[#D4AF37] bg-[#fff7df] shadow-[0_14px_32px_rgba(212,175,55,0.18)]"
+                            : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#D4AF37]/70"
+                        }`}
                       >
-                        <div className="aspect-[16/10] bg-slate-100">
+                        <div className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-slate-100">
                           {item.type === "video" ? (
-                            <video
-                              src={item.mediaUrl}
-                              poster={item.posterUrl ?? undefined}
-                              controls
-                              playsInline
-                              className="h-full w-full object-cover"
-                            />
+                            <>
+                              <video src={item.mediaUrl} poster={item.posterUrl ?? undefined} className="h-full w-full object-cover" muted playsInline />
+                              <span className="absolute inset-0 m-auto flex size-10 items-center justify-center rounded-full bg-black/55 text-white">
+                                <Play className="size-4 fill-current" />
+                              </span>
+                            </>
                           ) : (
                             <img src={item.mediaUrl} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />
                           )}
                         </div>
-                        <div className="p-5 text-right">
-                          <div className="flex items-start gap-3">
-                            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#D4AF37] text-black shadow-[0_10px_20px_rgba(212,175,55,0.28)]">
-                              <Icon className="size-5" />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-[#D4AF37] text-black" : "bg-[#FDF8F0] text-[#B8960C]"}`}>
+                              <Icon className="size-4" />
                             </span>
-                            <div>
-                              <h3 className="text-xl font-black text-slate-950">{item.title}</h3>
-                              <p className="mt-2 text-sm font-semibold leading-7 text-slate-600">{item.description}</p>
-                            </div>
+                            <h3 className="line-clamp-2 text-sm font-black leading-5 text-slate-950">{item.title}</h3>
                           </div>
+                          <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">{item.description}</p>
                         </div>
-                      </article>
+                      </button>
                     );
                   })}
+                  <div className="rounded-[24px] border border-dashed border-[#D4AF37]/35 bg-[#FDF8F0] p-4 text-center text-sm font-black text-[#B8960C]">
+                    ממשיכים לבנות עוד חשיפה לכל נכס →
+                  </div>
+                </div>
               </div>
             </div>
           </div>

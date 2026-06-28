@@ -21,7 +21,7 @@ function escapeHtml(value: string) {
 
 export async function sendLeadNotificationEmail(input: LeadNotificationInput) {
   if (!ENV.resendApiKey) {
-    console.warn("[Email] RESEND_API_KEY is missing; lead notification email was not sent.");
+    console.warn(`[Email] RESEND_API_KEY is missing; lead notification email to ${ENV.leadNotificationEmail} was not sent.`);
     return false;
   }
 

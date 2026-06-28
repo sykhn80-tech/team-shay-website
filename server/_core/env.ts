@@ -9,5 +9,5 @@ export const ENV = {
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   resendFromEmail: process.env.RESEND_FROM_EMAIL ?? "Team Shay <onboarding@resend.dev>",
-  leadNotificationEmail: process.env.LEAD_NOTIFICATION_EMAIL ?? "shay2003ai@gmail.com",
+  leadNotificationEmail: process.env.LEAD_NOTIFICATION_EMAIL ?? "sykhn80@gmail.com",
 };

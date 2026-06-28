@@ -228,7 +228,7 @@ export const defaultMarketingSection: MarketingSectionData = {
   items: [
     {
       id: "render-videos",
-      title: "סרטוני הדמיה ונכסי פרימיום",
+      title: "סרטוני הדמיה",
       description: "וידאו קצר שמכניס קונים לאווירה של הנכס עוד לפני הסיור.",
       type: "video",
       mediaUrl: "/media/hero-animation.mp4",
@@ -237,7 +237,7 @@ export const defaultMarketingSection: MarketingSectionData = {
     },
     {
       id: "newspaper",
-      title: "כתבות וחשיפה בעיתון",
+      title: "עיתון מקומי, פליירים ומכתבי שכנים",
       description: "נראות מקומית שמחזקת אמון ומגיעה לקהל שמחפש בירושלים באמת.",
       type: "image",
       mediaUrl:
@@ -245,7 +245,7 @@ export const defaultMarketingSection: MarketingSectionData = {
     },
     {
       id: "open-house",
-      title: "בתים פתוחים שמייצרים תנועה",
+      title: "בתים פתוחים לקונים ומתווכים",
       description: "אירועי מכירה מתוזמנים שמייצרים דחיפות, ביקושים ושיחות שטח.",
       type: "image",
       mediaUrl:
@@ -253,8 +253,8 @@ export const defaultMarketingSection: MarketingSectionData = {
     },
     {
       id: "signs",
-      title: "שלטים ונוכחות בשטח",
-      description: "שילוט מדויק בשכונה, קשרי שכנים וחשיפה פיזית שלא נשארת רק בדיגיטל.",
+      title: "פרסום אגרסיבי ברשתות",
+      description: "קמפיינים ממומנים, אורגני, חשיפה ברשתות וחזרה חכמה לקהל שמתעניין.",
       type: "image",
       mediaUrl:
         "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/IMG_7825_20a7e895.jpg",
