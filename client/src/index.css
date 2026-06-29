@@ -322,7 +322,7 @@ All global tokens should support a modern, clean, conversion-first interface.
     transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translate3d(50%, 0, 0);
+    transform: translate3d(-50%, 0, 0);
   }
 }
 
@@ -338,11 +338,7 @@ All global tokens should support a modern, clean, conversion-first interface.
   }
 
   .sold-properties-marquee {
-    animation: sold-properties-marquee 56s linear infinite;
+    animation: sold-properties-marquee 30s linear infinite;
     will-change: transform;
-  }
-
-  .sold-properties-marquee:hover {
-    animation-play-state: paused;
   }
 }

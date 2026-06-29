@@ -60,6 +60,10 @@ const HERO_LOOP_TARGET_SECONDS = 8;
 const ELIYA_IMAGE_URL = "/agents/eliya-card.jpeg";
 const AVIAD_IMAGE_URL = "/agents/aviad-card.jpeg";
 const HODIYA_IMAGE_URL = "/agents/hodiya-card.png";
+const RONEN_IMAGE_URL =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/tryiton_1760536418265_f4vv644shhrm80csx0jvzt3etm2_d3afa6a6.png";
+const YARDEN_IMAGE_URL =
+  "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/WhatsAppImage2026-04-13at17.31.35_58f082a2.jpeg";
 const HERO_TYPING_PHRASES = [
   "מוכרים בלעדיות. קונים בחכמה.",
   "מתחברים לשוק הנכסים של ירושלים.",
@@ -184,9 +188,9 @@ type AgentDisplayOverride = {
 const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
   [
     "שיכהן",
-    { email: "shay2003ai@gmail.com", phone: "052-863-6631", expertise: "ראש הצוות, מומחה משא ומתן ושיווק פרויקטים" },
+    { email: "shay2003ai@gmail.com", phone: "052-863-6631", expertise: "ראש הצוות, מומחה משא ומתן ושיווק פרויקטים", image: SHAY_ABOUT_IMAGE, imagePosition: "center 18%" },
   ],
-  ["שי", { email: "shay2003ai@gmail.com", phone: "052-863-6631", expertise: "ראש הצוות, מומחה משא ומתן ושיווק פרויקטים" }],
+  ["שי", { email: "shay2003ai@gmail.com", phone: "052-863-6631", expertise: "ראש הצוות, מומחה משא ומתן ושיווק פרויקטים", image: SHAY_ABOUT_IMAGE, imagePosition: "center 18%" }],
   [
     "אביעדניסים",
     {
@@ -209,9 +213,9 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
   ],
   [
     "רונןדוידיאן",
-    { email: "ronend0000@gmail.com", phone: "050-900-5161", expertise: "סוכן מוכרים. מומחה לאזור רסקו וסן סימון" },
+    { email: "ronend0000@gmail.com", phone: "050-900-5161", expertise: "סוכן מוכרים. מומחה לאזור רסקו וסן סימון", image: RONEN_IMAGE_URL, imagePosition: "center 18%" },
   ],
-  ["רונן", { email: "ronend0000@gmail.com", phone: "050-900-5161", expertise: "סוכן מוכרים. מומחה לאזור רסקו וסן סימון" }],
+  ["רונן", { email: "ronend0000@gmail.com", phone: "050-900-5161", expertise: "סוכן מוכרים. מומחה לאזור רסקו וסן סימון", image: RONEN_IMAGE_URL, imagePosition: "center 18%" }],
   [
     "אליהמרציאנו",
     {
@@ -238,6 +242,8 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       email: "yardeen12@gmail.com",
       phone: "050-253-5095",
       expertise: "סוכן מוכרים. מומחה לאזור קטמונים, קטמון, סן סימון ורסקו",
+      image: YARDEN_IMAGE_URL,
+      imagePosition: "center 26%",
     },
   ],
   [
@@ -246,6 +252,8 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       email: "yardeen12@gmail.com",
       phone: "050-253-5095",
       expertise: "סוכן מוכרים. מומחה לאזור קטמונים, קטמון, סן סימון ורסקו",
+      image: YARDEN_IMAGE_URL,
+      imagePosition: "center 26%",
     },
   ],
   [
@@ -269,6 +277,7 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
     },
   ],
 ]);
+const fallbackAgentByName = new Map(fallbackAgents.map((agent) => [normalizeAgentName(agent.name), agent]));
 
 const normalizeTestimonialTitle = (value: string) => (value.trim() === "מאי אווריין" ? "מאי אוחיון" : value);
 const isVideoMediaUrl = (value?: string | null) => Boolean(value && /\.(mp4|webm|mov)(\?|$)/i.test(value));
@@ -385,7 +394,8 @@ export default function Home() {
     if (dbAgents.length > 0) {
       return dbAgents.map((agent, index) => ({
         ...(() => {
-          const fallbackAgent = fallbackAgents[index % fallbackAgents.length];
+          const fallbackByName = fallbackAgentByName.get(normalizeAgentName(agent.name));
+          const fallbackAgent = fallbackByName ?? fallbackAgents[index % fallbackAgents.length];
           const displayOverride = agentDisplayOverrides.get(normalizeAgentName(agent.name));
           return {
             id: agent.id,
@@ -393,7 +403,7 @@ export default function Home() {
             expertise: agent.roleTitle + (agent.bio ? `. ${agent.bio}` : "") || displayOverride?.expertise || "",
             phone: agent.phone || displayOverride?.phone || officePhone,
             email: agent.email || displayOverride?.email || "",
-            image: displayOverride?.image || agent.photoUrl || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
+            image: displayOverride?.image || fallbackByName?.image || agent.photoUrl || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
             imagePosition: displayOverride?.imagePosition || fallbackAgent?.imagePosition || "center 20%",
           };
         })(),
@@ -450,7 +460,7 @@ export default function Home() {
 
   const soldPropertiesTrack = useMemo(() => {
     if (!soldProperties.length) return [];
-    const copiesPerLoop = Math.max(4, Math.ceil(12 / soldProperties.length));
+    const copiesPerLoop = Math.max(6, Math.ceil(20 / soldProperties.length));
     const loop = Array.from({ length: copiesPerLoop }, () => soldProperties).flat();
     return [...loop, ...loop];
   }, [soldProperties]);
@@ -1343,50 +1353,51 @@ export default function Home() {
               ) : visibleTestimonials.length ? (
                 <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3" aria-label="קיר המלצות חי">
                   {visibleTestimonials.map((testimonial) => (
-                    <article
+                    <button
+                      type="button"
                       key={testimonial.id}
-                      className="flex min-h-[30rem] flex-col rounded-[30px] border border-slate-200 bg-white p-5 text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] md:p-6"
-                    >
-                      {testimonial.whatsappImageUrl ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setTestimonialPreview({
+                      onClick={() =>
+                        testimonial.whatsappImageUrl
+                          ? setTestimonialPreview({
                               title: testimonial.title,
                               source: testimonial.source,
                               quote: testimonial.quote,
                               stars: testimonial.stars,
                               whatsappImageUrl: testimonial.whatsappImageUrl ?? null,
                             })
-                          }
-                          className="group relative h-40 overflow-hidden rounded-[24px] bg-slate-950 text-right focus:outline-none focus:ring-4 focus:ring-[#D4AF37]/25"
-                          aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}
-                        >
+                          : undefined
+                      }
+                      className="group flex min-h-[34rem] cursor-pointer flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition duration-300 hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25"
+                    >
+                      {testimonial.whatsappImageUrl ? (
+                        <div className="relative h-72 overflow-hidden bg-slate-950 md:h-80" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                           {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
                             <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105" muted playsInline preload="metadata" />
                           ) : (
                             <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105" loading="lazy" />
                           )}
-                          <span className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent opacity-80" />
-                          <span className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full bg-white/92 px-4 py-2 text-sm font-black text-[#1A1A1A] shadow-lg">
-                            {isVideoMediaUrl(testimonial.whatsappImageUrl) ? <Play className="size-4 fill-current text-[#D4AF37]" /> : <MessageCircle className="size-4 text-[#D4AF37]" />}
-                            פתיחה גדולה
+                          <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
+                          <span className="absolute bottom-4 right-4 inline-flex translate-y-3 items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2 text-sm font-black text-[#1A1A1A] opacity-0 shadow-lg transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                            {isVideoMediaUrl(testimonial.whatsappImageUrl) ? <Play className="size-4 fill-current" /> : <MessageCircle className="size-4" />}
+                            לחצו לצפייה
                           </span>
-                        </button>
+                        </div>
                       ) : null}
-                      <div className="mt-5 flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-xl font-black text-slate-950">{testimonial.title}</p>
-                          <p className="mt-1 text-sm font-bold tracking-[0.02em] text-[#D4AF37]">{testimonial.source}</p>
+                      <div className="flex flex-1 flex-col p-6">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xl font-black text-slate-950">{testimonial.title}</p>
+                            <p className="mt-1 text-sm font-bold tracking-[0.02em] text-[#D4AF37]">{testimonial.source}</p>
+                          </div>
+                          <div className="flex items-center gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
+                            {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
+                              <Star key={`${testimonial.id}-${starIndex}`} className="size-5 fill-current" />
+                            ))}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
-                          {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
-                            <Star key={`${testimonial.id}-${starIndex}`} className="size-5 fill-current" />
-                          ))}
-                        </div>
+                        <p className="mt-4 flex-1 text-[1.04rem] font-semibold leading-8 text-slate-600">{testimonial.quote}</p>
                       </div>
-                      <p className="mt-4 flex-1 text-[1.04rem] font-semibold leading-8 text-slate-600">{testimonial.quote}</p>
-                    </article>
+                    </button>
                   ))}
                 </div>
               ) : (
