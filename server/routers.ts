@@ -1789,11 +1789,7 @@ export const appRouter = router({
         const nextData = {
           ...input.data,
           email: normalizedEmail,
-          passwordHash: input.data.password
-            ? hashAgentPassword(input.data.password)
-            : normalizedEmail
-              ? hashAgentPassword(passwordFromAgentEmail(normalizedEmail))
-              : undefined,
+          passwordHash: input.data.password ? hashAgentPassword(input.data.password) : undefined,
           photoUrl: await resolveStoredImage(
             `team-shay/staff/${normalizedEmail ?? input.accountId}`,
             input.data.photoUrl,

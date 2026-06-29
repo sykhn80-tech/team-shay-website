@@ -339,6 +339,7 @@ export default function Home() {
   const [selectedPropertySlide, setSelectedPropertySlide] = useState(0);
   const [isPropertyCarouselPaused, setIsPropertyCarouselPaused] = useState(false);
   const [selectedMarketingIndex, setSelectedMarketingIndex] = useState(0);
+  const [marketingPreviewOpen, setMarketingPreviewOpen] = useState(false);
   const [formData, setFormData] = useState({
     neighborhood: "",
     rooms: "",
@@ -380,10 +381,10 @@ export default function Home() {
           return {
             id: agent.id,
             name: agent.name,
-            expertise: displayOverride?.expertise || agent.roleTitle + (agent.bio ? `. ${agent.bio}` : ""),
-            phone: displayOverride?.phone || agent.phone || officePhone,
-            email: displayOverride?.email || agent.email || "",
-            image: displayOverride?.image || agent.photoUrl || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
+            expertise: agent.roleTitle + (agent.bio ? `. ${agent.bio}` : "") || displayOverride?.expertise || "",
+            phone: agent.phone || displayOverride?.phone || officePhone,
+            email: agent.email || displayOverride?.email || "",
+            image: agent.photoUrl || displayOverride?.image || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
             imagePosition: displayOverride?.imagePosition || fallbackAgent?.imagePosition || "center 20%",
           };
         })(),
@@ -491,6 +492,10 @@ export default function Home() {
       setSelectedMarketingIndex(0);
     }
   }, [marketingSection.items.length, selectedMarketingIndex]);
+
+  useEffect(() => {
+    setMarketingPreviewOpen(false);
+  }, [selectedMarketingIndex]);
 
   const heroPlaybackRate = useMemo(
     () => Math.max(0.25, Math.min(1, (HERO_LOOP_END_SECONDS - HERO_LOOP_START_SECONDS) / HERO_LOOP_TARGET_SECONDS)),
@@ -1007,6 +1012,14 @@ export default function Home() {
                       {String(selectedMarketingIndex + 1).padStart(2, "0")} / {marketingSection.items.length}
                     </span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setMarketingPreviewOpen(true)}
+                    className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full bg-white/92 px-4 py-2 text-sm font-black text-[#1A1A1A] shadow-[0_12px_28px_rgba(0,0,0,0.18)] transition hover:bg-[#D4AF37]"
+                  >
+                    <Play className="size-4 fill-current" />
+                    צפייה מלאה
+                  </button>
                 </div>
                 <div className="grid gap-4 p-6 text-right md:grid-cols-[auto_1fr] md:items-start">
                   <span className="flex size-12 items-center justify-center rounded-2xl bg-[#D4AF37] text-black shadow-[0_12px_24px_rgba(212,175,55,0.24)]">
@@ -1066,6 +1079,50 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            {marketingPreviewOpen && selectedMarketingItem ? (
+              <div
+                className="fixed inset-0 z-[90] flex items-center justify-center bg-black/85 p-4"
+                role="dialog"
+                aria-modal="true"
+                onClick={() => setMarketingPreviewOpen(false)}
+              >
+                <div className="w-full max-w-6xl overflow-hidden rounded-[30px] bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                  <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
+                    <div className="text-right">
+                      <p className="text-xs font-black uppercase tracking-[0.08em] text-[#B8960C]">Preview</p>
+                      <h3 className="text-xl font-black text-slate-950">{selectedMarketingItem.title}</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMarketingPreviewOpen(false)}
+                      className="flex size-11 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:border-[#D4AF37] hover:text-[#B8960C]"
+                      aria-label="סגירת תצוגה מקדימה"
+                    >
+                      <X className="size-5" />
+                    </button>
+                  </div>
+                  <div className="bg-black">
+                    {selectedMarketingItem.type === "video" ? (
+                      <video
+                        src={selectedMarketingItem.mediaUrl}
+                        poster={selectedMarketingItem.posterUrl ?? undefined}
+                        controls
+                        autoPlay
+                        playsInline
+                        className="max-h-[78vh] w-full object-contain"
+                      />
+                    ) : (
+                      <img
+                        src={selectedMarketingItem.mediaUrl}
+                        alt={selectedMarketingItem.title}
+                        className="max-h-[78vh] w-full object-contain"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
 

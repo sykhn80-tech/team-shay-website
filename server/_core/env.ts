@@ -10,4 +10,7 @@ export const ENV = {
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   resendFromEmail: process.env.RESEND_FROM_EMAIL ?? "Team Shay <onboarding@resend.dev>",
   leadNotificationEmail: process.env.LEAD_NOTIFICATION_EMAIL ?? "sykhn80@gmail.com",
+  gmailUser: process.env.GMAIL_USER ?? "",
+  gmailAppPassword: process.env.GMAIL_APP_PASSWORD ?? "",
+  gmailFromEmail: process.env.GMAIL_FROM_EMAIL ?? process.env.GMAIL_USER ?? "",
 };

@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import {
   Building2,
   ChevronLeft,
+  Eye,
   ImagePlus,
   Loader2,
   MessageSquareQuote,
@@ -99,6 +100,8 @@ type PropertyGalleryDraft = {
 
 const allowedMimeTypes: UploadMimeType[] = ["image/jpeg", "image/png", "image/webp"];
 const allowedMediaMimeTypes: UploadMediaMimeType[] = ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm", "video/quicktime"];
+const maxImageUploadBytes = 5 * 1024 * 1024;
+const maxVideoUploadBytes = 3 * 1024 * 1024;
 
 const buildImageField = (url?: string | null): ImageFieldState => ({
   storedUrl: url ?? "",
@@ -242,11 +245,13 @@ function MediaUploadField({
   hint,
   value,
   onFileSelected,
+  onPreview,
 }: {
   label: string;
   hint: string;
   value: ImageFieldState;
   onFileSelected: (file: File | null) => Promise<void> | void;
+  onPreview?: () => void;
 }) {
   const isVideo = value.previewUrl && /\.(mp4|webm|mov)(\?|$)/i.test(value.previewUrl);
 
@@ -278,6 +283,16 @@ function MediaUploadField({
           ) : (
             <img src={value.previewUrl} alt={label} className="h-40 w-full object-cover" />
           )}
+          {onPreview ? (
+            <button
+              type="button"
+              onClick={onPreview}
+              className="flex w-full items-center justify-center gap-2 border-t border-slate-100 bg-white px-4 py-3 text-sm font-black text-[#B8960C] transition hover:bg-[#fff7df]"
+            >
+              <Eye className="size-4" />
+              תצוגה בגודל מלא
+            </button>
+          ) : null}
         </div>
       ) : (
         <div className="mt-4 rounded-[20px] border border-dashed border-slate-200 bg-white p-5 text-sm text-slate-400">
@@ -285,7 +300,7 @@ function MediaUploadField({
         </div>
       )}
       <p className="mt-3 text-xs font-semibold text-slate-500">
-        תומך JPG, PNG, WebP, MP4, WebM ו-MOV. אחרי שמירה הקובץ יעלה לאחסון הקבוע.
+        תומך JPG, PNG, WebP עד 5MB. וידאו: MP4, WebM או MOV עד 3MB במסלול ההעלאה הנוכחי.
       </p>
     </div>
   );
@@ -303,6 +318,7 @@ export default function AdminPanel() {
   const [editingTestimonialId, setEditingTestimonialId] = useState<number | null>(null);
   const [editingTestimonialForm, setEditingTestimonialForm] = useState<TestimonialFormState>(emptyTestimonialForm);
   const [propertyGalleryDrafts, setPropertyGalleryDrafts] = useState<Record<number, PropertyGalleryDraft>>({});
+  const [adminMediaPreview, setAdminMediaPreview] = useState<{ title: string; type: "image" | "video"; url: string; posterUrl?: string } | null>(null);
 
   const agentSessionQuery = trpc.agent.me.useQuery();
   const dashboardQuery = trpc.admin.dashboard.useQuery(undefined, {
@@ -471,6 +487,16 @@ export default function AdminPanel() {
     if (!file) return;
     if (!allowedMediaMimeTypes.includes(file.type as UploadMediaMimeType)) {
       toast.error("אפשר להעלות JPG, PNG, WebP, MP4, WebM או MOV.");
+      return;
+    }
+    const isVideoUpload = file.type.startsWith("video/");
+    const maxBytes = isVideoUpload ? maxVideoUploadBytes : maxImageUploadBytes;
+    if (file.size > maxBytes) {
+      toast.error(
+        isVideoUpload
+          ? "הסרטון גדול מדי. כרגע אפשר להעלות MP4/WebM/MOV עד 3MB — דחס את הסרטון או העלה גרסה קצרה יותר."
+          : "התמונה גדולה מדי. אפשר להעלות תמונות עד 5MB.",
+      );
       return;
     }
 
@@ -889,6 +915,7 @@ export default function AdminPanel() {
                             <option value="admin">אדמין</option>
                           </select>
                           <input placeholder="סיסמה חדשה (אופציונלי)" value={editingStaffForm.password} onChange={(e) => setEditingStaffForm((prev) => ({ ...prev, password: e.target.value }))} className="h-12 rounded-2xl border border-slate-200 px-4" />
+                          <input placeholder="סדר הצגה" type="number" value={editingStaffForm.sortOrder} onChange={(e) => setEditingStaffForm((prev) => ({ ...prev, sortOrder: Number(e.target.value) }))} className="h-12 rounded-2xl border border-slate-200 px-4" />
                         </div>
                         <textarea value={editingStaffForm.bio} onChange={(e) => setEditingStaffForm((prev) => ({ ...prev, bio: e.target.value }))} rows={3} className="rounded-2xl border border-slate-200 px-4 py-3" />
                         <ImageUploadField
@@ -901,8 +928,14 @@ export default function AdminPanel() {
                             )
                           }
                         />
+                        <div className="flex flex-wrap gap-4 text-sm font-semibold text-slate-700">
+                          <label className="inline-flex items-center gap-2"><input type="checkbox" checked={editingStaffForm.isFeaturedOnHomepage} onChange={(e) => setEditingStaffForm((prev) => ({ ...prev, isFeaturedOnHomepage: e.target.checked }))} /> מוצג בדף הבית</label>
+                          <label className="inline-flex items-center gap-2"><input type="checkbox" checked={editingStaffForm.isActive} onChange={(e) => setEditingStaffForm((prev) => ({ ...prev, isActive: e.target.checked }))} /> פעיל</label>
+                        </div>
                         <div className="flex gap-3">
-                          <Button type="button" onClick={() => handleSaveStaff(member.id)} className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">שמירת שינויים</Button>
+                          <Button type="button" disabled={updateStaffMutation.isPending} onClick={() => handleSaveStaff(member.id)} className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">
+                            {updateStaffMutation.isPending ? "שומר..." : "שמירת שינויים"}
+                          </Button>
                           <Button type="button" variant="outline" onClick={() => setEditingStaffId(null)} className="rounded-full">ביטול</Button>
                         </div>
                       </div>
@@ -1076,6 +1109,16 @@ export default function AdminPanel() {
                     label="קובץ מדיה לכרטיס"
                     hint="אפשר להעלות תמונה או סרטון. אם לא מעלים קובץ חדש, הקובץ הקיים נשאר."
                     value={item.mediaUrl}
+                    onPreview={() =>
+                      item.mediaUrl.previewUrl
+                        ? setAdminMediaPreview({
+                            title: item.title,
+                            type: item.type,
+                            url: item.mediaUrl.previewUrl,
+                            posterUrl: item.posterUrl.previewUrl || undefined,
+                          })
+                        : undefined
+                    }
                     onFileSelected={(file) =>
                       handleSingleImageSelection(file, (updater) =>
                         setMarketingSectionForm((prev) => ({
@@ -1092,6 +1135,15 @@ export default function AdminPanel() {
                       label="תמונת פתיחה לווידאו"
                       hint="אופציונלי — תמונה שתופיע לפני הפעלת הסרטון."
                       value={item.posterUrl}
+                      onPreview={() =>
+                        item.posterUrl.previewUrl
+                          ? setAdminMediaPreview({
+                              title: `תמונת פתיחה — ${item.title}`,
+                              type: "image",
+                              url: item.posterUrl.previewUrl,
+                            })
+                          : undefined
+                      }
                       onFileSelected={(file) =>
                         handleSingleImageSelection(file, (updater) =>
                           setMarketingSectionForm((prev) => ({
@@ -1109,6 +1161,37 @@ export default function AdminPanel() {
             ))}
           </div>
         </form>
+
+        {adminMediaPreview ? (
+          <div
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setAdminMediaPreview(null)}
+          >
+            <div className="w-full max-w-6xl overflow-hidden rounded-[28px] bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                <h3 className="text-lg font-black text-slate-950">{adminMediaPreview.title}</h3>
+                <Button type="button" variant="outline" onClick={() => setAdminMediaPreview(null)} className="rounded-full">
+                  סגירה
+                </Button>
+              </div>
+              <div className="bg-black">
+                {adminMediaPreview.type === "video" ? (
+                  <video
+                    src={adminMediaPreview.url}
+                    poster={adminMediaPreview.posterUrl}
+                    controls
+                    playsInline
+                    className="max-h-[78vh] w-full object-contain"
+                  />
+                ) : (
+                  <img src={adminMediaPreview.url} alt={adminMediaPreview.title} className="max-h-[78vh] w-full object-contain" />
+                )}
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <section id="admin-testimonials" className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center gap-3">

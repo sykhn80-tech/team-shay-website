@@ -1,4 +1,5 @@
 import { ENV } from "./env";
+import nodemailer from "nodemailer";
 
 type LeadNotificationInput = {
   leadId: number;
@@ -20,11 +21,6 @@ function escapeHtml(value: string) {
 }
 
 export async function sendLeadNotificationEmail(input: LeadNotificationInput) {
-  if (!ENV.resendApiKey) {
-    console.warn(`[Email] RESEND_API_KEY is missing; lead notification email to ${ENV.leadNotificationEmail} was not sent.`);
-    return false;
-  }
-
   const subject = `ליד חדש מהאתר — ${input.fullName}`;
   const rows = [
     ["שם מלא", input.fullName],
@@ -48,39 +44,72 @@ export async function sendLeadNotificationEmail(input: LeadNotificationInput) {
     )
     .join("");
 
-  try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${ENV.resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: ENV.resendFromEmail,
-        to: [ENV.leadNotificationEmail],
-        subject,
-        text,
-        html: `
-          <div dir="rtl" style="font-family:Arial, sans-serif;background:#FDF8F0;padding:24px;">
-            <div style="max-width:620px;margin:0 auto;background:white;border-radius:18px;padding:24px;border:1px solid #ead9aa;">
-              <p style="margin:0;color:#D4AF37;font-weight:800;">Team Shay</p>
-              <h1 style="margin:8px 0 18px;color:#1A1A1A;">ליד חדש מהאתר</h1>
-              <table style="width:100%;border-collapse:collapse;">${htmlRows}</table>
-            </div>
-          </div>
-        `,
-      }),
-    });
+  const html = `
+    <div dir="rtl" style="font-family:Arial, sans-serif;background:#FDF8F0;padding:24px;">
+      <div style="max-width:620px;margin:0 auto;background:white;border-radius:18px;padding:24px;border:1px solid #ead9aa;">
+        <p style="margin:0;color:#D4AF37;font-weight:800;">Team Shay</p>
+        <h1 style="margin:8px 0 18px;color:#1A1A1A;">ליד חדש מהאתר</h1>
+        <table style="width:100%;border-collapse:collapse;">${htmlRows}</table>
+      </div>
+    </div>
+  `;
 
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => "");
-      console.warn("[Email] Failed to send lead notification email:", response.status, errorBody);
-      return false;
+  if (ENV.resendApiKey) {
+    try {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${ENV.resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: ENV.resendFromEmail,
+          to: [ENV.leadNotificationEmail],
+          subject,
+          text,
+          html,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => "");
+        console.warn("[Email] Failed to send lead notification email:", response.status, errorBody);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.warn("[Email] Failed to send lead notification email:", error);
     }
-  } catch (error) {
-    console.warn("[Email] Failed to send lead notification email:", error);
-    return false;
   }
 
-  return true;
+  if (ENV.gmailUser && ENV.gmailAppPassword) {
+    try {
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: ENV.gmailUser,
+          pass: ENV.gmailAppPassword,
+        },
+      });
+
+      await transporter.sendMail({
+        from: ENV.gmailFromEmail || ENV.gmailUser,
+        to: ENV.leadNotificationEmail,
+        subject,
+        text,
+        html,
+      });
+
+      return true;
+    } catch (error) {
+      console.warn("[Email] Failed to send lead notification email via Gmail SMTP:", error);
+      return false;
+    }
+  }
+
+  console.warn(
+    `[Email] No email provider configured; set RESEND_API_KEY or GMAIL_USER + GMAIL_APP_PASSWORD. Lead notification email to ${ENV.leadNotificationEmail} was not sent.`,
+  );
+  return false;
 }
