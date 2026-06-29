@@ -15,7 +15,6 @@ import {
   Newspaper,
   Phone,
   Play,
-  Plus,
   ShieldCheck,
   Star,
   Video,
@@ -529,10 +528,6 @@ export default function Home() {
     }
   }, [marketingItems.length, selectedMarketingIndex]);
 
-  useEffect(() => {
-    setMarketingPreviewOpen(false);
-  }, [selectedMarketingIndex]);
-
   const heroPlaybackRate = useMemo(
     () => Math.max(0.25, Math.min(1, (HERO_LOOP_END_SECONDS - HERO_LOOP_START_SECONDS) / HERO_LOOP_TARGET_SECONDS)),
     [],
@@ -1037,7 +1032,6 @@ export default function Home() {
                 >
                   <CarouselContent className="-ml-5">
                     {marketingItems.map((item, index) => {
-                      const Icon = item.type === "video" ? Video : index === 1 ? Newspaper : index === 2 ? Building2 : Megaphone;
                       return (
                         <CarouselItem key={item.id || item.title} className="basis-[78%] pl-5 sm:basis-[48%] lg:basis-[31%] xl:basis-[25%]">
                           <button
@@ -1054,9 +1048,6 @@ export default function Home() {
                               <img src={item.mediaUrl} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy" />
                             )}
                             <span className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/22 to-transparent" />
-                            <span className="absolute right-5 top-5 flex size-11 items-center justify-center rounded-2xl bg-white/90 text-[#1A1A1A] shadow-lg transition group-hover:bg-[#D4AF37]">
-                              <Icon className="size-5" />
-                            </span>
                             <span className="absolute left-5 top-5 rounded-full bg-[#D4AF37] px-3 py-1 text-xs font-black text-black">
                               {String(index + 1).padStart(2, "0")} / {marketingItems.length}
                             </span>
@@ -1064,8 +1055,8 @@ export default function Home() {
                               <p className="text-sm font-black text-[#D4AF37]">{item.type === "video" ? "וידאו" : "תמונה"}</p>
                               <h3 className="mt-2 text-2xl font-black leading-tight">{item.title}</h3>
                               <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-white/82">{item.description}</p>
-                              <span className="mt-5 inline-flex size-14 items-center justify-center rounded-full border border-white/40 bg-white/10 text-white transition group-hover:border-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-black">
-                                <Plus className="size-8" />
+                              <span className="mt-5 inline-flex rounded-full border border-white/45 bg-white/10 px-5 py-2 text-sm font-black text-white opacity-0 backdrop-blur-sm transition duration-300 group-hover:border-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-black group-hover:opacity-100">
+                                צפייה מלאה
                               </span>
                             </div>
                           </button>

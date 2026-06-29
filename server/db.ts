@@ -117,50 +117,56 @@ const defaultSiteSettings: InsertSiteSettings = {
 
 const defaultTestimonials: InsertTestimonial[] = [
   {
-    quote: "שי והצוות ליוו אותנו ברוגע, במהירות ובדיוק עד לחתימה.",
-    sourceName: "לקוח 1",
+    quote: "תודה רבה לך, גם אני שמחתי מאוד להכיר. באמת מצאת לנו דירה ממש מתאימה וטובה, בהצלחה רבה.",
+    sourceName: "שי אלמקיאס",
     sourceLabel: "WhatsApp",
     stars: 5,
+    whatsappImageUrl: "/restored-testimonials/shi-almakais.png",
     displayOrder: 1,
     isPublished: true,
   },
   {
-    quote: "קיבלנו חשיפה מדויקת וקונים רציניים כבר בשבוע הראשון.",
-    sourceName: "לקוח 2",
-    sourceLabel: "WhatsApp",
+    quote: "שי היקר עם יחסי אנוש גבוהים, קידם את העסקה בצורה טובה ביותר. נעים לעיניים, הכל מתנהל בנעימות.",
+    sourceName: "לינור לוברבאום",
+    sourceLabel: "google",
     stars: 5,
+    whatsappImageUrl: "/restored-testimonials/linor-loberbaum.png",
     displayOrder: 2,
     isPublished: true,
   },
   {
-    quote: "תהליך מסודר, שקוף ונעים עם תוצאה שחסכה לנו הרבה זמן.",
-    sourceName: "לקוח 3",
-    sourceLabel: "WhatsApp",
+    quote: "רציתי להמליץ מכל הלב על המתווך שי כהן. מהרגע הראשון הרגשנו בידיים טובות, מקצועי וזמין לכל שאלה.",
+    sourceName: "מאי אוחיון",
+    sourceLabel: "google",
     stars: 5,
+    whatsappImageUrl: "/restored-testimonials/mai-avorian.png",
     displayOrder: 3,
     isPublished: true,
   },
   {
-    quote: "הצוות ידע לחדד את המסרים של הנכס ולשפר את רמת הביקוש.",
-    sourceName: "לקוח 4",
-    sourceLabel: "WhatsApp",
+    quote: "צוות מסור ואחראי, נהניתי מכל רגע איתם בתהליך וממליץ בחום!",
+    sourceName: "בר אלוז",
+    sourceLabel: "google",
     stars: 5,
+    whatsappImageUrl: "/restored-testimonials/bar-eluz.png",
     displayOrder: 4,
     isPublished: true,
   },
   {
-    quote: "הרגשנו שיש מי שמנהל עבורנו את המשא ומתן עד הפרט האחרון.",
-    sourceName: "לקוח 5",
-    sourceLabel: "WhatsApp",
+    quote: "ממליצה בחום ויושרה ברמה גבוהה, תודה על הליווי האישי והחם שהענקתם לנו.",
+    sourceName: "נטלי תורג'מן",
+    sourceLabel: "google",
     stars: 5,
+    whatsappImageUrl: "/restored-testimonials/natali-torgeman.png",
     displayOrder: 5,
     isPublished: true,
   },
   {
-    quote: "שילוב של יחס אישי, הבנת שוק ויכולת סגירה חזקה מאוד.",
-    sourceName: "לקוח 6",
+    quote: "תודה רבה על השירות והסבלנות. אוהבים אותך!",
+    sourceName: "מואיז כהן",
     sourceLabel: "WhatsApp",
     stars: 5,
+    whatsappImageUrl: "/restored-testimonials/moiz-cohen.png",
     displayOrder: 6,
     isPublished: true,
   },
@@ -458,10 +464,21 @@ function normalizeSiteSettings(settings: Partial<SiteSettings> | null | undefine
   };
 }
 
+function hasOnlyGenericTestimonials(testimonialsRows: Partial<Testimonial>[] | undefined) {
+  if (!testimonialsRows?.length) return true;
+
+  return testimonialsRows.every((testimonial, index) => {
+    const sourceName = testimonial.sourceName?.trim() ?? "";
+    const expectedGenericName = `לקוח ${index + 1}`;
+    return sourceName === expectedGenericName || sourceName === "";
+  });
+}
+
 function normalizeSiteContent(parsed: Partial<LocalSiteContent> | null | undefined): LocalSiteContent {
   const fallback = createDefaultSiteContent();
   const staff = (parsed?.staff?.length ? parsed.staff : fallback.staff).map(normalizeAgentAccount);
-  const testimonialsRows = (parsed?.testimonials?.length ? parsed.testimonials : fallback.testimonials).map(normalizeTestimonial);
+  const testimonialsSource = hasOnlyGenericTestimonials(parsed?.testimonials) ? fallback.testimonials : parsed?.testimonials;
+  const testimonialsRows = (testimonialsSource?.length ? testimonialsSource : fallback.testimonials).map(normalizeTestimonial);
 
   return {
     nextStaffId: Math.max(Number(parsed?.nextStaffId ?? 1), ...staff.map((agent) => agent.id + 1)),
