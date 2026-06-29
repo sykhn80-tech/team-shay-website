@@ -970,7 +970,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="marketing-methods" className="bg-[#FDF8F0] px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
+        <section id="marketing-methods" className="border-y border-[#D4AF37]/20 bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-5 text-center md:items-center">
               <p className="inline-flex items-center justify-center gap-2 self-center rounded-full border border-[#D4AF37]/40 bg-white px-5 py-2 text-sm font-black text-[#B8960C] shadow-sm">
@@ -1032,8 +1032,8 @@ export default function Home() {
                 </div>
               </article>
 
-              <div className="relative overflow-hidden rounded-[34px] border border-[#D4AF37]/20 bg-white/70 p-4 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
-                <div className="pointer-events-none absolute left-0 top-0 h-full w-14 bg-gradient-to-r from-[#FDF8F0] to-transparent" />
+              <div className="relative overflow-hidden rounded-[34px] border border-[#D4AF37]/25 bg-white p-4 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
+                <div className="pointer-events-none absolute left-0 top-0 h-full w-14 bg-gradient-to-r from-white to-transparent" />
                 <div className="grid max-h-[620px] gap-3 overflow-y-auto pr-1 [scrollbar-width:thin] sm:grid-cols-2 lg:grid-cols-1">
                   {marketingSection.items.map((item, index) => {
                     const Icon = item.type === "video" ? Video : index === 1 ? Newspaper : index === 2 ? Building2 : Megaphone;
@@ -1063,7 +1063,7 @@ export default function Home() {
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-[#D4AF37] text-black" : "bg-[#FDF8F0] text-[#B8960C]"}`}>
+                            <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-[#D4AF37] text-black" : "bg-[#1A1A1A] text-[#D4AF37]"}`}>
                               <Icon className="size-4" />
                             </span>
                             <h3 className="line-clamp-2 text-sm font-black leading-5 text-slate-950">{item.title}</h3>
@@ -1073,7 +1073,7 @@ export default function Home() {
                       </button>
                     );
                   })}
-                  <div className="rounded-[24px] border border-dashed border-[#D4AF37]/35 bg-[#FDF8F0] p-4 text-center text-sm font-black text-[#B8960C]">
+                  <div className="rounded-[24px] border border-dashed border-[#D4AF37]/45 bg-[#1A1A1A] p-4 text-center text-sm font-black text-[#D4AF37]">
                     ממשיכים לבנות עוד חשיפה לכל נכס →
                   </div>
                 </div>
