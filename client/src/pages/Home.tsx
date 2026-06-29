@@ -4,7 +4,6 @@ import { Link } from "wouter";
 import {
   ArrowLeft,
   ArrowRight,
-  BedDouble,
   Building2,
   Check,
   ChevronLeft,
@@ -17,7 +16,6 @@ import {
   Phone,
   Play,
   Plus,
-  Ruler,
   ShieldCheck,
   Star,
   Video,
@@ -1198,40 +1196,45 @@ export default function Home() {
                   <CarouselContent className="-ml-3 md:-ml-5">
                     {featuredPropertyTrack.map((property) => (
                       <CarouselItem key={property.id} className="basis-[84%] pl-3 sm:basis-[58%] md:pl-5 lg:basis-1/3">
-                        <article className="group h-full overflow-hidden rounded-[28px] border border-[#D4AF37]/35 bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:shadow-[0_18px_36px_rgba(212,175,55,0.16)]">
-                          <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                        <Link
+                          href={`/properties/${property.id}`}
+                          className="group relative block h-[520px] overflow-hidden rounded-[30px] border border-[#D4AF37]/30 bg-[#1A1A1A] text-white shadow-[0_20px_48px_rgba(15,23,42,0.14)] transition duration-500 hover:-translate-y-1.5 hover:border-[#D4AF37] hover:shadow-[0_26px_64px_rgba(212,175,55,0.24)]"
+                          aria-label={`פתיחת דף הנכס ${property.title}`}
+                        >
+                          <div className="absolute inset-0 overflow-hidden">
                             <img
                               src={property.image}
                               alt={property.title}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                               loading="lazy"
                             />
                           </div>
-                          <div className="flex h-full flex-col p-5">
-                            <div className="flex items-center justify-between gap-3">
-                              <p className="text-2xl font-black text-slate-950">₪{property.price.toLocaleString("he-IL")}</p>
-                              <span className="rounded-full bg-[#d9ae4c] px-3 py-1 text-xs font-black text-white shadow-[0_8px_18px_rgba(217,174,76,0.22)]">{property.status}</span>
-                            </div>
-                            <h3 className="mt-3 text-[1.38rem] font-extrabold leading-snug text-slate-950">{property.title}</h3>
-                            <p className="mt-3 text-base font-semibold text-slate-600">
-                              {formatPropertyLocation(property)}
+                          <span className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/12 to-black/82 transition duration-500 group-hover:from-black/78 group-hover:via-black/38 group-hover:to-black/88" />
+                          <span className="absolute right-5 top-5 rounded-full bg-[#D4AF37] px-4 py-1.5 text-xs font-black text-black shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
+                            {property.status}
+                          </span>
+
+                          <div className="absolute inset-x-0 top-0 p-7 text-center">
+                            <h3 className="mx-auto max-w-[92%] text-3xl font-black leading-tight drop-shadow-[0_3px_14px_rgba(0,0,0,0.45)] md:text-[2.25rem]">
+                              {formatPropertyLocation(property) || property.title}
+                            </h3>
+                            <p className="mt-4 text-base font-bold text-white/90 drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]">
+                              {property.rooms} חדרים · {property.sqm} מ״ר
                             </p>
-                            <div className="mt-4 grid grid-cols-2 gap-3 text-sm font-bold text-slate-700">
-                              <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3">
-                                <BedDouble className="size-4 text-[#d9ae4c]" />
-                                <span>{property.rooms} חדרים</span>
-                              </div>
-                              <div className="flex items-center gap-2 rounded-2xl bg-slate-50 px-3 py-3">
-                                <Ruler className="size-4 text-[#d9ae4c]" />
-                                <span>{property.sqm} מ״ר</span>
-                              </div>
-                            </div>
-                            <Link href={`/properties/${property.id}`} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#D4AF37] px-4 py-3 text-sm font-black text-black transition hover:bg-[#B8960C] hover:text-black" aria-label={`פרטים נוספים ${property.title}`}>
-                              פרטים נוספים
-                              <ChevronLeft className="size-4" />
-                            </Link>
                           </div>
-                        </article>
+
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="translate-y-4 border border-white/75 bg-black/24 px-10 py-4 text-base font-black text-white opacity-0 shadow-[0_16px_38px_rgba(0,0,0,0.28)] backdrop-blur-[2px] transition duration-300 group-hover:translate-y-0 group-hover:border-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-black group-hover:opacity-100">
+                              פרטים נוספים
+                            </span>
+                          </div>
+
+                          <div className="absolute inset-x-0 bottom-0 p-7 text-center">
+                            <p className="text-3xl font-black text-[#D4AF37] drop-shadow-[0_3px_16px_rgba(0,0,0,0.45)]">
+                              ₪{property.price.toLocaleString("he-IL")}
+                            </p>
+                          </div>
+                        </Link>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
