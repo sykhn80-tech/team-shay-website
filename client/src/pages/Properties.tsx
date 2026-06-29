@@ -271,6 +271,14 @@ export default function Properties() {
                         </div>
 
                         <h3 className="mt-3 text-xl font-black text-slate-950">{property.title}</h3>
+                        <div className="mt-4 rounded-[22px] border border-[#D4AF37]/25 bg-[#fffaf0] p-4">
+                          <p className="text-2xl font-black leading-tight text-slate-950">
+                            {property.street || property.address || property.title}
+                          </p>
+                          <p className="mt-2 text-base font-black text-[#B8960C]">
+                            {property.neighborhood}{property.city && property.city !== property.neighborhood ? `, ${property.city}` : ""}
+                          </p>
+                        </div>
                         <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
                           <MapPin className="size-4 text-[#d9ae4c]" />
                           {formatPropertyLocation(property)}

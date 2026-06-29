@@ -109,6 +109,14 @@ const buildImageField = (url?: string | null): ImageFieldState => ({
   upload: null,
 });
 
+function isVideoMediaUrl(value?: string | null) {
+  return Boolean(value && /\.(mp4|webm|mov)(\?|$)/i.test(value));
+}
+
+function isVideoField(value: ImageFieldState) {
+  return Boolean(value.upload?.mimeType.startsWith("video/") || isVideoMediaUrl(value.previewUrl));
+}
+
 const emptyStaffForm: StaffFormState = {
   accountRole: "agent",
   name: "",
@@ -266,7 +274,7 @@ function MediaUploadField({
   onFileSelected: (file: File | null) => Promise<void> | void;
   onPreview?: () => void;
 }) {
-  const isVideo = value.previewUrl && /\.(mp4|webm|mov)(\?|$)/i.test(value.previewUrl);
+  const isVideo = isVideoField(value);
 
   return (
     <div className="rounded-[24px] border border-slate-200 bg-[#fbfdff] p-4">
@@ -1272,15 +1280,23 @@ export default function AdminPanel() {
                 <input type="number" min={1} max={5} value={newTestimonial.stars} onChange={(e) => setNewTestimonial((prev) => ({ ...prev, stars: Number(e.target.value) }))} className="h-12 rounded-2xl border border-slate-200 px-4" />
                 <input type="number" min={1} value={newTestimonial.displayOrder} onChange={(e) => setNewTestimonial((prev) => ({ ...prev, displayOrder: Number(e.target.value) }))} className="h-12 rounded-2xl border border-slate-200 px-4" placeholder="מיקום בתצוגה" />
               </div>
-              <ImageUploadField
-                label="צילום WhatsApp / מקור"
-                hint="אפשר להעלות צילום מסך או תמונת מקור ישירות מהמחשב."
+              <MediaUploadField
+                label="תמונה או וידאו להמלצה"
+                hint="אפשר להעלות צילום מסך, תמונת מקור או סרטון המלצה קצר ישירות מהמחשב."
                 value={newTestimonial.whatsappImageUrl}
                 onFileSelected={(file) =>
                   handleSingleImageSelection(file, (updater) =>
                     setNewTestimonial((prev) => ({ ...prev, whatsappImageUrl: updater(prev.whatsappImageUrl) })),
                   )
                 }
+                onPreview={() => {
+                  if (!newTestimonial.whatsappImageUrl.previewUrl) return;
+                  setAdminMediaPreview({
+                    title: newTestimonial.sourceName || "תצוגה מקדימה של המלצה",
+                    type: isVideoField(newTestimonial.whatsappImageUrl) ? "video" : "image",
+                    url: newTestimonial.whatsappImageUrl.previewUrl,
+                  });
+                }}
               />
               <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={newTestimonial.isPublished} onChange={(e) => setNewTestimonial((prev) => ({ ...prev, isPublished: e.target.checked }))} /> מפורסם באתר</label>
               <Button type="submit" disabled={createTestimonialMutation.isPending} className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">
@@ -1302,15 +1318,23 @@ export default function AdminPanel() {
                           <input type="number" min={1} max={5} value={editingTestimonialForm.stars} onChange={(e) => setEditingTestimonialForm((prev) => ({ ...prev, stars: Number(e.target.value) }))} className="h-12 rounded-2xl border border-slate-200 px-4" />
                           <input type="number" min={1} value={editingTestimonialForm.displayOrder} onChange={(e) => setEditingTestimonialForm((prev) => ({ ...prev, displayOrder: Number(e.target.value) }))} className="h-12 rounded-2xl border border-slate-200 px-4" placeholder="מיקום בתצוגה" />
                         </div>
-                        <ImageUploadField
-                          label="תמונת מקור להמלצה"
-                          hint="ניתן לבחור קובץ חדש ולהחליף את התמונה הקיימת."
+                        <MediaUploadField
+                          label="תמונה או וידאו להמלצה"
+                          hint="ניתן לבחור קובץ חדש ולהחליף את המדיה הקיימת."
                           value={editingTestimonialForm.whatsappImageUrl}
                           onFileSelected={(file) =>
                             handleSingleImageSelection(file, (updater) =>
                               setEditingTestimonialForm((prev) => ({ ...prev, whatsappImageUrl: updater(prev.whatsappImageUrl) })),
                             )
                           }
+                          onPreview={() => {
+                            if (!editingTestimonialForm.whatsappImageUrl.previewUrl) return;
+                            setAdminMediaPreview({
+                              title: editingTestimonialForm.sourceName || "תצוגה מקדימה של המלצה",
+                              type: isVideoField(editingTestimonialForm.whatsappImageUrl) ? "video" : "image",
+                              url: editingTestimonialForm.whatsappImageUrl.previewUrl,
+                            });
+                          }}
                         />
                         <div className="flex gap-3">
                           <Button type="button" onClick={() => handleSaveTestimonial(item.id)} className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">שמירת שינויים</Button>
@@ -1321,7 +1345,13 @@ export default function AdminPanel() {
                       <>
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-4">
-                            {item.whatsappImageUrl ? <img src={item.whatsappImageUrl} alt={item.sourceName} className="h-16 w-16 rounded-2xl object-cover" /> : null}
+                            {item.whatsappImageUrl ? (
+                              isVideoMediaUrl(item.whatsappImageUrl) ? (
+                                <video src={item.whatsappImageUrl} className="h-16 w-16 rounded-2xl object-cover" muted playsInline />
+                              ) : (
+                                <img src={item.whatsappImageUrl} alt={item.sourceName} className="h-16 w-16 rounded-2xl object-cover" />
+                              )
+                            ) : null}
                             <div>
                               <h3 className="text-lg font-black text-slate-950">{item.sourceName}</h3>
                               <p className="mt-2 text-sm leading-7 text-slate-600">{item.quote}</p>

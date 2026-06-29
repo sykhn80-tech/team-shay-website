@@ -142,7 +142,7 @@ const testimonialInputSchema = z.object({
   sourceName: z.string().min(2),
   sourceLabel: z.string().min(2).default("WhatsApp"),
   stars: z.number().int().min(1).max(5).default(5),
-  whatsappImageUrl: storedOrUploadedImageSchema,
+  whatsappImageUrl: storedOrUploadedMediaSchema,
   displayOrder: z.number().int().min(1).default(1),
   isPublished: z.boolean().default(true),
 });
@@ -1811,7 +1811,7 @@ export const appRouter = router({
     createTestimonial: agentProcedure.input(testimonialInputSchema).mutation(async ({ input }) => {
       const testimonialId = await createTestimonial({
         ...input,
-        whatsappImageUrl: await resolveStoredImage(
+        whatsappImageUrl: await resolveStoredMedia(
           `team-shay/testimonials/${input.sourceName}`,
           input.whatsappImageUrl,
           `${input.sourceName}-testimonial`,
@@ -1824,7 +1824,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await updateTestimonial(input.testimonialId, {
           ...input.data,
-          whatsappImageUrl: await resolveStoredImage(
+          whatsappImageUrl: await resolveStoredMedia(
             `team-shay/testimonials/${input.data.sourceName ?? input.testimonialId}`,
             input.data.whatsappImageUrl,
             `testimonial-${input.testimonialId}`,

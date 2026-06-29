@@ -271,6 +271,7 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
 ]);
 
 const normalizeTestimonialTitle = (value: string) => (value.trim() === "מאי אווריין" ? "מאי אוחיון" : value);
+const isVideoMediaUrl = (value?: string | null) => Boolean(value && /\.(mp4|webm|mov)(\?|$)/i.test(value));
 
 const fallbackTestimonials = [
   {
@@ -340,6 +341,13 @@ export default function Home() {
   const [isPropertyCarouselPaused, setIsPropertyCarouselPaused] = useState(false);
   const [selectedMarketingIndex, setSelectedMarketingIndex] = useState(0);
   const [marketingPreviewOpen, setMarketingPreviewOpen] = useState(false);
+  const [testimonialPreview, setTestimonialPreview] = useState<{
+    title: string;
+    source: string;
+    quote: string;
+    stars: number;
+    whatsappImageUrl: string | null;
+  } | null>(null);
   const [formData, setFormData] = useState({
     neighborhood: "",
     rooms: "",
@@ -385,7 +393,7 @@ export default function Home() {
             expertise: agent.roleTitle + (agent.bio ? `. ${agent.bio}` : "") || displayOverride?.expertise || "",
             phone: agent.phone || displayOverride?.phone || officePhone,
             email: agent.email || displayOverride?.email || "",
-            image: agent.photoUrl || displayOverride?.image || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
+            image: displayOverride?.image || agent.photoUrl || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
             imagePosition: displayOverride?.imagePosition || fallbackAgent?.imagePosition || "center 20%",
           };
         })(),
@@ -1004,7 +1012,7 @@ export default function Home() {
         <section id="marketing-methods" className="border-y border-[#D4AF37]/20 bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-5 text-center md:items-center">
-              <p className="inline-flex items-center justify-center gap-2 self-center rounded-full border border-[#D4AF37]/40 bg-white px-5 py-2 text-sm font-black text-[#B8960C] shadow-sm">
+              <p className="inline-flex items-center justify-center gap-2 self-center rounded-full border border-[#D4AF37]/40 bg-white px-5 py-2 text-sm font-black text-[#D4AF37] shadow-sm">
                 <Play className="size-4 fill-current" />
                 {marketingSection.eyebrow}
               </p>
@@ -1016,7 +1024,7 @@ export default function Home() {
               </p>
               <div className="flex max-w-5xl flex-wrap justify-center gap-3">
                 {marketingSection.highlights.map((item) => (
-                  <div key={item} className="rounded-full border border-[#D4AF37]/25 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm">
+                  <div key={item} className="rounded-full border border-[#D4AF37]/25 bg-white px-4 py-2 text-sm font-black text-[#D4AF37] shadow-sm">
                     {item}
                   </div>
                 ))}
@@ -1048,12 +1056,9 @@ export default function Home() {
                               <img src={item.mediaUrl} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy" />
                             )}
                             <span className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/22 to-transparent" />
-                            <span className="absolute left-5 top-5 rounded-full bg-[#D4AF37] px-3 py-1 text-xs font-black text-black">
-                              {String(index + 1).padStart(2, "0")} / {marketingItems.length}
-                            </span>
                             <div className="absolute inset-x-0 bottom-0 p-6 text-white">
                               <p className="text-sm font-black text-[#D4AF37]">{item.type === "video" ? "וידאו" : "תמונה"}</p>
-                              <h3 className="mt-2 text-2xl font-black leading-tight">{item.title}</h3>
+                              <h3 className="mt-2 text-2xl font-black leading-tight text-[#D4AF37]">{item.title}</h3>
                               <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-white/82">{item.description}</p>
                               <span className="mt-5 inline-flex rounded-full border border-white/45 bg-white/10 px-5 py-2 text-sm font-black text-white opacity-0 backdrop-blur-sm transition duration-300 group-hover:border-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-black group-hover:opacity-100">
                                 צפייה מלאה
@@ -1201,10 +1206,6 @@ export default function Home() {
                             />
                           </div>
                           <span className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/12 to-black/82 transition duration-500 group-hover:from-black/78 group-hover:via-black/38 group-hover:to-black/88" />
-                          <span className="absolute right-5 top-5 rounded-full bg-[#D4AF37] px-4 py-1.5 text-xs font-black text-black shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
-                            {property.status}
-                          </span>
-
                           <div className="absolute inset-x-0 top-0 p-7 text-center">
                             <h3 className="mx-auto max-w-[92%] text-3xl font-black leading-tight drop-shadow-[0_3px_14px_rgba(0,0,0,0.45)] md:text-[2.25rem]">
                               {formatPropertyLocation(property) || property.title}
@@ -1221,6 +1222,9 @@ export default function Home() {
                           </div>
 
                           <div className="absolute inset-x-0 bottom-0 p-7 text-center">
+                            <span className="mb-3 inline-flex rounded-full bg-[#D4AF37] px-4 py-1.5 text-xs font-black text-black shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
+                              {property.status}
+                            </span>
                             <p className="text-3xl font-black text-[#D4AF37] drop-shadow-[0_3px_16px_rgba(0,0,0,0.45)]">
                               ₪{property.price.toLocaleString("he-IL")}
                             </p>
@@ -1344,9 +1348,31 @@ export default function Home() {
                       className="flex min-h-[30rem] flex-col rounded-[30px] border border-slate-200 bg-white p-5 text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] md:p-6"
                     >
                       {testimonial.whatsappImageUrl ? (
-                        <div className="h-40 overflow-hidden rounded-[24px] bg-slate-950">
-                          <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover object-top" loading="lazy" />
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setTestimonialPreview({
+                              title: testimonial.title,
+                              source: testimonial.source,
+                              quote: testimonial.quote,
+                              stars: testimonial.stars,
+                              whatsappImageUrl: testimonial.whatsappImageUrl ?? null,
+                            })
+                          }
+                          className="group relative h-40 overflow-hidden rounded-[24px] bg-slate-950 text-right focus:outline-none focus:ring-4 focus:ring-[#D4AF37]/25"
+                          aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}
+                        >
+                          {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
+                            <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105" muted playsInline preload="metadata" />
+                          ) : (
+                            <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105" loading="lazy" />
+                          )}
+                          <span className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent opacity-80" />
+                          <span className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full bg-white/92 px-4 py-2 text-sm font-black text-[#1A1A1A] shadow-lg">
+                            {isVideoMediaUrl(testimonial.whatsappImageUrl) ? <Play className="size-4 fill-current text-[#D4AF37]" /> : <MessageCircle className="size-4 text-[#D4AF37]" />}
+                            פתיחה גדולה
+                          </span>
+                        </button>
                       ) : null}
                       <div className="mt-5 flex items-start justify-between gap-4">
                         <div>
@@ -1371,6 +1397,53 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {testimonialPreview ? (
+          <div
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-black/82 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`המלצה של ${testimonialPreview.title}`}
+            onClick={() => setTestimonialPreview(null)}
+          >
+            <div
+              className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-[32px] bg-white text-right shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
+                <div>
+                  <p className="text-sm font-black text-[#D4AF37]">{testimonialPreview.source}</p>
+                  <h3 className="text-2xl font-black text-[#1A1A1A]">{testimonialPreview.title}</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTestimonialPreview(null)}
+                  className="flex size-11 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition hover:bg-[#D4AF37] hover:text-[#1A1A1A]"
+                  aria-label="סגירת המלצה"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+              {testimonialPreview.whatsappImageUrl ? (
+                <div className="bg-[#0f0f0f]">
+                  {isVideoMediaUrl(testimonialPreview.whatsappImageUrl) ? (
+                    <video src={testimonialPreview.whatsappImageUrl} className="max-h-[68vh] w-full object-contain" controls playsInline autoPlay />
+                  ) : (
+                    <img src={testimonialPreview.whatsappImageUrl} alt={testimonialPreview.title} className="max-h-[68vh] w-full object-contain" />
+                  )}
+                </div>
+              ) : null}
+              <div className="space-y-3 p-5">
+                <div className="flex items-center justify-end gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonialPreview.stars} מתוך 5`}>
+                  {Array.from({ length: testimonialPreview.stars }).map((_, starIndex) => (
+                    <Star key={`preview-${starIndex}`} className="size-5 fill-current" />
+                  ))}
+                </div>
+                <p className="text-lg font-semibold leading-9 text-slate-700">{testimonialPreview.quote}</p>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <section id="lead-form" className="bg-white px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-4xl rounded-[36px] border border-slate-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:p-12">
