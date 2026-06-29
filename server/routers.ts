@@ -178,8 +178,8 @@ const marketingSectionInputSchema = z.object({
   eyebrow: z.string().min(1),
   title: z.string().min(1),
   subtitle: z.string().min(1),
-  highlights: z.array(z.string()).min(1).max(8),
-  items: z.array(marketingSectionItemInputSchema).min(1).max(8),
+  highlights: z.array(z.string()).min(1).max(10),
+  items: z.array(marketingSectionItemInputSchema).min(1).max(10),
 });
 
 const leadInputSchema = z.object({

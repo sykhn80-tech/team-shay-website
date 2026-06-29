@@ -16,6 +16,7 @@ import {
   Newspaper,
   Phone,
   Play,
+  Plus,
   Ruler,
   ShieldCheck,
   Star,
@@ -336,7 +337,9 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [leadStep, setLeadStep] = useState<1 | 2>(1);
   const [propertyCarouselApi, setPropertyCarouselApi] = useState<CarouselApi | null>(null);
+  const [marketingCarouselApi, setMarketingCarouselApi] = useState<CarouselApi | null>(null);
   const [selectedPropertySlide, setSelectedPropertySlide] = useState(0);
+  const [selectedMarketingSlide, setSelectedMarketingSlide] = useState(0);
   const [isPropertyCarouselPaused, setIsPropertyCarouselPaused] = useState(false);
   const [selectedMarketingIndex, setSelectedMarketingIndex] = useState(0);
   const [marketingPreviewOpen, setMarketingPreviewOpen] = useState(false);
@@ -369,7 +372,8 @@ export default function Home() {
     highlights: ["וידאו שנפתח בלחיצה", "גלריות לפני/אחרי", "כרטיסי קמפיין מודגשים", "תיעוד שטח מבתים פתוחים"],
     items: marketingMethodItems.map((item, index) => ({ ...item, id: `fallback-${index + 1}` })),
   };
-  const selectedMarketingItem = marketingSection.items[selectedMarketingIndex] ?? marketingSection.items[0];
+  const marketingItems = useMemo(() => marketingSection.items.slice(0, 10), [marketingSection.items]);
+  const selectedMarketingItem = marketingItems[selectedMarketingIndex] ?? marketingItems[0];
 
   const homepageAgents = useMemo(() => {
     const dbAgents = homeQuery.data?.agents ?? [];
@@ -426,19 +430,25 @@ export default function Home() {
   }, [homeQuery.data?.properties]);
 
   const featuredProperties = useMemo(
-    () => homepageProperties.filter((property) => property.status.trim() === "בלעדי").slice(0, 8),
+    () => homepageProperties.filter((property) => ["בלעדי", "למכירה"].includes(property.status.trim())).slice(0, 10),
     [homepageProperties],
   );
 
   const soldProperties = useMemo(() => {
     return homepageProperties
       .filter((property) => property.status.trim() === "נמכר")
+      .slice(0, 10)
       .map((property) => ({
       ...property,
     }));
   }, [homepageProperties]);
 
-  const soldPropertiesTrack = useMemo(() => [...soldProperties, ...soldProperties], [soldProperties]);
+  const soldPropertiesTrack = useMemo(() => {
+    if (!soldProperties.length) return [];
+    const copiesPerLoop = Math.max(4, Math.ceil(12 / soldProperties.length));
+    const loop = Array.from({ length: copiesPerLoop }, () => soldProperties).flat();
+    return [...loop, ...loop];
+  }, [soldProperties]);
 
   const featuredPropertyTrack = useMemo(
     () => featuredProperties,
@@ -460,6 +470,17 @@ export default function Home() {
     propertyCarouselApi.scrollNext();
   }, [propertyCarouselApi]);
 
+  const scrollMarketingCarousel = useCallback((direction: "prev" | "next") => {
+    if (!marketingCarouselApi) return;
+
+    if (direction === "prev") {
+      marketingCarouselApi.scrollPrev();
+      return;
+    }
+
+    marketingCarouselApi.scrollNext();
+  }, [marketingCarouselApi]);
+
   useEffect(() => {
     if (!propertyCarouselApi) return;
 
@@ -478,6 +499,23 @@ export default function Home() {
   }, [propertyCarouselApi]);
 
   useEffect(() => {
+    if (!marketingCarouselApi) return;
+
+    const updateSelectedSlide = () => {
+      setSelectedMarketingSlide(marketingCarouselApi.selectedScrollSnap());
+    };
+
+    updateSelectedSlide();
+    marketingCarouselApi.on("select", updateSelectedSlide);
+    marketingCarouselApi.on("reInit", updateSelectedSlide);
+
+    return () => {
+      marketingCarouselApi.off("select", updateSelectedSlide);
+      marketingCarouselApi.off("reInit", updateSelectedSlide);
+    };
+  }, [marketingCarouselApi]);
+
+  useEffect(() => {
     if (!propertyCarouselApi || isPropertyCarouselPaused || featuredPropertyTrack.length <= 1) return;
 
     const autoplay = window.setInterval(() => {
@@ -488,10 +526,10 @@ export default function Home() {
   }, [featuredPropertyTrack.length, isPropertyCarouselPaused, propertyCarouselApi]);
 
   useEffect(() => {
-    if (selectedMarketingIndex >= marketingSection.items.length) {
+    if (selectedMarketingIndex >= marketingItems.length) {
       setSelectedMarketingIndex(0);
     }
-  }, [marketingSection.items.length, selectedMarketingIndex]);
+  }, [marketingItems.length, selectedMarketingIndex]);
 
   useEffect(() => {
     setMarketingPreviewOpen(false);
@@ -992,92 +1030,93 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-12 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-stretch">
-              <article className="overflow-hidden rounded-[34px] border border-[#D4AF37]/35 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
-                <div className="relative aspect-[16/9] bg-slate-100">
-                  {selectedMarketingItem?.type === "video" ? (
-                    <video
-                      key={selectedMarketingItem.mediaUrl}
-                      src={selectedMarketingItem.mediaUrl}
-                      poster={selectedMarketingItem.posterUrl ?? undefined}
-                      controls
-                      playsInline
-                      className="h-full w-full object-cover"
-                    />
-                  ) : selectedMarketingItem ? (
-                    <img src={selectedMarketingItem.mediaUrl} alt={selectedMarketingItem.title} className="h-full w-full object-cover" loading="lazy" />
-                  ) : null}
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent p-5">
-                    <span className="inline-flex rounded-full bg-[#D4AF37] px-4 py-1.5 text-xs font-black text-black">
-                      {String(selectedMarketingIndex + 1).padStart(2, "0")} / {marketingSection.items.length}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setMarketingPreviewOpen(true)}
-                    className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full bg-white/92 px-4 py-2 text-sm font-black text-[#1A1A1A] shadow-[0_12px_28px_rgba(0,0,0,0.18)] transition hover:bg-[#D4AF37]"
-                  >
-                    <Play className="size-4 fill-current" />
-                    צפייה מלאה
-                  </button>
-                </div>
-                <div className="grid gap-4 p-6 text-right md:grid-cols-[auto_1fr] md:items-start">
-                  <span className="flex size-12 items-center justify-center rounded-2xl bg-[#D4AF37] text-black shadow-[0_12px_24px_rgba(212,175,55,0.24)]">
-                    {selectedMarketingItem?.type === "video" ? <Video className="size-6" /> : <Megaphone className="size-6" />}
-                  </span>
-                  <div>
-                    <h3 className="text-2xl font-black text-slate-950">{selectedMarketingItem?.title}</h3>
-                    <p className="mt-2 text-base font-semibold leading-8 text-slate-600">{selectedMarketingItem?.description}</p>
-                  </div>
-                </div>
-              </article>
-
-              <div className="relative overflow-hidden rounded-[34px] border border-[#D4AF37]/25 bg-white p-4 shadow-[0_18px_46px_rgba(15,23,42,0.06)]">
-                <div className="pointer-events-none absolute left-0 top-0 h-full w-14 bg-gradient-to-r from-white to-transparent" />
-                <div className="grid max-h-[620px] gap-3 overflow-y-auto pr-1 [scrollbar-width:thin] sm:grid-cols-2 lg:grid-cols-1">
-                  {marketingSection.items.map((item, index) => {
-                    const Icon = item.type === "video" ? Video : index === 1 ? Newspaper : index === 2 ? Building2 : Megaphone;
-                    const isActive = index === selectedMarketingIndex;
-                    return (
-                      <button
-                        key={item.id || item.title}
-                        type="button"
-                        onClick={() => setSelectedMarketingIndex(index)}
-                        className={`group grid grid-cols-[104px_1fr] items-center gap-3 rounded-[24px] border p-2 text-right transition duration-300 ${
-                          isActive
-                            ? "border-[#D4AF37] bg-[#fff7df] shadow-[0_14px_32px_rgba(212,175,55,0.18)]"
-                            : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#D4AF37]/70"
-                        }`}
-                      >
-                        <div className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-slate-100">
-                          {item.type === "video" ? (
-                            <>
-                              <video src={item.mediaUrl} poster={item.posterUrl ?? undefined} className="h-full w-full object-cover" muted playsInline />
-                              <span className="absolute inset-0 m-auto flex size-10 items-center justify-center rounded-full bg-black/55 text-white">
-                                <Play className="size-4 fill-current" />
-                              </span>
-                            </>
-                          ) : (
-                            <img src={item.mediaUrl} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-[#D4AF37] text-black" : "bg-[#1A1A1A] text-[#D4AF37]"}`}>
-                              <Icon className="size-4" />
+            <div className="mt-12">
+              {marketingItems.length ? (
+                <Carousel
+                  setApi={setMarketingCarouselApi}
+                  opts={{ align: "center", direction: "rtl", loop: marketingItems.length > 3 }}
+                  className="relative"
+                >
+                  <CarouselContent className="-ml-5">
+                    {marketingItems.map((item, index) => {
+                      const Icon = item.type === "video" ? Video : index === 1 ? Newspaper : index === 2 ? Building2 : Megaphone;
+                      return (
+                        <CarouselItem key={item.id || item.title} className="basis-[78%] pl-5 sm:basis-[48%] lg:basis-[31%] xl:basis-[25%]">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMarketingIndex(index);
+                              setMarketingPreviewOpen(true);
+                            }}
+                            className="group relative h-[460px] w-full overflow-hidden rounded-[30px] border border-[#D4AF37]/35 bg-[#1A1A1A] text-right shadow-[0_22px_50px_rgba(15,23,42,0.12)] transition duration-500 hover:-translate-y-1 hover:border-[#D4AF37] hover:shadow-[0_24px_58px_rgba(212,175,55,0.20)]"
+                          >
+                            {item.type === "video" ? (
+                              <video src={item.mediaUrl} poster={item.posterUrl ?? undefined} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" muted playsInline />
+                            ) : (
+                              <img src={item.mediaUrl} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy" />
+                            )}
+                            <span className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/22 to-transparent" />
+                            <span className="absolute right-5 top-5 flex size-11 items-center justify-center rounded-2xl bg-white/90 text-[#1A1A1A] shadow-lg transition group-hover:bg-[#D4AF37]">
+                              <Icon className="size-5" />
                             </span>
-                            <h3 className="line-clamp-2 text-sm font-black leading-5 text-slate-950">{item.title}</h3>
-                          </div>
-                          <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-slate-500">{item.description}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                  <div className="rounded-[24px] border border-dashed border-[#D4AF37]/45 bg-[#1A1A1A] p-4 text-center text-sm font-black text-[#D4AF37]">
-                    ממשיכים לבנות עוד חשיפה לכל נכס →
+                            <span className="absolute left-5 top-5 rounded-full bg-[#D4AF37] px-3 py-1 text-xs font-black text-black">
+                              {String(index + 1).padStart(2, "0")} / {marketingItems.length}
+                            </span>
+                            <div className="absolute inset-x-0 bottom-0 p-6 text-white">
+                              <p className="text-sm font-black text-[#D4AF37]">{item.type === "video" ? "וידאו" : "תמונה"}</p>
+                              <h3 className="mt-2 text-2xl font-black leading-tight">{item.title}</h3>
+                              <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-white/82">{item.description}</p>
+                              <span className="mt-5 inline-flex size-14 items-center justify-center rounded-full border border-white/40 bg-white/10 text-white transition group-hover:border-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-black">
+                                <Plus className="size-8" />
+                              </span>
+                            </div>
+                          </button>
+                        </CarouselItem>
+                      );
+                    })}
+                  </CarouselContent>
+
+                  {marketingItems.length > 1 ? (
+                    <div className="mt-8 flex items-center justify-center gap-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="size-12 rounded-full border-[#D4AF37] bg-[#D4AF37] text-black shadow-[0_12px_26px_rgba(212,175,55,0.24)] hover:bg-[#B8960C] hover:text-black"
+                        onClick={() => scrollMarketingCarousel("next")}
+                        aria-label="פעולת שיווק הבאה"
+                      >
+                        <ArrowRight className="size-5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="size-12 rounded-full border-[#D4AF37] bg-[#D4AF37] text-black shadow-[0_12px_26px_rgba(212,175,55,0.24)] hover:bg-[#B8960C] hover:text-black"
+                        onClick={() => scrollMarketingCarousel("prev")}
+                        aria-label="פעולת שיווק קודמת"
+                      >
+                        <ArrowLeft className="size-5" />
+                      </Button>
+                    </div>
+                  ) : null}
+
+                  <div className="mt-5 flex items-center justify-center gap-2">
+                    {marketingItems.map((item, index) => (
+                      <button
+                        key={`marketing-dot-${item.id || index}`}
+                        type="button"
+                        className={`h-2.5 rounded-full transition-all ${
+                          selectedMarketingSlide === index ? "w-8 bg-[#D4AF37]" : "w-2.5 bg-slate-300"
+                        }`}
+                        onClick={() => marketingCarouselApi?.scrollTo(index)}
+                        aria-label={`מעבר לפעולת שיווק ${index + 1}`}
+                        aria-current={selectedMarketingSlide === index ? "true" : undefined}
+                      />
+                    ))}
                   </div>
-                </div>
-              </div>
+                </Carousel>
+              ) : null}
             </div>
 
             {marketingPreviewOpen && selectedMarketingItem ? (
@@ -1199,12 +1238,12 @@ export default function Home() {
 
                   {featuredPropertyTrack.length > 1 ? (
                     <>
-                      <div className="pointer-events-none absolute inset-y-0 left-0 right-0 hidden items-center justify-between md:flex">
+                      <div className="mt-8 flex items-center justify-center gap-4">
                         <Button
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="pointer-events-auto -mr-5 size-11 rounded-full border-slate-200 bg-white text-slate-950 shadow-[0_14px_30px_rgba(15,23,42,0.14)] hover:bg-[#d9ae4c] hover:text-white"
+                          className="size-12 rounded-full border-[#D4AF37] bg-[#D4AF37] text-black shadow-[0_12px_26px_rgba(212,175,55,0.24)] hover:bg-[#B8960C] hover:text-black"
                           onClick={() => scrollPropertyCarousel("next")}
                           aria-label="Next property"
                         >
@@ -1214,7 +1253,7 @@ export default function Home() {
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="pointer-events-auto -ml-5 size-11 rounded-full border-slate-200 bg-white text-slate-950 shadow-[0_14px_30px_rgba(15,23,42,0.14)] hover:bg-[#d9ae4c] hover:text-white"
+                          className="size-12 rounded-full border-[#D4AF37] bg-[#D4AF37] text-black shadow-[0_12px_26px_rgba(212,175,55,0.24)] hover:bg-[#B8960C] hover:text-black"
                           onClick={() => scrollPropertyCarousel("prev")}
                           aria-label="Previous property"
                         >
@@ -1222,7 +1261,7 @@ export default function Home() {
                         </Button>
                       </div>
 
-                      <div className="mt-7 flex items-center justify-center gap-2">
+                      <div className="mt-5 flex items-center justify-center gap-2">
                         {featuredPropertyTrack.map((property, index) => (
                           <button
                             key={`property-dot-${property.id}`}

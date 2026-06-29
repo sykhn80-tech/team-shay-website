@@ -16,6 +16,8 @@ import {
   type InsertPropertyImage,
   type InsertSiteSettings,
   type InsertTestimonial,
+  type SiteSettings,
+  type Testimonial,
   InsertUser,
   leadSubmissions,
   properties,
@@ -46,7 +48,7 @@ const defaultStaffAccounts = [
     email: "ronend0000@gmail.com",
     phone: "050-900-5161",
     password: "ronend0000",
-    roleTitle: "מלווה משקיעים ורוכשים",
+    roleTitle: "סוכן מוכרים. מומחה לאזור רסקו וסן סימון",
     bio: null,
     sortOrder: 1,
     isFeaturedOnHomepage: true,
@@ -279,11 +281,21 @@ type LocalCmsData = {
   propertyImages: LocalPropertyImage[];
 };
 
+type LocalSiteContent = {
+  nextStaffId: number;
+  nextTestimonialId: number;
+  siteSettings: SiteSettings;
+  staff: AgentAccount[];
+  testimonials: Testimonial[];
+};
+
 const localCmsDataPath = path.join(process.cwd(), ".local-cms-data", "cms.json");
 const localMarketingSectionPath = path.join(process.cwd(), ".local-cms-data", "marketing-section.json");
+const localSiteContentPath = path.join(process.cwd(), ".local-cms-data", "site-content.json");
 const blobCmsDataPrefix = "cms/team-shay/cms-";
 const blobCmsCurrentPath = "cms/team-shay/current.json";
 const blobMarketingSectionPath = "cms/team-shay/marketing-section.json";
+const blobSiteContentPath = "cms/team-shay/site-content.json";
 const blobCmsCacheTtlMs = 30_000;
 
 let cachedBlobCmsData: LocalCmsData | null = null;
@@ -291,6 +303,8 @@ let cachedBlobCmsEtag: string | null = null;
 let cachedBlobCmsFetchedAt = 0;
 let cachedMarketingSection: MarketingSectionData | null = null;
 let cachedMarketingSectionFetchedAt = 0;
+let cachedSiteContent: LocalSiteContent | null = null;
+let cachedSiteContentFetchedAt = 0;
 
 function hasBlobStorage() {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
@@ -331,6 +345,130 @@ function normalizeLocalCmsData(parsed: Partial<LocalCmsData>): LocalCmsData {
       ...image,
       createdAt: parseDate(image.createdAt),
     })) as LocalPropertyImage[],
+  };
+}
+
+function buildDefaultSiteSettings(): SiteSettings {
+  const now = new Date(0);
+  return {
+    id: 1,
+    siteName: defaultSiteSettings.siteName ?? "Team Shay",
+    headerLogoUrl: defaultSiteSettings.headerLogoUrl ?? null,
+    footerLogoUrl: defaultSiteSettings.footerLogoUrl ?? null,
+    landsmanLogoUrl: defaultSiteSettings.landsmanLogoUrl ?? null,
+    heroBackgroundUrl: defaultSiteSettings.heroBackgroundUrl ?? null,
+    shayAboutImageUrl: defaultSiteSettings.shayAboutImageUrl ?? null,
+    heroHeadline: defaultSiteSettings.heroHeadline ?? null,
+    heroTypingText: defaultSiteSettings.heroTypingText ?? null,
+    whatsappLink: defaultSiteSettings.whatsappLink ?? null,
+    officePhone: defaultSiteSettings.officePhone ?? null,
+    aboutTitle: defaultSiteSettings.aboutTitle ?? null,
+    aboutSubtitle: defaultSiteSettings.aboutSubtitle ?? null,
+    landsmanTitle: defaultSiteSettings.landsmanTitle ?? null,
+    landsmanBody: defaultSiteSettings.landsmanBody ?? null,
+    footerSlogan: defaultSiteSettings.footerSlogan ?? "מתווכים בצד שלך",
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function buildFallbackTestimonial(testimonial: InsertTestimonial, index: number): Testimonial {
+  const now = new Date(0);
+  return {
+    id: index + 1,
+    quote: testimonial.quote,
+    sourceName: testimonial.sourceName,
+    sourceLabel: testimonial.sourceLabel ?? "WhatsApp",
+    stars: testimonial.stars ?? 5,
+    whatsappImageUrl: testimonial.whatsappImageUrl ?? null,
+    legacySortOrder: 0,
+    displayOrder: testimonial.displayOrder ?? index + 1,
+    isPublished: testimonial.isPublished ?? true,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function createDefaultSiteContent(): LocalSiteContent {
+  const staff = getFallbackAgentAccounts();
+  const testimonialsRows = defaultTestimonials.map(buildFallbackTestimonial);
+
+  return {
+    nextStaffId: Math.max(0, ...staff.map((agent) => agent.id)) + 1,
+    nextTestimonialId: Math.max(0, ...testimonialsRows.map((testimonial) => testimonial.id)) + 1,
+    siteSettings: buildDefaultSiteSettings(),
+    staff,
+    testimonials: testimonialsRows,
+  };
+}
+
+function normalizeAgentAccount(agent: Partial<AgentAccount>, index: number): AgentAccount {
+  const fallback = getFallbackAgentAccounts()[index] ?? getFallbackAgentAccounts()[0];
+  return {
+    ...fallback,
+    ...agent,
+    id: Number(agent.id ?? fallback.id ?? index + 1),
+    accountRole: agent.accountRole === "admin" ? "admin" : "agent",
+    name: agent.name || fallback.name,
+    email: agent.email || fallback.email,
+    phone: agent.phone || fallback.phone,
+    passwordHash: agent.passwordHash || fallback.passwordHash,
+    roleTitle: agent.roleTitle ?? fallback.roleTitle,
+    bio: agent.bio ?? null,
+    photoUrl: agent.photoUrl ?? null,
+    sortOrder: Number(agent.sortOrder ?? fallback.sortOrder ?? index),
+    isFeaturedOnHomepage: agent.isFeaturedOnHomepage ?? true,
+    isActive: agent.isActive ?? true,
+    managedByAdmin: agent.managedByAdmin ?? true,
+    lastLoginAt: agent.lastLoginAt ? parseDate(agent.lastLoginAt) : null,
+    createdAt: parseDate(agent.createdAt),
+    updatedAt: parseDate(agent.updatedAt),
+  };
+}
+
+function normalizeTestimonial(testimonial: Partial<Testimonial>, index: number): Testimonial {
+  const fallback = buildFallbackTestimonial(defaultTestimonials[index] ?? defaultTestimonials[0], index);
+  return {
+    ...fallback,
+    ...testimonial,
+    id: Number(testimonial.id ?? fallback.id ?? index + 1),
+    quote: testimonial.quote || fallback.quote,
+    sourceName: testimonial.sourceName || fallback.sourceName,
+    sourceLabel: testimonial.sourceLabel || "WhatsApp",
+    stars: Number(testimonial.stars ?? fallback.stars ?? 5),
+    whatsappImageUrl: testimonial.whatsappImageUrl ?? null,
+    legacySortOrder: Number(testimonial.legacySortOrder ?? fallback.legacySortOrder ?? 0),
+    displayOrder: Number(testimonial.displayOrder ?? fallback.displayOrder ?? index + 1),
+    isPublished: testimonial.isPublished ?? true,
+    createdAt: parseDate(testimonial.createdAt),
+    updatedAt: parseDate(testimonial.updatedAt),
+  };
+}
+
+function normalizeSiteSettings(settings: Partial<SiteSettings> | null | undefined): SiteSettings {
+  const fallback = buildDefaultSiteSettings();
+  return {
+    ...fallback,
+    ...settings,
+    id: 1,
+    siteName: settings?.siteName ?? fallback.siteName,
+    footerSlogan: settings?.footerSlogan ?? fallback.footerSlogan,
+    createdAt: parseDate(settings?.createdAt),
+    updatedAt: parseDate(settings?.updatedAt),
+  };
+}
+
+function normalizeSiteContent(parsed: Partial<LocalSiteContent> | null | undefined): LocalSiteContent {
+  const fallback = createDefaultSiteContent();
+  const staff = (parsed?.staff?.length ? parsed.staff : fallback.staff).map(normalizeAgentAccount);
+  const testimonialsRows = (parsed?.testimonials?.length ? parsed.testimonials : fallback.testimonials).map(normalizeTestimonial);
+
+  return {
+    nextStaffId: Math.max(Number(parsed?.nextStaffId ?? 1), ...staff.map((agent) => agent.id + 1)),
+    nextTestimonialId: Math.max(Number(parsed?.nextTestimonialId ?? 1), ...testimonialsRows.map((testimonial) => testimonial.id + 1)),
+    siteSettings: normalizeSiteSettings(parsed?.siteSettings),
+    staff,
+    testimonials: testimonialsRows,
   };
 }
 
@@ -464,6 +602,88 @@ async function writeLocalCmsData(data: LocalCmsData) {
   throw new Error("CMS write failed: Blob is unavailable and local filesystem is read-only.");
 }
 
+async function persistLocalSiteContentBackup(data: LocalSiteContent) {
+  if (!canWriteLocalCmsBackup()) return false;
+
+  try {
+    await mkdir(path.dirname(localSiteContentPath), { recursive: true });
+    await writeFile(localSiteContentPath, `${JSON.stringify(data, null, 2)}\n`);
+    return true;
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "EROFS" || code === "EPERM" || code === "EACCES") {
+      console.warn("[SiteContent] Local backup write skipped: filesystem is not writable in this environment.");
+      return false;
+    }
+
+    throw error;
+  }
+}
+
+async function readSiteContent(): Promise<LocalSiteContent> {
+  if (cachedSiteContent && Date.now() - cachedSiteContentFetchedAt < blobCmsCacheTtlMs) {
+    return cachedSiteContent;
+  }
+
+  if (hasBlobStorage()) {
+    try {
+      const result = await blobGet(blobSiteContentPath, { access: "public" });
+      if (result?.statusCode === 200 && result.stream) {
+        cachedSiteContent = normalizeSiteContent(JSON.parse(await streamToText(result.stream)) as Partial<LocalSiteContent>);
+        cachedSiteContentFetchedAt = Date.now();
+        await persistLocalSiteContentBackup(cachedSiteContent);
+        return cachedSiteContent;
+      }
+    } catch (error) {
+      console.warn("[SiteContent] Failed to read Blob content:", error);
+    }
+  }
+
+  try {
+    const rawData = await readFile(localSiteContentPath, "utf8");
+    cachedSiteContent = normalizeSiteContent(JSON.parse(rawData) as Partial<LocalSiteContent>);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      console.warn("[SiteContent] Failed to read local content:", error);
+    }
+    cachedSiteContent = createDefaultSiteContent();
+  }
+
+  cachedSiteContentFetchedAt = Date.now();
+  return cachedSiteContent;
+}
+
+async function writeSiteContent(data: LocalSiteContent) {
+  const normalized = normalizeSiteContent(data);
+  const payload = `${JSON.stringify(normalized, null, 2)}\n`;
+  let saved = false;
+
+  if (hasBlobStorage()) {
+    try {
+      await blobPut(blobSiteContentPath, payload, {
+        access: "public",
+        allowOverwrite: true,
+        addRandomSuffix: false,
+        contentType: "application/json",
+      });
+      saved = true;
+    } catch (error) {
+      console.warn("[SiteContent] Failed to save Blob content:", error);
+    }
+  }
+
+  if (await persistLocalSiteContentBackup(normalized)) {
+    saved = true;
+  }
+
+  if (!saved) {
+    throw new Error("שמירת תוכן האתר נכשלה.");
+  }
+
+  cachedSiteContent = normalized;
+  cachedSiteContentFetchedAt = Date.now();
+}
+
 function normalizeMarketingSection(input: Partial<MarketingSectionData> | null | undefined): MarketingSectionData {
   return {
     eyebrow: input?.eyebrow?.trim() || defaultMarketingSection.eyebrow,
@@ -472,7 +692,7 @@ function normalizeMarketingSection(input: Partial<MarketingSectionData> | null |
     highlights: (input?.highlights ?? defaultMarketingSection.highlights)
       .map((highlight) => highlight.trim())
       .filter(Boolean)
-      .slice(0, 8),
+      .slice(0, 10),
     items: (input?.items ?? defaultMarketingSection.items)
       .map<MarketingSectionItem>((item, index) => ({
         id: item.id?.trim() || `marketing-${index + 1}`,
@@ -482,7 +702,7 @@ function normalizeMarketingSection(input: Partial<MarketingSectionData> | null |
         mediaUrl: item.mediaUrl?.trim() || defaultMarketingSection.items[index]?.mediaUrl || defaultMarketingSection.items[0].mediaUrl,
         posterUrl: item.posterUrl?.trim() || null,
       }))
-      .slice(0, 8),
+      .slice(0, 10),
   };
 }
 
@@ -679,8 +899,10 @@ export async function authenticateAgent(email: string, password: string) {
   const normalizedEmail = email.trim().toLowerCase();
 
   if (!db) {
-    const fallbackAgent = getFallbackAgentAccounts().find((agent) => agent.email === normalizedEmail);
-    if (!fallbackAgent || password !== passwordFromAgentEmail(normalizedEmail)) {
+    const data = await readSiteContent();
+    const fallbackAgent = data.staff.find((agent) => agent.email.trim().toLowerCase() === normalizedEmail && agent.isActive);
+    const passwordHash = hashAgentPassword(password);
+    if (!fallbackAgent || (fallbackAgent.passwordHash !== passwordHash && password !== passwordFromAgentEmail(normalizedEmail))) {
       return null;
     }
 
@@ -715,7 +937,10 @@ export async function authenticateAgent(email: string, password: string) {
 
 export async function getAgentById(agentId: number) {
   const db = await getDb();
-  if (!db) return getFallbackAgentAccounts().find((agent) => agent.id === agentId) ?? null;
+  if (!db) {
+    const data = await readSiteContent();
+    return data.staff.find((agent) => agent.id === agentId) ?? null;
+  }
 
   const result = await db.select().from(agentAccounts).where(eq(agentAccounts.id, agentId)).limit(1);
   return result[0] ?? null;
@@ -723,7 +948,10 @@ export async function getAgentById(agentId: number) {
 
 export async function listStaffAccounts() {
   const db = await getDb();
-  if (!db) return getFallbackAgentAccounts();
+  if (!db) {
+    const data = await readSiteContent();
+    return data.staff.sort((left, right) => left.sortOrder - right.sortOrder || left.createdAt.getTime() - right.createdAt.getTime());
+  }
 
   await ensureDefaultAgentAccounts();
 
@@ -735,7 +963,22 @@ export async function listStaffAccounts() {
 
 export async function listFeaturedAgents() {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    const data = await readSiteContent();
+    return data.staff
+      .filter((agent) => agent.isFeaturedOnHomepage && agent.isActive)
+      .sort((left, right) => left.sortOrder - right.sortOrder || left.createdAt.getTime() - right.createdAt.getTime())
+      .map((agent) => ({
+        id: agent.id,
+        name: agent.name,
+        roleTitle: agent.roleTitle,
+        bio: agent.bio,
+        phone: agent.phone,
+        email: agent.email,
+        photoUrl: agent.photoUrl,
+        sortOrder: agent.sortOrder,
+      }));
+  }
 
   await ensureDefaultAgentAccounts();
 
@@ -758,7 +1001,31 @@ export async function listFeaturedAgents() {
 export async function createStaffAccount(input: InsertAgentAccount) {
   const db = await getDb();
   if (!db) {
-    throw new Error("Database not available");
+    const data = await readSiteContent();
+    const now = new Date();
+    const accountId = data.nextStaffId++;
+
+    data.staff.push({
+      id: accountId,
+      accountRole: input.accountRole ?? "agent",
+      name: input.name,
+      email: input.email,
+      phone: input.phone,
+      passwordHash: input.passwordHash,
+      roleTitle: input.roleTitle ?? "",
+      bio: input.bio ?? null,
+      photoUrl: input.photoUrl ?? null,
+      sortOrder: input.sortOrder ?? data.staff.length,
+      isFeaturedOnHomepage: input.isFeaturedOnHomepage ?? true,
+      isActive: input.isActive ?? true,
+      managedByAdmin: input.managedByAdmin ?? true,
+      lastLoginAt: null,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await writeSiteContent(data);
+    return accountId;
   }
 
   const inserted = await db.insert(agentAccounts).values(input);
@@ -768,7 +1035,20 @@ export async function createStaffAccount(input: InsertAgentAccount) {
 export async function updateStaffAccount(accountId: number, input: Partial<InsertAgentAccount>) {
   const db = await getDb();
   if (!db) {
-    throw new Error("Database not available");
+    const data = await readSiteContent();
+    const accountIndex = data.staff.findIndex((agent) => agent.id === accountId);
+    if (accountIndex === -1) {
+      throw new Error("Agent not found");
+    }
+
+    data.staff[accountIndex] = {
+      ...data.staff[accountIndex],
+      ...Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined)),
+      updatedAt: new Date(),
+    } as AgentAccount;
+
+    await writeSiteContent(data);
+    return;
   }
 
   await db
@@ -780,7 +1060,10 @@ export async function updateStaffAccount(accountId: number, input: Partial<Inser
 export async function deleteStaffAccount(accountId: number) {
   const db = await getDb();
   if (!db) {
-    throw new Error("Database not available");
+    const data = await readSiteContent();
+    data.staff = data.staff.filter((agent) => agent.id !== accountId);
+    await writeSiteContent(data);
+    return;
   }
 
   await db.delete(agentAccounts).where(eq(agentAccounts.id, accountId));
@@ -788,7 +1071,10 @@ export async function deleteStaffAccount(accountId: number) {
 
 export async function getSiteSettings() {
   const db = await getDb();
-  if (!db) return null;
+  if (!db) {
+    const data = await readSiteContent();
+    return data.siteSettings;
+  }
 
   await ensureDefaultSiteSettings();
 
@@ -799,7 +1085,14 @@ export async function getSiteSettings() {
 export async function updateSiteSettings(input: Partial<InsertSiteSettings>) {
   const db = await getDb();
   if (!db) {
-    throw new Error("Database not available");
+    const data = await readSiteContent();
+    data.siteSettings = {
+      ...data.siteSettings,
+      ...Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined)),
+      updatedAt: new Date(),
+    } as SiteSettings;
+    await writeSiteContent(data);
+    return;
   }
 
   await ensureDefaultSiteSettings();
@@ -812,7 +1105,12 @@ export async function updateSiteSettings(input: Partial<InsertSiteSettings>) {
 
 export async function listPublishedTestimonials() {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    const data = await readSiteContent();
+    return data.testimonials
+      .filter((testimonial) => testimonial.isPublished)
+      .sort((left, right) => left.displayOrder - right.displayOrder || left.id - right.id);
+  }
 
   await ensureDefaultTestimonials();
 
@@ -825,7 +1123,10 @@ export async function listPublishedTestimonials() {
 
 export async function listAllTestimonials() {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    const data = await readSiteContent();
+    return data.testimonials.sort((left, right) => left.displayOrder - right.displayOrder || left.id - right.id);
+  }
 
   await ensureDefaultTestimonials();
 
@@ -838,7 +1139,26 @@ export async function listAllTestimonials() {
 export async function createTestimonial(input: InsertTestimonial) {
   const db = await getDb();
   if (!db) {
-    throw new Error("Database not available");
+    const data = await readSiteContent();
+    const now = new Date();
+    const testimonialId = data.nextTestimonialId++;
+
+    data.testimonials.push({
+      id: testimonialId,
+      quote: input.quote,
+      sourceName: input.sourceName,
+      sourceLabel: input.sourceLabel ?? "WhatsApp",
+      stars: input.stars ?? 5,
+      whatsappImageUrl: input.whatsappImageUrl ?? null,
+      legacySortOrder: 0,
+      displayOrder: input.displayOrder ?? data.testimonials.length + 1,
+      isPublished: input.isPublished ?? true,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await writeSiteContent(data);
+    return testimonialId;
   }
 
   const inserted = await db.insert(testimonials).values(input);
@@ -848,7 +1168,20 @@ export async function createTestimonial(input: InsertTestimonial) {
 export async function updateTestimonial(testimonialId: number, input: Partial<InsertTestimonial>) {
   const db = await getDb();
   if (!db) {
-    throw new Error("Database not available");
+    const data = await readSiteContent();
+    const testimonialIndex = data.testimonials.findIndex((testimonial) => testimonial.id === testimonialId);
+    if (testimonialIndex === -1) {
+      throw new Error("Testimonial not found");
+    }
+
+    data.testimonials[testimonialIndex] = {
+      ...data.testimonials[testimonialIndex],
+      ...Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined)),
+      updatedAt: new Date(),
+    } as Testimonial;
+
+    await writeSiteContent(data);
+    return;
   }
 
   await db
@@ -860,7 +1193,10 @@ export async function updateTestimonial(testimonialId: number, input: Partial<In
 export async function deleteTestimonial(testimonialId: number) {
   const db = await getDb();
   if (!db) {
-    throw new Error("Database not available");
+    const data = await readSiteContent();
+    data.testimonials = data.testimonials.filter((testimonial) => testimonial.id !== testimonialId);
+    await writeSiteContent(data);
+    return;
   }
 
   await db.delete(testimonials).where(eq(testimonials.id, testimonialId));

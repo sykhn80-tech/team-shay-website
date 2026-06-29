@@ -338,7 +338,7 @@ All global tokens should support a modern, clean, conversion-first interface.
   }
 
   .sold-properties-marquee {
-    animation: sold-properties-marquee 38s linear infinite;
+    animation: sold-properties-marquee 56s linear infinite;
     will-change: transform;
   }
 

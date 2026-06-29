@@ -159,6 +159,19 @@ const emptyMarketingSectionForm: MarketingSectionFormState = {
   items: [],
 };
 
+const maxMarketingSectionItems = 10;
+
+function buildMarketingSectionItem(index: number) {
+  return {
+    id: `marketing-${Date.now()}-${index}`,
+    title: "פעולת שיווק חדשה",
+    description: "תיאור קצר של הפעולה והחשיפה שהיא מייצרת לנכס.",
+    type: "image" as const,
+    mediaUrl: buildImageField(),
+    posterUrl: buildImageField(),
+  };
+}
+
 async function fileToBase64(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -550,6 +563,26 @@ export default function AdminPanel() {
         mediaUrl: serializeImageField(item.mediaUrl) || item.mediaUrl.previewUrl,
         posterUrl: serializeImageField(item.posterUrl),
       })),
+    });
+  };
+
+  const handleAddMarketingSectionItem = () => {
+    setMarketingSectionForm((prev) => {
+      if (prev.items.length >= maxMarketingSectionItems) return prev;
+      return {
+        ...prev,
+        items: [...prev.items, buildMarketingSectionItem(prev.items.length + 1)],
+      };
+    });
+  };
+
+  const handleRemoveMarketingSectionItem = (index: number) => {
+    setMarketingSectionForm((prev) => {
+      if (prev.items.length <= 1) return prev;
+      return {
+        ...prev,
+        items: prev.items.filter((_, currentIndex) => currentIndex !== index),
+      };
     });
   };
 
@@ -1051,26 +1084,55 @@ export default function AdminPanel() {
             </label>
           </div>
 
-          <div className="mt-8 grid gap-5 xl:grid-cols-2">
+          <div className="mt-8 flex flex-col gap-3 border-t border-slate-100 pt-6 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-xl font-black text-slate-950">כרטיסי פעולות שיווק</h3>
+              <p className="mt-1 text-sm font-semibold text-slate-500">אפשר להציג עד {maxMarketingSectionItems} פעולות בדף הבית.</p>
+            </div>
+            <Button
+              type="button"
+              onClick={handleAddMarketingSectionItem}
+              disabled={marketingSectionForm.items.length >= maxMarketingSectionItems}
+              className="rounded-full bg-[#1A1A1A] px-5 text-white hover:bg-[#D4AF37] hover:text-black disabled:opacity-40"
+            >
+              <Plus className="ml-2 size-4" />
+              הוספת כרטיס שיווק
+            </Button>
+          </div>
+
+          <div className="mt-5 grid gap-5 xl:grid-cols-2">
             {marketingSectionForm.items.map((item, index) => (
               <article key={item.id} className="rounded-[28px] border border-slate-200 bg-[#fbfdff] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-lg font-black text-slate-950">כרטיס שיווק #{index + 1}</p>
-                  <select
-                    value={item.type}
-                    onChange={(event) =>
-                      setMarketingSectionForm((prev) => ({
-                        ...prev,
-                        items: prev.items.map((current, currentIndex) =>
-                          currentIndex === index ? { ...current, type: event.target.value as "image" | "video" } : current,
-                        ),
-                      }))
-                    }
-                    className="h-10 rounded-2xl border border-[#D4AF37]/50 bg-white px-3 text-sm font-bold outline-none"
-                  >
-                    <option value="image">תמונה</option>
-                    <option value="video">וידאו</option>
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={item.type}
+                      onChange={(event) =>
+                        setMarketingSectionForm((prev) => ({
+                          ...prev,
+                          items: prev.items.map((current, currentIndex) =>
+                            currentIndex === index ? { ...current, type: event.target.value as "image" | "video" } : current,
+                          ),
+                        }))
+                      }
+                      className="h-10 rounded-2xl border border-[#D4AF37]/50 bg-white px-3 text-sm font-bold outline-none"
+                    >
+                      <option value="image">תמונה</option>
+                      <option value="video">וידאו</option>
+                    </select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleRemoveMarketingSectionItem(index)}
+                      disabled={marketingSectionForm.items.length <= 1}
+                      className="size-10 rounded-full border-red-100 text-red-500 hover:bg-red-50 disabled:opacity-35"
+                      aria-label="מחיקת כרטיס שיווק"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="mt-5 grid gap-4">
