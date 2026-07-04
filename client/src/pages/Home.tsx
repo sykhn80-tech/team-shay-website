@@ -1396,65 +1396,98 @@ export default function Home() {
                   טוענים המלצות מהמערכת...
                 </div>
               ) : visibleTestimonials.length ? (
-                <div
-                  className={testimonialsExpanded
-                    ? "grid gap-4 transition-all duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
-                    : "relative mx-auto min-h-[28rem] max-w-4xl overflow-visible py-3 transition-all duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)]"}
-                  aria-label="קיר המלצות חי"
-                >
-                  {!testimonialsExpanded ? (
+                <div className="relative mx-auto overflow-visible py-3 transition-all duration-[1600ms] ease-[cubic-bezier(0.22,1,0.36,1)]" aria-label="קיר המלצות חי">
+                  <div
+                    className={`grid gap-4 transition-all duration-[1500ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 ${
+                      testimonialsExpanded ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
+                    }`}
+                  >
+                    {testimonialCards.map((testimonial, index) => (
+                      <button
+                        type="button"
+                        key={`grid-${testimonial.id}`}
+                        onClick={() => openTestimonialPreview(testimonial)}
+                        className="group relative flex min-h-[25rem] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25"
+                        style={{ transitionDelay: testimonialsExpanded ? `${Math.min(index, 5) * 150}ms` : "0ms" }}
+                      >
+                        {testimonial.whatsappImageUrl ? (
+                          <div className="relative h-40 overflow-hidden bg-slate-950 md:h-44 xl:h-48" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
+                            {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
+                              <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" muted playsInline preload="metadata" />
+                            ) : (
+                              <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" loading="lazy" />
+                            )}
+                            <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
+                            <span className="absolute bottom-4 right-4 inline-flex translate-y-3 items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2 text-sm font-black text-[#1A1A1A] opacity-0 shadow-lg transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                              {isVideoMediaUrl(testimonial.whatsappImageUrl) ? <Play className="size-4 fill-current" /> : <MessageCircle className="size-4" />}
+                              לחצו לצפייה
+                            </span>
+                          </div>
+                        ) : null}
+                        <div className="flex flex-1 flex-col p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-base font-black text-slate-950">{testimonial.title}</p>
+                              <p className="mt-1 text-xs font-bold tracking-[0.02em] text-[#D4AF37]">{testimonial.source}</p>
+                            </div>
+                            <div className="flex items-center gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
+                              {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
+                                <Star key={`grid-${testimonial.id}-${starIndex}`} className="size-3.5 fill-current" />
+                              ))}
+                            </div>
+                          </div>
+                          <p className="mt-3 line-clamp-5 flex-1 text-sm font-semibold leading-6 text-slate-600">{testimonial.quote}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div
+                    className={`absolute inset-x-0 top-3 flex min-h-[25rem] justify-center transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                      testimonialsExpanded ? "pointer-events-none -translate-y-2 opacity-0 blur-[1px]" : "translate-y-0 opacity-100 blur-0"
+                    }`}
+                    aria-hidden={testimonialsExpanded}
+                  >
                     <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center">
                       <span className="h-[24rem] w-full max-w-[14rem] rounded-[34px] bg-[#D4AF37]/15 blur-3xl" />
                     </div>
-                  ) : null}
-
-                  {testimonialCards.map((testimonial, index) => {
-                    const stackedStyle = testimonialStackStyles[index] ?? testimonialStackStyles[0];
-                    return (
-                    <button
-                      type="button"
-                      key={testimonial.id}
-                      onClick={() => openTestimonialPreview(testimonial)}
-                      className={`group flex cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25 ${
-                        testimonialsExpanded
-                          ? "relative min-h-[25rem] animate-in fade-in slide-in-from-bottom-4 duration-[1400ms]"
-                          : "absolute left-1/2 top-0 min-h-[25rem] w-full max-w-[14rem] duration-[1500ms] hover:-translate-y-3"
-                      }`}
-                      style={testimonialsExpanded
-                        ? { transitionDelay: `${Math.min(index, 5) * 180}ms`, animationDelay: `${Math.min(index, 5) * 180}ms` }
-                        : { ...stackedStyle, transitionDelay: `${index * 120}ms` }}
-                    >
-                      {testimonial.whatsappImageUrl ? (
-                        <div className="relative h-40 overflow-hidden bg-slate-950 md:h-44 xl:h-48" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
-                          {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
-                            <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" muted playsInline preload="metadata" />
-                          ) : (
-                            <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" loading="lazy" />
-                          )}
-                          <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
-                          <span className="absolute bottom-4 right-4 inline-flex translate-y-3 items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2 text-sm font-black text-[#1A1A1A] opacity-0 shadow-lg transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
-                            {isVideoMediaUrl(testimonial.whatsappImageUrl) ? <Play className="size-4 fill-current" /> : <MessageCircle className="size-4" />}
-                            לחצו לצפייה
-                          </span>
-                        </div>
-                      ) : null}
-                      <div className="flex flex-1 flex-col p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-base font-black text-slate-950">{testimonial.title}</p>
-                            <p className="mt-1 text-xs font-bold tracking-[0.02em] text-[#D4AF37]">{testimonial.source}</p>
+                    {testimonialCards.map((testimonial, index) => {
+                      const stackedStyle = testimonialStackStyles[index] ?? testimonialStackStyles[0];
+                      return (
+                        <button
+                          type="button"
+                          key={`stack-${testimonial.id}`}
+                          onClick={() => openTestimonialPreview(testimonial)}
+                          className="group absolute left-1/2 top-0 flex min-h-[25rem] w-full max-w-[14rem] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1500ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-3 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25"
+                          style={{ ...stackedStyle, transitionDelay: `${index * 120}ms` }}
+                        >
+                          {testimonial.whatsappImageUrl ? (
+                            <div className="relative h-40 overflow-hidden bg-slate-950 md:h-44 xl:h-48" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
+                              {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
+                                <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" muted playsInline preload="metadata" />
+                              ) : (
+                                <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" loading="lazy" />
+                              )}
+                            </div>
+                          ) : null}
+                          <div className="flex flex-1 flex-col p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-base font-black text-slate-950">{testimonial.title}</p>
+                                <p className="mt-1 text-xs font-bold tracking-[0.02em] text-[#D4AF37]">{testimonial.source}</p>
+                              </div>
+                              <div className="flex items-center gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
+                                {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
+                                  <Star key={`stack-${testimonial.id}-${starIndex}`} className="size-3.5 fill-current" />
+                                ))}
+                              </div>
+                            </div>
+                            <p className="mt-3 line-clamp-5 flex-1 text-sm font-semibold leading-6 text-slate-600">{testimonial.quote}</p>
                           </div>
-                          <div className="flex items-center gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
-                            {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
-                              <Star key={`${testimonial.id}-${starIndex}`} className="size-3.5 fill-current" />
-                            ))}
-                          </div>
-                        </div>
-                        <p className="mt-3 line-clamp-5 flex-1 text-sm font-semibold leading-6 text-slate-600">{testimonial.quote}</p>
-                      </div>
-                    </button>
-                    );
-                  })}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
                 <div className="rounded-[30px] border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
