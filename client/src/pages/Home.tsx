@@ -591,11 +591,11 @@ export default function Home() {
 
   const testimonialStackStyles = useMemo(() => [
     { transform: "translate3d(-50%, 0, 0) rotate(0deg) scale(1)", zIndex: 30, opacity: 1 },
-    { transform: "translate3d(-57%, 22px, 0) rotate(-5deg) scale(0.96)", zIndex: 25, opacity: 0.72 },
-    { transform: "translate3d(-43%, 34px, 0) rotate(5deg) scale(0.94)", zIndex: 24, opacity: 0.66 },
-    { transform: "translate3d(-63%, 58px, 0) rotate(-8deg) scale(0.9)", zIndex: 20, opacity: 0.48 },
-    { transform: "translate3d(-37%, 72px, 0) rotate(8deg) scale(0.88)", zIndex: 19, opacity: 0.42 },
-    { transform: "translate3d(-50%, 94px, 0) rotate(0deg) scale(0.84)", zIndex: 18, opacity: 0.36 },
+    { transform: "translate3d(-54%, 12px, 0) rotate(-4deg) scale(0.98)", zIndex: 25, opacity: 0.72 },
+    { transform: "translate3d(-46%, 20px, 0) rotate(4deg) scale(0.96)", zIndex: 24, opacity: 0.66 },
+    { transform: "translate3d(-58%, 34px, 0) rotate(-6deg) scale(0.94)", zIndex: 20, opacity: 0.5 },
+    { transform: "translate3d(-42%, 44px, 0) rotate(6deg) scale(0.92)", zIndex: 19, opacity: 0.44 },
+    { transform: "translate3d(-50%, 56px, 0) rotate(0deg) scale(0.9)", zIndex: 18, opacity: 0.36 },
   ], []);
 
   useEffect(() => {
@@ -1398,13 +1398,13 @@ export default function Home() {
               ) : visibleTestimonials.length ? (
                 <div
                   className={testimonialsExpanded
-                    ? "grid gap-4 transition-all duration-1000 ease-out sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
-                    : "relative mx-auto min-h-[39rem] max-w-4xl overflow-visible py-6 transition-all duration-1000 ease-out"}
+                    ? "grid gap-4 transition-all duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+                    : "relative mx-auto min-h-[28rem] max-w-4xl overflow-visible py-3 transition-all duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)]"}
                   aria-label="קיר המלצות חי"
                 >
                   {!testimonialsExpanded ? (
                     <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center">
-                      <span className="h-[30rem] w-full max-w-lg rounded-[34px] bg-[#D4AF37]/15 blur-3xl" />
+                      <span className="h-[24rem] w-full max-w-[14rem] rounded-[34px] bg-[#D4AF37]/15 blur-3xl" />
                     </div>
                   ) : null}
 
@@ -1417,15 +1417,15 @@ export default function Home() {
                       onClick={() => openTestimonialPreview(testimonial)}
                       className={`group flex cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25 ${
                         testimonialsExpanded
-                          ? "relative min-h-[25rem] animate-in fade-in slide-in-from-bottom-8 duration-1000"
-                          : "absolute left-1/2 top-0 min-h-[32rem] w-full max-w-lg duration-[1300ms] hover:-translate-y-3"
+                          ? "relative min-h-[25rem] animate-in fade-in slide-in-from-bottom-4 duration-[1400ms]"
+                          : "absolute left-1/2 top-0 min-h-[25rem] w-full max-w-[14rem] duration-[1500ms] hover:-translate-y-3"
                       }`}
                       style={testimonialsExpanded
-                        ? { transitionDelay: `${Math.min(index, 5) * 150}ms`, animationDelay: `${Math.min(index, 5) * 150}ms` }
-                        : { ...stackedStyle, transitionDelay: `${index * 90}ms` }}
+                        ? { transitionDelay: `${Math.min(index, 5) * 180}ms`, animationDelay: `${Math.min(index, 5) * 180}ms` }
+                        : { ...stackedStyle, transitionDelay: `${index * 120}ms` }}
                     >
                       {testimonial.whatsappImageUrl ? (
-                        <div className={`relative overflow-hidden bg-slate-950 ${testimonialsExpanded ? "h-40 md:h-44 xl:h-48" : "h-64 md:h-72"}`} aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
+                        <div className="relative h-40 overflow-hidden bg-slate-950 md:h-44 xl:h-48" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                           {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
                             <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" muted playsInline preload="metadata" />
                           ) : (
@@ -1438,19 +1438,19 @@ export default function Home() {
                           </span>
                         </div>
                       ) : null}
-                      <div className={`flex flex-1 flex-col ${testimonialsExpanded ? "p-4" : "p-6"}`}>
+                      <div className="flex flex-1 flex-col p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className={testimonialsExpanded ? "text-base font-black text-slate-950" : "text-xl font-black text-slate-950"}>{testimonial.title}</p>
-                            <p className={testimonialsExpanded ? "mt-1 text-xs font-bold tracking-[0.02em] text-[#D4AF37]" : "mt-1 text-sm font-bold tracking-[0.02em] text-[#D4AF37]"}>{testimonial.source}</p>
+                            <p className="text-base font-black text-slate-950">{testimonial.title}</p>
+                            <p className="mt-1 text-xs font-bold tracking-[0.02em] text-[#D4AF37]">{testimonial.source}</p>
                           </div>
                           <div className="flex items-center gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
                             {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
-                              <Star key={`${testimonial.id}-${starIndex}`} className={`${testimonialsExpanded ? "size-3.5" : "size-5"} fill-current`} />
+                              <Star key={`${testimonial.id}-${starIndex}`} className="size-3.5 fill-current" />
                             ))}
                           </div>
                         </div>
-                        <p className={testimonialsExpanded ? "mt-3 line-clamp-5 flex-1 text-sm font-semibold leading-6 text-slate-600" : "mt-4 flex-1 text-[1.04rem] font-semibold leading-8 text-slate-600"}>{testimonial.quote}</p>
+                        <p className="mt-3 line-clamp-5 flex-1 text-sm font-semibold leading-6 text-slate-600">{testimonial.quote}</p>
                       </div>
                     </button>
                     );
