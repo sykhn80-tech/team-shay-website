@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
-import { BedDouble, ChevronLeft, Loader2, MapPin, Ruler, Search, SlidersHorizontal } from "lucide-react";
+import { BedDouble, ChevronLeft, Loader2, Ruler, Search, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import {
@@ -10,9 +10,16 @@ import {
   TEAM_LOGO,
   WHATSAPP_LINK,
 } from "@/lib/siteData";
-import { formatPropertyLocation } from "@/lib/property-display";
+import { propertyStreetOnly } from "@/lib/property-display";
 
 const formatPrice = (value: number) => `₪${value.toLocaleString("he-IL")}`;
+const formatNeighborhoodCity = (property: { neighborhood?: string | null; city?: string | null }) => {
+  const neighborhood = property.neighborhood?.trim() ?? "";
+  const city = property.city?.trim() ?? "";
+  if (!neighborhood) return city;
+  if (!city || neighborhood === city) return neighborhood;
+  return `${neighborhood}, ${city}`;
+};
 
 export default function Properties() {
   const [areaQuery, setAreaQuery] = useState("");
@@ -256,16 +263,19 @@ export default function Properties() {
                 </div>
 
                 <div className="mt-8 grid gap-6 md:grid-cols-2 2xl:grid-cols-3">
-                  {filteredProperties.map((property) => (
+                  {filteredProperties.map((property) => {
+                    const streetOnly = propertyStreetOnly(property);
+                    const areaOnly = formatNeighborhoodCity(property);
+                    return (
                     <article
                       key={property.id}
-                      className="group overflow-hidden rounded-[28px] border border-[#D4AF37]/35 bg-white shadow-[0_18px_36px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:shadow-[0_24px_48px_rgba(212,175,55,0.22)]"
+                      className="group flex h-full min-h-[620px] flex-col overflow-hidden rounded-[28px] border border-[#D4AF37]/35 bg-white shadow-[0_18px_36px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:shadow-[0_24px_48px_rgba(212,175,55,0.22)]"
                     >
                       <div className="relative overflow-hidden">
                         <img src={property.image} alt={property.title} className="h-56 w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />
                         <span className="absolute right-4 top-4 rounded-full bg-[#D4AF37] px-3 py-1.5 text-xs font-black text-black shadow-lg">{property.status}</span>
                       </div>
-                      <div className="p-5">
+                      <div className="flex flex-1 flex-col p-5">
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-2xl font-black text-slate-950">{formatPrice(property.price)}</p>
                         </div>
@@ -273,15 +283,9 @@ export default function Properties() {
                         <h3 className="mt-3 text-xl font-black text-slate-950">{property.title}</h3>
                         <div className="mt-4 rounded-[22px] border border-[#D4AF37]/25 bg-[#fffaf0] p-4">
                           <p className="text-2xl font-black leading-tight text-slate-950">
-                            {property.street || property.address || property.title}
+                            {streetOnly || property.title}
                           </p>
-                          <p className="mt-2 text-base font-black text-[#B8960C]">
-                            {property.neighborhood}{property.city && property.city !== property.neighborhood ? `, ${property.city}` : ""}
-                          </p>
-                        </div>
-                        <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
-                          <MapPin className="size-4 text-[#d9ae4c]" />
-                          {formatPropertyLocation(property)}
+                          {areaOnly ? <p className="mt-2 text-base font-black text-[#B8960C]">{areaOnly}</p> : null}
                         </div>
 
                         <div className="mt-4 grid grid-cols-2 gap-3 text-sm font-bold text-slate-700">
@@ -289,9 +293,9 @@ export default function Properties() {
                           <div className="flex items-center gap-2 rounded-2xl bg-[#fff8e6] px-3 py-3"><Ruler className="size-4 text-[#D4AF37]" />{property.sqm} מ״ר</div>
                         </div>
 
-                        <p className="mt-4 text-sm leading-7 text-slate-600">{property.description}</p>
+                        <p className="mt-4 line-clamp-4 text-sm leading-7 text-slate-600">{property.description}</p>
 
-                        <div className="mt-5">
+                        <div className="mt-auto pt-5">
                           <Link href={`/properties/${property.id}`} className="block">
                             <Button className="w-full rounded-full bg-[#D4AF37] text-[#1A1A1A] hover:bg-[#B8960C] hover:text-black">
                               לפרטים נוספים
@@ -300,7 +304,8 @@ export default function Properties() {
                         </div>
                       </div>
                     </article>
-                  ))}
+                  );
+                })}
                 </div>
 
                 {!filteredProperties.length ? (

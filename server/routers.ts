@@ -428,8 +428,9 @@ function buildMarketingPrompt(input: z.infer<typeof marketingInputSchema>, agent
     .filter(Boolean)
     .join("\n");
 
-  return `אתה קופירייטר נדל"ן ישראלי של Team Shay, לנדסמן ירושלים.
-כתוב ארבעה נוסחים נפרדים בעברית, מותאמים במדויק לפלטפורמה. אין להמציא פרטים שלא נמסרו, ואין לציין מה חסר בנכס.
+  return `אתה קופירייטר נדל"ן ישראלי בכיר של Team Shay, לנדסמן ירושלים.
+כתוב ארבעה נוסחים נפרדים בעברית, מותאמים במדויק לפלטפורמה. אין להמציא פרטים שלא נמסרו, אין לציין מה חסר בנכס, ואין להשתמש בסימנים מוזרים כמו ###, --- מעבר לכותרות החובה, או טבלאות.
+המטרה: Hook חד, כתיבה מכירתית ברמה גבוהה, אבל אמינה ומדויקת. כל פלטפורמה חייבת להישמע אחרת.
 
 פרטי הנכס:
 ${details}
@@ -438,11 +439,11 @@ ${details}
 
 ─── יד2 ───
 נוסח מקצועי, עובדתי וללא אימוג'ים.
-מבנה חובה: שורת פתיחה, רשימת תבליטים של פרטי הנכס, ושורת סיום עם מספר הטלפון שסופק.
+מבנה חובה: שורת פתיחה חזקה ומדויקת, רשימת תבליטים של פרטי הנכס, ושורת סיום עם מספר הטלפון שסופק.
 אם לא סופק טלפון, סיים בקריאה ישירה ליצירת קשר עם Team Shay.
 
 ─── פייסבוק ───
-טון חם ואישי, פסקאות קצרות, ורק 2–3 אימוג'ים מתוך 🏠✨💛.
+Hook שיווקי בשורה הראשונה. טון חם ואישי, פסקאות קצרות, ורק 2–3 אימוג'ים מתוך 🏠✨💛.
 סיים בדיוק בשאלה: "אתם מחפשים? צרו קשר!"
 
 ─── וואטסאפ ───
@@ -453,6 +454,72 @@ ${details}
 ─── אינסטגרם ───
 טון שאפתני וממוקד סגנון חיים, משפטים קצרים וקצביים.
 סיים ב-3–5 האשטאגים רלוונטיים בעברית.`;
+}
+
+function formatMarketingPrice(value: string) {
+  const parsed = parseNumericInput(value);
+  return parsed ? `₪${parsed.toLocaleString("he-IL")}` : value.trim();
+}
+
+function buildMarketingFacts(input: z.infer<typeof marketingInputSchema>) {
+  return [
+    input.street && `כתובת: ${input.street}${input.neighborhood ? `, ${input.neighborhood}` : ""}`,
+    !input.street && input.neighborhood && `אזור: ${input.neighborhood}`,
+    input.rooms && `${input.rooms} חדרים`,
+    input.sqm && `${input.sqm} מ״ר`,
+    input.floor && `קומה ${input.floor}`,
+    input.balcony && `מרפסת/גינה: ${input.balcony}`,
+    input.elevator && "מעלית",
+    input.parking && "חניה",
+    input.storage && "מחסן",
+    input.renovated && "משופץ",
+    input.price && `מחיר: ${formatMarketingPrice(input.price)}`,
+    input.exclusive && "בלעדיות Team Shay",
+  ].filter(Boolean) as string[];
+}
+
+function buildFallbackMarketingOutput(input: z.infer<typeof marketingInputSchema>, agentPhone?: string | null) {
+  const facts = buildMarketingFacts(input);
+  const location = [input.street, input.neighborhood].filter(Boolean).join(", ") || "ירושלים";
+  const price = input.price ? formatMarketingPrice(input.price) : "";
+  const phoneLine = agentPhone ? `לפרטים ותיאום: ${agentPhone}` : "לפרטים ותיאום: Team Shay";
+  const hook = `${location} — נכס שמייצר עניין כבר מהשורה הראשונה`;
+  const strongestFacts = facts.slice(0, 6);
+  const compactFacts = strongestFacts.length ? strongestFacts.join(" | ") : "פרטים מלאים אצל צוות Team Shay";
+
+  return {
+    yad2: [
+      `${hook}.`,
+      "",
+      ...facts.map((fact) => `• ${fact}`),
+      "",
+      phoneLine,
+    ].join("\n"),
+    facebook: [
+      `יש נכסים שפשוט מרגישים נכון מהרגע הראשון ✨`,
+      "",
+      `${location} מציע שילוב מדויק של מיקום, תכנון ונוחות יומיומית${price ? ` — במחיר ${price}` : ""}.`,
+      strongestFacts.length ? strongestFacts.map((fact) => `• ${fact}`).join("\n") : "",
+      "",
+      `אם אתם מחפשים בית עם נוכחות אמיתית בירושלים — שווה לראות אותו מקרוב 🏠💛`,
+      "אתם מחפשים? צרו קשר!",
+    ].filter(Boolean).join("\n"),
+    whatsapp: [
+      `*נכס חדש ב${input.neighborhood || "ירושלים"}*`,
+      compactFacts ? `*פרטים:* ${compactFacts}` : "",
+      price ? `*מחיר:* ${price}` : "",
+      input.notes ? input.notes.slice(0, 90) : "",
+      agentPhone ? `רוצים לראות? דברו איתי: ${agentPhone}` : "רוצים לראות? שלחו הודעה לצוות שי",
+    ].filter(Boolean).slice(0, 5).join("\n"),
+    instagram: [
+      `לחיות את ירושלים בקצב הנכון.`,
+      `${location}.`,
+      strongestFacts.slice(0, 3).join(" · "),
+      price ? `מחיר מבוקש: ${price}` : "",
+      `נכס שמספר סיפור של מיקום, אור ואיכות חיים.`,
+      "#נדלן_בירושלים #TeamShay #דירות_בירושלים #נכס_למכירה",
+    ].filter(Boolean).join("\n"),
+  };
 }
 
 function parseNumericInput(value: string) {
@@ -639,9 +706,72 @@ function buildFallbackCmaSummary(
       min: Math.min(recommendedMin, recommendedMax),
       max: Math.max(recommendedMin, recommendedMax),
     },
-    averagePricePerSqm: avgPricePerSqm,
-    sellerRecommendation:
-      "מומלץ לצאת לשוק עם מחיר פתיחה מדויק שמגובה בעסקאות ההשוואה, ולהצליב מול נכסים פעילים ברחובות הדומים כדי לחדד את מיצוב הנכס כבר בתחילת התהליך.",
+	    averagePricePerSqm: avgPricePerSqm,
+	    sellerRecommendation:
+	      "מומלץ לצאת לשוק עם מחיר פתיחה מדויק שמגובה בעסקאות ההשוואה, ולהצליב מול נכסים פעילים ברחובות הדומים כדי לחדד את מיצוב הנכס כבר בתחילת התהליך.",
+  };
+}
+
+function estimateJerusalemPricePerSqm(input: z.infer<typeof cmaInputSchema>) {
+  const normalizedNeighborhood = normalizeHebrewToken(input.neighborhood);
+  const premiumNeighborhoods = ["בקעה", "המושבה", "רחביה", "טלביה", "קטמון", "רסקו", "סן סימון", "ארנונה"];
+  const valueNeighborhoods = ["גילה", "קרית מנחם", "עיר גנים", "פסגת זאב", "נווה יעקב", "הר חומה"];
+  if (premiumNeighborhoods.some((neighborhood) => normalizedNeighborhood.includes(normalizeHebrewToken(neighborhood)))) return 42_000;
+  if (valueNeighborhoods.some((neighborhood) => normalizedNeighborhood.includes(normalizeHebrewToken(neighborhood)))) return 30_000;
+  return 35_000;
+}
+
+function buildManualCmaFallback(input: z.infer<typeof cmaInputSchema>, reason?: unknown) {
+  const cityName = input.city.trim() || CMA_DEFAULT_CITY_NAME;
+  const minSqm = parseNumericInput(input.minSqm);
+  const maxSqm = parseNumericInput(input.maxSqm);
+  const rooms = parseNumericInput(input.rooms) ?? 3;
+  const estimatedSqmMin = minSqm ?? Math.max(45, rooms * 22);
+  const estimatedSqmMax = maxSqm ?? Math.max(estimatedSqmMin + 8, rooms * 28);
+  const averagePricePerSqm = estimateJerusalemPricePerSqm(input);
+  const recommendedMin = roundCurrency(averagePricePerSqm * estimatedSqmMin * 0.94);
+  const recommendedMax = roundCurrency(averagePricePerSqm * estimatedSqmMax * 1.06);
+  const street = input.street.trim() || input.neighborhood.trim();
+  const broadSearchQuery = `site:yad2.co.il/realestate/forsale ${input.street || ""} ${input.neighborhood} ${cityName} ${input.rooms} חדרים`;
+  const technicalReason = reason instanceof Error ? reason.message : "";
+
+  return {
+    neighborhoodLabel: input.neighborhood,
+    settlementName: cityName,
+    deals: [] as CmaComparableDeal[],
+    streetSuggestions: [
+      {
+        street,
+        searchQuery: `${street}, ${input.neighborhood}, ${cityName}, ${input.rooms} חדרים`,
+        searchUrl: buildYad2StreetSearchUrl(street, input.neighborhood, input.rooms, cityName),
+      },
+      {
+        street: input.neighborhood,
+        searchQuery: `${input.neighborhood}, ${cityName}, ${input.rooms} חדרים`,
+        searchUrl: buildYad2StreetSearchUrl("", input.neighborhood, input.rooms, cityName),
+      },
+    ].filter((item, index, items) => item.street && items.findIndex((candidate) => candidate.street === item.street) === index),
+    broadSearchUrl: `https://www.google.com/search?q=${encodeURIComponent(broadSearchQuery)}`,
+    aiSummary: {
+      marketAnalysis: [
+        `לא התקבלה כרגע גישה מלאה למאגר העסקאות בזמן אמת עבור ${input.neighborhood}, לכן נפתח דוח עבודה שמרני לעריכה ידנית.`,
+        `העוגן הראשוני מבוסס על טווח מ"ר משוער של ${Math.round(estimatedSqmMin)}–${Math.round(estimatedSqmMax)} מ"ר ועל מחיר מ"ר שמרני לאזור ירושלים.`,
+        input.notes ? `דגשים שהוזנו: ${input.notes}.` : "",
+        technicalReason ? `הערת מערכת: ${technicalReason}` : "",
+      ].filter(Boolean).join(" "),
+      recommendedRange: {
+        min: Math.min(recommendedMin, recommendedMax),
+        max: Math.max(recommendedMin, recommendedMax),
+      },
+      averagePricePerSqm,
+      sellerRecommendation:
+        "מומלץ להזין 3–5 נכסים מתחרים ידנית בטבלה, לפתוח את חיפושי יד2 המצורפים, ואז לעדכן את טווח המחיר לפני שליחה למוכר.",
+    },
+    stats: {
+      averagePricePerSqm,
+      averageDealPrice: 0,
+      matchingDealsCount: 0,
+    },
   };
 }
 
@@ -1597,72 +1727,87 @@ export const appRouter = router({
           throw new Error("יש למלא לפחות שכונה או רחוב");
         }
 
+        const fallbackOutput = buildFallbackMarketingOutput(input, ctx.agentSession.phone);
         const apiKey = process.env.VITE_ANTHROPIC_KEY;
         if (!apiKey) {
-          throw new Error("מפתח Anthropic לא מוגדר בסביבת השרת.");
+          return fallbackOutput;
         }
 
-        const raw = await requestAnthropicMarketing(buildMarketingPrompt(input, ctx.agentSession.phone), apiKey);
+        try {
+          const raw = await requestAnthropicMarketing(buildMarketingPrompt(input, ctx.agentSession.phone), apiKey);
+          const output = {
+            yad2: extractMarketingSection(raw, /─── יד2 ───\n([\s\S]*?)(?=─── פייסבוק ───|$)/),
+            facebook: extractMarketingSection(raw, /─── פייסבוק ───\n([\s\S]*?)(?=─── וואטסאפ ───|$)/),
+            whatsapp: extractMarketingSection(raw, /─── וואטסאפ ───\n([\s\S]*?)(?=─── אינסטגרם ───|$)/),
+            instagram: extractMarketingSection(raw, /─── אינסטגרם ───\n([\s\S]*?)$/),
+          };
 
-        return {
-          yad2: extractMarketingSection(raw, /─── יד2 ───\n([\s\S]*?)(?=─── פייסבוק ───|$)/),
-          facebook: extractMarketingSection(raw, /─── פייסבוק ───\n([\s\S]*?)(?=─── וואטסאפ ───|$)/),
-          whatsapp: extractMarketingSection(raw, /─── וואטסאפ ───\n([\s\S]*?)(?=─── אינסטגרם ───|$)/),
-          instagram: extractMarketingSection(raw, /─── אינסטגרם ───\n([\s\S]*?)$/),
-        };
+          return {
+            yad2: output.yad2 || fallbackOutput.yad2,
+            facebook: output.facebook || fallbackOutput.facebook,
+            whatsapp: output.whatsapp || fallbackOutput.whatsapp,
+            instagram: output.instagram || fallbackOutput.instagram,
+          };
+        } catch {
+          return fallbackOutput;
+        }
       }),
     generateCma: agentProcedure
       .input(cmaInputSchema)
       .mutation(async ({ input }) => {
-        const neighborhoodRef = await fetchNeighborhoodReference(input.neighborhood.trim(), input.city.trim(), input.street.trim());
-        const polygonId = await fetchNeighborhoodDealsPolygonId(neighborhoodRef.point);
+        try {
+          const neighborhoodRef = await fetchNeighborhoodReference(input.neighborhood.trim(), input.city.trim(), input.street.trim());
+          const polygonId = await fetchNeighborhoodDealsPolygonId(neighborhoodRef.point);
 
-        let pageData: NadlanNeighborhoodPage | null = null;
-        if (typeof neighborhoodRef.govmapNeighborhoodId === "number" && Number.isFinite(neighborhoodRef.govmapNeighborhoodId)) {
-          try {
-            const legacyNeighborhoodId = await getLegacyNeighborhoodId(neighborhoodRef.govmapNeighborhoodId);
-            pageData = await fetchNadlanNeighborhoodPage(legacyNeighborhoodId);
-          } catch {
-            pageData = null;
+          let pageData: NadlanNeighborhoodPage | null = null;
+          if (typeof neighborhoodRef.govmapNeighborhoodId === "number" && Number.isFinite(neighborhoodRef.govmapNeighborhoodId)) {
+            try {
+              const legacyNeighborhoodId = await getLegacyNeighborhoodId(neighborhoodRef.govmapNeighborhoodId);
+              pageData = await fetchNadlanNeighborhoodPage(legacyNeighborhoodId);
+            } catch {
+              pageData = null;
+            }
           }
-        }
 
-        const rawDeals = await fetchGovmapNeighborhoodDeals(polygonId, 100);
-        const deals = selectComparableDeals(rawDeals, input);
-        if (deals.length === 0) {
-          throw new Error("לא נמצאו עסקאות השוואה מתאימות עבור השכונה והחדרים שבחרת.");
-        }
-
-        const cityName = (pageData?.settlementName ?? input.city.trim() ?? "").trim() || CMA_DEFAULT_CITY_NAME;
-        const streetSuggestions = buildStreetSuggestions(deals, pageData, input, cityName);
-        const fallbackSummary = buildFallbackCmaSummary(input, deals, pageData);
-        const apiKey = process.env.VITE_ANTHROPIC_KEY;
-
-        let aiSummary = fallbackSummary;
-        if (apiKey) {
-          try {
-            const rawSummary = await requestAnthropicMarketing(buildCmaPrompt(input, deals, pageData, cityName, fallbackSummary), apiKey);
-            aiSummary = parseCmaAiResponse(rawSummary, fallbackSummary);
-          } catch {
-            aiSummary = fallbackSummary;
+          const rawDeals = await fetchGovmapNeighborhoodDeals(polygonId, 100);
+          const deals = selectComparableDeals(rawDeals, input);
+          if (deals.length === 0) {
+            throw new Error("לא נמצאו עסקאות השוואה מתאימות עבור השכונה והחדרים שבחרת.");
           }
+
+          const cityName = (pageData?.settlementName ?? input.city.trim() ?? "").trim() || CMA_DEFAULT_CITY_NAME;
+          const streetSuggestions = buildStreetSuggestions(deals, pageData, input, cityName);
+          const fallbackSummary = buildFallbackCmaSummary(input, deals, pageData);
+          const apiKey = process.env.VITE_ANTHROPIC_KEY;
+
+          let aiSummary = fallbackSummary;
+          if (apiKey) {
+            try {
+              const rawSummary = await requestAnthropicMarketing(buildCmaPrompt(input, deals, pageData, cityName, fallbackSummary), apiKey);
+              aiSummary = parseCmaAiResponse(rawSummary, fallbackSummary);
+            } catch {
+              aiSummary = fallbackSummary;
+            }
+          }
+
+          const broadSearchQuery = `site:yad2.co.il/realestate/forsale ${input.street || ""} ${input.neighborhood} ${cityName} ${input.rooms} חדרים`;
+
+          return {
+            neighborhoodLabel: pageData?.neighborhoodName ?? neighborhoodRef.label,
+            settlementName: cityName,
+            deals,
+            streetSuggestions,
+            broadSearchUrl: `https://www.google.com/search?q=${encodeURIComponent(broadSearchQuery)}`,
+            aiSummary,
+            stats: {
+              averagePricePerSqm: aiSummary.averagePricePerSqm,
+              averageDealPrice: Math.round(deals.reduce((sum, deal) => sum + deal.price, 0) / deals.length),
+              matchingDealsCount: deals.length,
+            },
+          };
+        } catch (error) {
+          return buildManualCmaFallback(input, error);
         }
-
-        const broadSearchQuery = `site:yad2.co.il/realestate/forsale ${input.street || ""} ${input.neighborhood} ${cityName} ${input.rooms} חדרים`;
-
-        return {
-          neighborhoodLabel: pageData?.neighborhoodName ?? neighborhoodRef.label,
-          settlementName: cityName,
-          deals,
-          streetSuggestions,
-          broadSearchUrl: `https://www.google.com/search?q=${encodeURIComponent(broadSearchQuery)}`,
-          aiSummary,
-          stats: {
-            averagePricePerSqm: aiSummary.averagePricePerSqm,
-            averageDealPrice: Math.round(deals.reduce((sum, deal) => sum + deal.price, 0) / deals.length),
-            matchingDealsCount: deals.length,
-          },
-        };
       }),
   }),
   admin: router({

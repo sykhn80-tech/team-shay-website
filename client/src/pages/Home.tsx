@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { Link } from "wouter";
 import {
@@ -350,6 +350,8 @@ export default function Home() {
   const [isPropertyCarouselPaused, setIsPropertyCarouselPaused] = useState(false);
   const [selectedMarketingIndex, setSelectedMarketingIndex] = useState(0);
   const [marketingPreviewOpen, setMarketingPreviewOpen] = useState(false);
+  const testimonialsSectionRef = useRef<HTMLElement | null>(null);
+  const [testimonialsExpanded, setTestimonialsExpanded] = useState(false);
   const [testimonialPreview, setTestimonialPreview] = useState<{
     title: string;
     source: string;
@@ -575,6 +577,33 @@ export default function Home() {
   }, [homeQuery.data?.testimonials]);
 
   const visibleTestimonials = useMemo(() => editableTestimonials, [editableTestimonials]);
+  const displayedTestimonials = useMemo(
+    () => visibleTestimonials.slice(0, testimonialsExpanded ? 6 : 1),
+    [testimonialsExpanded, visibleTestimonials],
+  );
+
+  useEffect(() => {
+    if (testimonialsExpanded) return;
+    const section = testimonialsSectionRef.current;
+    if (!section) return;
+
+    let revealTimer: number | undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          revealTimer = window.setTimeout(() => setTestimonialsExpanded(true), 1000);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.35 },
+    );
+
+    observer.observe(section);
+    return () => {
+      observer.disconnect();
+      if (revealTimer) window.clearTimeout(revealTimer);
+    };
+  }, [testimonialsExpanded]);
 
   useEffect(() => {
     let phraseIndex = 0;
@@ -1338,7 +1367,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="testimonials" className="bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
+        <section ref={testimonialsSectionRef} id="testimonials" className="bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#D4AF37]" style={{fontSize: "24px"}}>המלצות</p>
@@ -1351,8 +1380,13 @@ export default function Home() {
                   טוענים המלצות מהמערכת...
                 </div>
               ) : visibleTestimonials.length ? (
-                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3" aria-label="קיר המלצות חי">
-                  {visibleTestimonials.map((testimonial) => (
+                <div
+                  className={`grid gap-6 transition-all duration-700 ${
+                    testimonialsExpanded ? "md:grid-cols-2 xl:grid-cols-3" : "mx-auto max-w-xl"
+                  }`}
+                  aria-label="קיר המלצות חי"
+                >
+                  {displayedTestimonials.map((testimonial, index) => (
                     <button
                       type="button"
                       key={testimonial.id}
@@ -1367,7 +1401,10 @@ export default function Home() {
                             })
                           : undefined
                       }
-                      className="group flex min-h-[34rem] cursor-pointer flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition duration-300 hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25"
+                      className={`group flex min-h-[34rem] cursor-pointer flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition duration-500 hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25 ${
+                        testimonialsExpanded ? "animate-in fade-in slide-in-from-bottom-4" : "scale-[1.02]"
+                      }`}
+                      style={{ transitionDelay: testimonialsExpanded ? `${Math.min(index, 5) * 80}ms` : "0ms" }}
                     >
                       {testimonial.whatsappImageUrl ? (
                         <div className="relative h-72 overflow-hidden bg-slate-950 md:h-80" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
