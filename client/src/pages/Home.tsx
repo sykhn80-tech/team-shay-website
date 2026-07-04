@@ -1383,14 +1383,14 @@ export default function Home() {
           </div>
         </section>
 
-        <section ref={testimonialsSectionRef} id="testimonials" className="bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
+        <section ref={testimonialsSectionRef} id="testimonials" className="bg-white px-4 py-14 text-[#1A1A1A] md:px-6 md:py-20">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#D4AF37]" style={{fontSize: "24px"}}>המלצות</p>
-              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]" style={{fontSize: "70px"}}>לקוחות משתפים</h2>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#D4AF37]" style={{fontSize: "20px"}}>המלצות</p>
+              <h2 className="mt-3 text-[2rem] font-extrabold md:text-[3.25rem]">לקוחות משתפים</h2>
             </div>
 
-            <div className="mx-auto mt-12 max-w-7xl">
+            <div className="mx-auto mt-9 max-w-7xl">
               {homeQuery.isLoading ? (
                 <div className="rounded-[30px] border border-slate-200 bg-white p-8 text-center text-slate-500">
                   טוענים המלצות מהמערכת...
@@ -1398,13 +1398,13 @@ export default function Home() {
               ) : visibleTestimonials.length ? (
                 <div
                   className={testimonialsExpanded
-                    ? "grid gap-6 transition-all duration-1000 ease-out md:grid-cols-2 xl:grid-cols-3"
-                    : "relative mx-auto min-h-[43rem] max-w-4xl overflow-visible py-8 transition-all duration-1000 ease-out"}
+                    ? "grid gap-4 transition-all duration-1000 ease-out sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+                    : "relative mx-auto min-h-[39rem] max-w-4xl overflow-visible py-6 transition-all duration-1000 ease-out"}
                   aria-label="קיר המלצות חי"
                 >
                   {!testimonialsExpanded ? (
                     <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center">
-                      <span className="h-[34rem] w-full max-w-xl rounded-[34px] bg-[#D4AF37]/15 blur-3xl" />
+                      <span className="h-[30rem] w-full max-w-lg rounded-[34px] bg-[#D4AF37]/15 blur-3xl" />
                     </div>
                   ) : null}
 
@@ -1415,17 +1415,17 @@ export default function Home() {
                       type="button"
                       key={testimonial.id}
                       onClick={() => openTestimonialPreview(testimonial)}
-                      className={`group flex min-h-[34rem] cursor-pointer flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25 ${
+                      className={`group flex cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25 ${
                         testimonialsExpanded
-                          ? "relative animate-in fade-in slide-in-from-bottom-8 duration-1000"
-                          : "absolute left-1/2 top-0 w-full max-w-xl duration-[1300ms] hover:-translate-y-3"
+                          ? "relative min-h-[25rem] animate-in fade-in slide-in-from-bottom-8 duration-1000"
+                          : "absolute left-1/2 top-0 min-h-[32rem] w-full max-w-lg duration-[1300ms] hover:-translate-y-3"
                       }`}
                       style={testimonialsExpanded
                         ? { transitionDelay: `${Math.min(index, 5) * 150}ms`, animationDelay: `${Math.min(index, 5) * 150}ms` }
                         : { ...stackedStyle, transitionDelay: `${index * 90}ms` }}
                     >
                       {testimonial.whatsappImageUrl ? (
-                        <div className="relative h-72 overflow-hidden bg-slate-950 md:h-80" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
+                        <div className={`relative overflow-hidden bg-slate-950 ${testimonialsExpanded ? "h-40 md:h-44 xl:h-48" : "h-64 md:h-72"}`} aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                           {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
                             <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" muted playsInline preload="metadata" />
                           ) : (
@@ -1438,19 +1438,19 @@ export default function Home() {
                           </span>
                         </div>
                       ) : null}
-                      <div className="flex flex-1 flex-col p-6">
-                        <div className="flex items-start justify-between gap-4">
+                      <div className={`flex flex-1 flex-col ${testimonialsExpanded ? "p-4" : "p-6"}`}>
+                        <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-xl font-black text-slate-950">{testimonial.title}</p>
-                            <p className="mt-1 text-sm font-bold tracking-[0.02em] text-[#D4AF37]">{testimonial.source}</p>
+                            <p className={testimonialsExpanded ? "text-base font-black text-slate-950" : "text-xl font-black text-slate-950"}>{testimonial.title}</p>
+                            <p className={testimonialsExpanded ? "mt-1 text-xs font-bold tracking-[0.02em] text-[#D4AF37]" : "mt-1 text-sm font-bold tracking-[0.02em] text-[#D4AF37]"}>{testimonial.source}</p>
                           </div>
                           <div className="flex items-center gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
                             {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
-                              <Star key={`${testimonial.id}-${starIndex}`} className="size-5 fill-current" />
+                              <Star key={`${testimonial.id}-${starIndex}`} className={`${testimonialsExpanded ? "size-3.5" : "size-5"} fill-current`} />
                             ))}
                           </div>
                         </div>
-                        <p className="mt-4 flex-1 text-[1.04rem] font-semibold leading-8 text-slate-600">{testimonial.quote}</p>
+                        <p className={testimonialsExpanded ? "mt-3 line-clamp-5 flex-1 text-sm font-semibold leading-6 text-slate-600" : "mt-4 flex-1 text-[1.04rem] font-semibold leading-8 text-slate-600"}>{testimonial.quote}</p>
                       </div>
                     </button>
                     );
