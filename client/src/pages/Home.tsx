@@ -577,10 +577,26 @@ export default function Home() {
   }, [homeQuery.data?.testimonials]);
 
   const visibleTestimonials = useMemo(() => editableTestimonials, [editableTestimonials]);
-  const displayedTestimonials = useMemo(
-    () => visibleTestimonials.slice(0, testimonialsExpanded ? 6 : 1),
-    [testimonialsExpanded, visibleTestimonials],
-  );
+  const testimonialCards = useMemo(() => visibleTestimonials.slice(0, 6), [visibleTestimonials]);
+  const openTestimonialPreview = useCallback((testimonial: (typeof testimonialCards)[number]) => {
+    if (!testimonial.whatsappImageUrl) return;
+    setTestimonialPreview({
+      title: testimonial.title,
+      source: testimonial.source,
+      quote: testimonial.quote,
+      stars: testimonial.stars,
+      whatsappImageUrl: testimonial.whatsappImageUrl ?? null,
+    });
+  }, []);
+
+  const testimonialStackStyles = useMemo(() => [
+    { transform: "translate3d(-50%, 0, 0) rotate(0deg) scale(1)", zIndex: 30, opacity: 1 },
+    { transform: "translate3d(-57%, 22px, 0) rotate(-5deg) scale(0.96)", zIndex: 25, opacity: 0.72 },
+    { transform: "translate3d(-43%, 34px, 0) rotate(5deg) scale(0.94)", zIndex: 24, opacity: 0.66 },
+    { transform: "translate3d(-63%, 58px, 0) rotate(-8deg) scale(0.9)", zIndex: 20, opacity: 0.48 },
+    { transform: "translate3d(-37%, 72px, 0) rotate(8deg) scale(0.88)", zIndex: 19, opacity: 0.42 },
+    { transform: "translate3d(-50%, 94px, 0) rotate(0deg) scale(0.84)", zIndex: 18, opacity: 0.36 },
+  ], []);
 
   useEffect(() => {
     if (testimonialsExpanded) return;
@@ -591,7 +607,7 @@ export default function Home() {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          revealTimer = window.setTimeout(() => setTestimonialsExpanded(true), 1000);
+          revealTimer = window.setTimeout(() => setTestimonialsExpanded(true), 1600);
           observer.disconnect();
         }
       },
@@ -1381,40 +1397,42 @@ export default function Home() {
                 </div>
               ) : visibleTestimonials.length ? (
                 <div
-                  className={`grid gap-6 transition-all duration-700 ${
-                    testimonialsExpanded ? "md:grid-cols-2 xl:grid-cols-3" : "mx-auto max-w-xl"
-                  }`}
+                  className={testimonialsExpanded
+                    ? "grid gap-6 transition-all duration-1000 ease-out md:grid-cols-2 xl:grid-cols-3"
+                    : "relative mx-auto min-h-[43rem] max-w-4xl overflow-visible py-8 transition-all duration-1000 ease-out"}
                   aria-label="קיר המלצות חי"
                 >
-                  {displayedTestimonials.map((testimonial, index) => (
+                  {!testimonialsExpanded ? (
+                    <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center">
+                      <span className="h-[34rem] w-full max-w-xl rounded-[34px] bg-[#D4AF37]/15 blur-3xl" />
+                    </div>
+                  ) : null}
+
+                  {testimonialCards.map((testimonial, index) => {
+                    const stackedStyle = testimonialStackStyles[index] ?? testimonialStackStyles[0];
+                    return (
                     <button
                       type="button"
                       key={testimonial.id}
-                      onClick={() =>
-                        testimonial.whatsappImageUrl
-                          ? setTestimonialPreview({
-                              title: testimonial.title,
-                              source: testimonial.source,
-                              quote: testimonial.quote,
-                              stars: testimonial.stars,
-                              whatsappImageUrl: testimonial.whatsappImageUrl ?? null,
-                            })
-                          : undefined
-                      }
-                      className={`group flex min-h-[34rem] cursor-pointer flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition duration-500 hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25 ${
-                        testimonialsExpanded ? "animate-in fade-in slide-in-from-bottom-4" : "scale-[1.02]"
+                      onClick={() => openTestimonialPreview(testimonial)}
+                      className={`group flex min-h-[34rem] cursor-pointer flex-col overflow-hidden rounded-[30px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25 ${
+                        testimonialsExpanded
+                          ? "relative animate-in fade-in slide-in-from-bottom-8 duration-1000"
+                          : "absolute left-1/2 top-0 w-full max-w-xl duration-[1300ms] hover:-translate-y-3"
                       }`}
-                      style={{ transitionDelay: testimonialsExpanded ? `${Math.min(index, 5) * 80}ms` : "0ms" }}
+                      style={testimonialsExpanded
+                        ? { transitionDelay: `${Math.min(index, 5) * 150}ms`, animationDelay: `${Math.min(index, 5) * 150}ms` }
+                        : { ...stackedStyle, transitionDelay: `${index * 90}ms` }}
                     >
                       {testimonial.whatsappImageUrl ? (
                         <div className="relative h-72 overflow-hidden bg-slate-950 md:h-80" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                           {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
-                            <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105" muted playsInline preload="metadata" />
+                            <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" muted playsInline preload="metadata" />
                           ) : (
-                            <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-105" loading="lazy" />
+                            <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" loading="lazy" />
                           )}
-                          <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 transition duration-300 group-hover:opacity-100" />
-                          <span className="absolute bottom-4 right-4 inline-flex translate-y-3 items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2 text-sm font-black text-[#1A1A1A] opacity-0 shadow-lg transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                          <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
+                          <span className="absolute bottom-4 right-4 inline-flex translate-y-3 items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2 text-sm font-black text-[#1A1A1A] opacity-0 shadow-lg transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
                             {isVideoMediaUrl(testimonial.whatsappImageUrl) ? <Play className="size-4 fill-current" /> : <MessageCircle className="size-4" />}
                             לחצו לצפייה
                           </span>
@@ -1435,7 +1453,8 @@ export default function Home() {
                         <p className="mt-4 flex-1 text-[1.04rem] font-semibold leading-8 text-slate-600">{testimonial.quote}</p>
                       </div>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="rounded-[30px] border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
