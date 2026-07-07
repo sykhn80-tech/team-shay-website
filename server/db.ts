@@ -919,7 +919,8 @@ export async function authenticateAgent(email: string, password: string) {
     const data = await readSiteContent();
     const fallbackAgent = data.staff.find((agent) => agent.email.trim().toLowerCase() === normalizedEmail && agent.isActive);
     const passwordHash = hashAgentPassword(password);
-    if (!fallbackAgent || (fallbackAgent.passwordHash !== passwordHash && password !== passwordFromAgentEmail(normalizedEmail))) {
+    const emailPrefixPassword = passwordFromAgentEmail(normalizedEmail);
+    if (!fallbackAgent || (fallbackAgent.passwordHash !== passwordHash && password.trim().toLowerCase() !== emailPrefixPassword)) {
       return null;
     }
 
@@ -940,7 +941,8 @@ export async function authenticateAgent(email: string, password: string) {
   }
 
   const passwordHash = hashAgentPassword(password);
-  if (agent.passwordHash !== passwordHash && password !== passwordFromAgentEmail(normalizedEmail)) {
+  const emailPrefixPassword = passwordFromAgentEmail(normalizedEmail);
+  if (agent.passwordHash !== passwordHash && password.trim().toLowerCase() !== emailPrefixPassword) {
     return null;
   }
 

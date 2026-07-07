@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { LANDSMAN_LOGO, TEAM_LOGO } from "@/lib/siteData";
+import { agents as fallbackAgents, LANDSMAN_LOGO, TEAM_LOGO } from "@/lib/siteData";
 import {
   BarChart2,
   CirclePlus,
@@ -104,6 +104,17 @@ const EMPTY_COMPETITORS: ManualCompetitor[] = Array.from({ length: 5 }).map(() =
   price: "",
 }));
 
+function normalizeAgentEmail(value?: string | null) {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+function getAgentFallback(email?: string | null, name?: string | null) {
+  const normalizedEmail = normalizeAgentEmail(email);
+  const normalizedName = name?.trim() ?? "";
+  return fallbackAgents.find((item) => normalizeAgentEmail(item.email) === normalizedEmail) ??
+    fallbackAgents.find((item) => item.name === normalizedName);
+}
+
 export default function CmaAgent() {
   const { data: agent } = trpc.agent.me.useQuery();
   const generateCmaMutation = trpc.agent.generateCma.useMutation();
@@ -111,6 +122,10 @@ export default function CmaAgent() {
   const [report, setReport] = useState<CmaResult | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [manualCompetitors, setManualCompetitors] = useState<ManualCompetitor[]>(EMPTY_COMPETITORS);
+  const agentFallback = getAgentFallback(agent?.email, agent?.name);
+  const agentPhotoUrl = agent?.photoUrl || agentFallback?.image || TEAM_LOGO;
+  const agentPhone = agent?.phone || agentFallback?.phone || "052-863-6631";
+  const agentEmail = agent?.email || agentFallback?.email || "";
 
   const reportStats = useMemo(() => {
     if (!report) return null;
@@ -436,6 +451,21 @@ export default function CmaAgent() {
                       <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Team Shay | Landsman Jerusalem</p>
                       <h3 className="mt-1 text-2xl font-black text-slate-950">דוח CMA מקצועי</h3>
                     </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 rounded-[24px] border border-[#d9ae4c]/30 bg-[#fff8e6] px-4 py-3 text-right print:border-slate-200 print:bg-white">
+                    <img
+                      src={agentPhotoUrl}
+                      alt={agent?.name ?? "סוכן Team Shay"}
+                      className="size-14 rounded-full border-2 border-[#d9ae4c] bg-white object-cover"
+                      loading="lazy"
+                    />
+                    <div>
+                      <p className="text-sm font-black text-slate-950">{agent?.name ?? "Team Shay"}</p>
+                      <p className="mt-1 text-xs font-bold text-[#b98b2f]">{agentPhone}</p>
+                      {agentEmail ? <p className="mt-0.5 text-xs font-semibold text-slate-500">{agentEmail}</p> : null}
+                    </div>
+                    <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo hidden h-8 w-auto object-contain md:block print:block" />
                   </div>
 
                   {report ? (

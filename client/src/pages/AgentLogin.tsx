@@ -159,7 +159,7 @@ export default function AgentLogin() {
               <p className="mt-6 text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">התחברות סוכן</p>
               <h2 className="mt-3 text-3xl font-black text-black">כניסה למסך הניהול</h2>
               <p className="mt-4 text-base leading-7 text-slate-600">
-                התחברו עם האימייל והסיסמה שהוגדרו לכרטיס הסוכן שלכם, ולאחר אימות תועברו בהפניה מלאה ישירות למסך האדמין.
+                התחברו עם האימייל שלכם. הסיסמה היא תחילת כתובת המייל לפני הסימן @ ולאחר אימות תועברו ישירות למסך האדמין.
               </p>
             </div>
 

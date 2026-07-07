@@ -301,7 +301,7 @@ const meetingSchema = z.object({
 
 const activityTypeSchema = z.enum(["meetings", "buyer_tours", "calls", "followups", "recruitments"]);
 
-const CMA_DEFAULT_CITY_NAME = "ישראל";
+const CMA_DEFAULT_CITY_NAME = "ירושלים";
 const NADLAN_NEIGHBORHOOD_INDEX_TTL_MS = 1000 * 60 * 60 * 6;
 
 type GovmapAutocompletePayload = {
@@ -439,7 +439,9 @@ ${details}
 
 ─── יד2 ───
 נוסח מקצועי, עובדתי וללא אימוג'ים.
-מבנה חובה: שורת פתיחה חזקה ומדויקת, רשימת תבליטים של פרטי הנכס, ושורת סיום עם מספר הטלפון שסופק.
+אסור להשתמש בסימנים מיוחדים בכלל: בלי נקודות, פסיקים, מקפים, תבליטים, כוכביות, גרשיים, אימוג'ים או סימני מטבע.
+מותר להשתמש רק באותיות, ספרות, רווחים ושבירת שורה.
+מבנה חובה: שורת פתיחה חזקה ומדויקת, פרטי הנכס בשורות קצרות ללא תבליטים, ושורת סיום עם מספר הטלפון שסופק.
 אם לא סופק טלפון, סיים בקריאה ישירה ליצירת קשר עם Team Shay.
 
 ─── פייסבוק ───
@@ -489,9 +491,9 @@ function buildFallbackMarketingOutput(input: z.infer<typeof marketingInputSchema
 
   return {
     yad2: [
-      `${hook}.`,
+      hook,
       "",
-      ...facts.map((fact) => `• ${fact}`),
+      ...facts,
       "",
       phoneLine,
     ].join("\n"),
@@ -520,6 +522,17 @@ function buildFallbackMarketingOutput(input: z.infer<typeof marketingInputSchema
       "#נדלן_בירושלים #TeamShay #דירות_בירושלים #נכס_למכירה",
     ].filter(Boolean).join("\n"),
   };
+}
+
+function sanitizeYad2Copy(value: string) {
+  return value
+    .replace(/[^A-Za-z0-9\u0590-\u05FF\s\n]/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n")
+    .trim();
 }
 
 function parseNumericInput(value: string) {
@@ -556,9 +569,13 @@ function roundCurrency(value: number) {
   return Math.round(value / 1000) * 1000;
 }
 
-function buildComparableAddress(streetName: string | null | undefined, houseNum: number | null | undefined) {
-  if (streetName && houseNum) return `${streetName} ${houseNum}`;
-  if (streetName) return streetName;
+function buildComparableAddress(streetName: string | null | undefined, houseNum: number | string | null | undefined) {
+  const street = typeof streetName === "string" ? streetName.trim() : "";
+  const normalizedHouseNumber = String(houseNum ?? "").trim();
+  const hasHouseNumber = normalizedHouseNumber !== "" && normalizedHouseNumber !== "0";
+
+  if (street && hasHouseNumber) return `${street} ${normalizedHouseNumber}`;
+  if (street) return street;
   return "כתובת לא זמינה";
 }
 
@@ -1031,6 +1048,12 @@ function selectComparableDeals(
     pricePerSqmSpread: number | null;
   };
 
+  const streetRelationRank: Record<StreetRelation, number> = {
+    same: 0,
+    near: 1,
+    neighborhood: 2,
+  };
+
   const normalizedNeighborhood = normalizeHebrewToken(input.neighborhood);
   const normalizedStreet = normalizeHebrewToken(input.street);
   const targetRooms = parseNumericInput(input.rooms);
@@ -1067,21 +1090,28 @@ function selectComparableDeals(
         (normalizedDealNeighborhood.includes(normalizedNeighborhood) || normalizedNeighborhood.includes(normalizedDealNeighborhood))
           ? 0
           : 10000;
+      const streetTokenOverlap =
+        normalizedStreet && normalizedDealStreet
+          ? normalizedStreet
+              .split(" ")
+              .filter((token) => token.length > 1)
+              .some((token) => normalizedDealStreet.includes(token))
+          : false;
       const streetRelation: StreetRelation =
         normalizedStreet && normalizedDealStreet
           ? normalizedDealStreet === normalizedStreet
             ? "same"
-            : normalizedDealStreet.includes(normalizedStreet) || normalizedStreet.includes(normalizedDealStreet)
+            : normalizedDealStreet.includes(normalizedStreet) || normalizedStreet.includes(normalizedDealStreet) || streetTokenOverlap
               ? "near"
               : "neighborhood"
           : "neighborhood";
       const streetMatchScore =
         streetRelation === "same"
-          ? -2000
+          ? -9000
           : streetRelation === "near"
-            ? -1000
+            ? -5500
             : normalizedStreet
-              ? 1200
+              ? 3500
               : 0;
       const dataPoints = [
         typeof deal.assetRoomNum === "number",
@@ -1093,7 +1123,12 @@ function selectComparableDeals(
 
       return {
         deal,
-        score: neighborhoodMatchScore + streetMatchScore + (roomDelta ?? 0) * 1000 + sqmPenalty * 5 + recencyDays,
+        score:
+          neighborhoodMatchScore +
+          streetMatchScore +
+          (roomDelta ?? 0) * 2200 +
+          sqmPenalty * 6 +
+          recencyDays * 0.8,
         isRecent: !Number.isNaN(dealDate.getTime()) && dealDate >= fromDate,
         strictNeighborhoodMatch:
           Boolean(normalizedNeighborhood) &&
@@ -1113,7 +1148,15 @@ function selectComparableDeals(
 
   const scoredDeals = allScoredDeals
     .filter((entry) => entry.isRecent && entry.strictNeighborhoodMatch && (entry.deal.dealAmount as number) >= CMA_MIN_DEAL_PRICE)
-    .sort((left, right) => left.score - right.score);
+    .sort((left, right) => {
+      const streetDiff = streetRelationRank[left.streetRelation] - streetRelationRank[right.streetRelation];
+      if (streetDiff !== 0) return streetDiff;
+
+      const roomDiff = (left.roomDelta ?? 99) - (right.roomDelta ?? 99);
+      if (roomDiff !== 0) return roomDiff;
+
+      return left.recencyDays - right.recencyDays;
+    });
 
   const topRankedForReference = scoredDeals.slice(0, 25);
   const pricePerSqmReferencePool = topRankedForReference
@@ -1145,13 +1188,21 @@ function selectComparableDeals(
     5,
   );
 
-  const fallbackScopedDeals: ScoredEntry[] =
-    tightDeals.length > 0
-      ? tightDeals
-      : allScoredDeals
-          .filter((entry) => entry.isRecent && (entry.deal.dealAmount as number) >= CMA_MIN_DEAL_PRICE)
-          .sort((left, right) => left.score - right.score)
-          .slice(0, 8);
+	  const fallbackScopedDeals: ScoredEntry[] =
+	    tightDeals.length > 0
+	      ? tightDeals
+	      : allScoredDeals
+	          .filter((entry) => entry.isRecent && (entry.deal.dealAmount as number) >= CMA_MIN_DEAL_PRICE)
+	          .sort((left, right) => {
+	            const streetDiff = streetRelationRank[left.streetRelation] - streetRelationRank[right.streetRelation];
+	            if (streetDiff !== 0) return streetDiff;
+
+	            const roomDiff = (left.roomDelta ?? 99) - (right.roomDelta ?? 99);
+	            if (roomDiff !== 0) return roomDiff;
+
+	            return left.recencyDays - right.recencyDays;
+	          })
+	          .slice(0, 8);
 
   const assessedDeals = fallbackScopedDeals.map((entry) => {
     let matchScore = 0;
@@ -1219,9 +1270,20 @@ function selectComparableDeals(
     };
   });
 
-  const qualityScopedDeals = assessedDeals
-    .filter((entry) => entry.matchScore >= CMA_MATCH_MIN_QUALITY_SCORE)
-    .sort((left, right) => right.matchScore - left.matchScore);
+	  const qualityScopedDeals = assessedDeals
+	    .filter((entry) => entry.matchScore >= CMA_MATCH_MIN_QUALITY_SCORE)
+	    .sort((left, right) => {
+        const streetDiff = streetRelationRank[left.streetRelation] - streetRelationRank[right.streetRelation];
+        if (streetDiff !== 0) return streetDiff;
+
+        const roomDiff = (left.roomDelta ?? 99) - (right.roomDelta ?? 99);
+        if (roomDiff !== 0) return roomDiff;
+
+        const recencyDiff = left.recencyDays - right.recencyDays;
+        if (recencyDiff !== 0) return recencyDiff;
+
+        return right.matchScore - left.matchScore;
+      });
 
   const limitedDeals =
     qualityScopedDeals.length >= 5 && qualityScopedDeals[4].matchScore >= 86
@@ -1730,7 +1792,10 @@ export const appRouter = router({
         const fallbackOutput = buildFallbackMarketingOutput(input, ctx.agentSession.phone);
         const apiKey = process.env.VITE_ANTHROPIC_KEY;
         if (!apiKey) {
-          return fallbackOutput;
+          return {
+            ...fallbackOutput,
+            yad2: sanitizeYad2Copy(fallbackOutput.yad2),
+          };
         }
 
         try {
@@ -1743,13 +1808,16 @@ export const appRouter = router({
           };
 
           return {
-            yad2: output.yad2 || fallbackOutput.yad2,
+            yad2: sanitizeYad2Copy(output.yad2 || fallbackOutput.yad2),
             facebook: output.facebook || fallbackOutput.facebook,
             whatsapp: output.whatsapp || fallbackOutput.whatsapp,
             instagram: output.instagram || fallbackOutput.instagram,
           };
         } catch {
-          return fallbackOutput;
+          return {
+            ...fallbackOutput,
+            yad2: sanitizeYad2Copy(fallbackOutput.yad2),
+          };
         }
       }),
     generateCma: agentProcedure
