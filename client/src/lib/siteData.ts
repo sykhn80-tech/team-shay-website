@@ -64,7 +64,8 @@ export const agents = [
     email: "eliyamarciano1@gmail.com",
     phone: "050-254-0855",
     image: "/agents/eliya-card.jpeg",
-    imagePosition: "center 34%",
+    imagePosition: "center center",
+    imageFit: "contain",
   },
   {
     id: "yarden",
