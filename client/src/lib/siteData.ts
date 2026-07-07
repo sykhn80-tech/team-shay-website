@@ -45,7 +45,7 @@ export const agents = [
     email: "aviad5436@gmail.com",
     phone: "052-533-5251",
     image: "/agents/aviad-card.jpeg",
-    imagePosition: "center center",
+    imagePosition: "center 35%",
   },
   {
     id: "ronen",

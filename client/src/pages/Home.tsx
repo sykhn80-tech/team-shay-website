@@ -200,7 +200,7 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       phone: "052-533-5251",
       expertise: "סוכן מוכרים. מומחה לאזור גילה והר חומה",
       image: AVIAD_IMAGE_URL,
-      imagePosition: "center center",
+      imagePosition: "center 35%",
     },
   ],
   [
@@ -210,7 +210,7 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       phone: "052-533-5251",
       expertise: "סוכן מוכרים. מומחה לאזור גילה והר חומה",
       image: AVIAD_IMAGE_URL,
-      imagePosition: "center center",
+      imagePosition: "center 35%",
     },
   ],
   [
@@ -1421,11 +1421,11 @@ export default function Home() {
                         type="button"
                         key={`grid-${testimonial.id}`}
                         onClick={() => openTestimonialPreview(testimonial)}
-                        className="group relative flex min-h-[25rem] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25"
+                        className="group relative flex min-h-[23rem] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25"
                         style={{ transitionDelay: testimonialsExpanded ? `${Math.min(index, 5) * 150}ms` : "0ms" }}
                       >
                         {testimonial.whatsappImageUrl ? (
-                          <div className="relative h-56 overflow-hidden bg-[#FDF8F0] md:h-60 xl:h-64" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
+                          <div className="relative h-44 overflow-hidden bg-[#1A1A1A] md:h-48 xl:h-52" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                             {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
                               <video src={testimonial.whatsappImageUrl} className="h-full w-full object-contain" muted playsInline preload="metadata" />
                             ) : (
@@ -1457,13 +1457,13 @@ export default function Home() {
                   </div>
 
                   <div
-                    className={`absolute inset-x-0 top-3 flex min-h-[25rem] justify-center transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    className={`absolute inset-x-0 top-3 flex min-h-[23rem] justify-center transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                       testimonialsExpanded ? "pointer-events-none -translate-y-2 opacity-0 blur-[1px]" : "translate-y-0 opacity-100 blur-0"
                     }`}
                     aria-hidden={testimonialsExpanded}
                   >
                     <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center">
-                      <span className="h-[24rem] w-full max-w-[14rem] rounded-[34px] bg-[#D4AF37]/15 blur-3xl" />
+                      <span className="h-[22rem] w-full max-w-[14rem] rounded-[34px] bg-[#D4AF37]/15 blur-3xl" />
                     </div>
                     {testimonialCards.map((testimonial, index) => {
                       const stackedStyle = testimonialStackStyles[index] ?? testimonialStackStyles[0];
@@ -1472,11 +1472,11 @@ export default function Home() {
                           type="button"
                           key={`stack-${testimonial.id}`}
                           onClick={() => openTestimonialPreview(testimonial)}
-                          className="group absolute left-1/2 top-0 flex min-h-[25rem] w-full max-w-[14rem] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1500ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-3 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25"
+                          className="group absolute left-1/2 top-0 flex min-h-[23rem] w-full max-w-[14rem] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1500ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-3 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25"
                           style={{ ...stackedStyle, transitionDelay: `${index * 120}ms` }}
                         >
                           {testimonial.whatsappImageUrl ? (
-                            <div className="relative h-56 overflow-hidden bg-[#FDF8F0] md:h-60 xl:h-64" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
+                            <div className="relative h-44 overflow-hidden bg-[#1A1A1A] md:h-48 xl:h-52" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                               {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
                                 <video src={testimonial.whatsappImageUrl} className="h-full w-full object-contain" muted playsInline preload="metadata" />
                               ) : (
