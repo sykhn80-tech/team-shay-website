@@ -123,7 +123,8 @@ export default function CmaAgent() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [manualCompetitors, setManualCompetitors] = useState<ManualCompetitor[]>(EMPTY_COMPETITORS);
   const agentFallback = getAgentFallback(agent?.email, agent?.name);
-  const agentPhotoUrl = agent?.photoUrl || agentFallback?.image || TEAM_LOGO;
+  const agentPhotoUrl = agent?.photoUrl || agentFallback?.image || "";
+  const agentDisplayName = agent?.name ?? agentFallback?.name ?? "Team Shay";
   const agentPhone = agent?.phone || agentFallback?.phone || "052-863-6631";
   const agentEmail = agent?.email || agentFallback?.email || "";
 
@@ -454,18 +455,23 @@ export default function CmaAgent() {
                   </div>
 
                   <div className="flex items-center gap-3 rounded-[24px] border border-[#d9ae4c]/30 bg-[#fff8e6] px-4 py-3 text-right print:border-slate-200 print:bg-white">
-                    <img
-                      src={agentPhotoUrl}
-                      alt={agent?.name ?? "סוכן Team Shay"}
-                      className="size-14 rounded-full border-2 border-[#d9ae4c] bg-white object-cover"
-                      loading="lazy"
-                    />
+                    {agentPhotoUrl ? (
+                      <img
+                        src={agentPhotoUrl}
+                        alt={agentDisplayName}
+                        className="size-14 rounded-full border-2 border-[#d9ae4c] bg-white object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="grid size-14 place-items-center rounded-full border-2 border-[#d9ae4c] bg-white text-lg font-black text-[#1A1A1A]">
+                        {agentDisplayName.slice(0, 1)}
+                      </span>
+                    )}
                     <div>
-                      <p className="text-sm font-black text-slate-950">{agent?.name ?? "Team Shay"}</p>
+                      <p className="text-sm font-black text-slate-950">{agentDisplayName}</p>
                       <p className="mt-1 text-xs font-bold text-[#b98b2f]">{agentPhone}</p>
                       {agentEmail ? <p className="mt-0.5 text-xs font-semibold text-slate-500">{agentEmail}</p> : null}
                     </div>
-                    <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo hidden h-8 w-auto object-contain md:block print:block" />
                   </div>
 
                   {report ? (

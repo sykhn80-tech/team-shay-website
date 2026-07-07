@@ -396,7 +396,7 @@ type CmaStreetSuggestion = {
 type CmaAiSummary = z.infer<typeof cmaAiSummarySchema>;
 
 const CMA_MAX_PRICE_PER_SQM_SPREAD = 15_000;
-const CMA_MIN_DEAL_PRICE = 850_000;
+const CMA_MIN_DEAL_PRICE = 1_500_000;
 const CMA_MATCH_MIN_QUALITY_SCORE = 58;
 
 let cachedNadlanNeighborhoodIndex: Record<string, NadlanNeighborhoodIndexEntry> | null = null;
