@@ -183,6 +183,7 @@ type AgentDisplayOverride = {
   expertise?: string;
   image?: string;
   imagePosition?: string;
+  imageFit?: "cover" | "contain";
 };
 
 const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
@@ -223,7 +224,8 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       phone: "050-254-0855",
       expertise: "מלווה משקיעים ורוכשים",
       image: ELIYA_IMAGE_URL,
-      imagePosition: "center 34%",
+      imagePosition: "center center",
+      imageFit: "contain",
     },
   ],
   [
@@ -233,7 +235,8 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       phone: "050-254-0855",
       expertise: "מלווה משקיעים ורוכשים",
       image: ELIYA_IMAGE_URL,
-      imagePosition: "center 34%",
+      imagePosition: "center center",
+      imageFit: "contain",
     },
   ],
   [
@@ -407,6 +410,7 @@ export default function Home() {
             email: agent.email || displayOverride?.email || "",
             image: displayOverride?.image || fallbackByName?.image || agent.photoUrl || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
             imagePosition: displayOverride?.imagePosition || fallbackAgent?.imagePosition || "center 20%",
+            imageFit: displayOverride?.imageFit || (fallbackAgent as { imageFit?: "cover" | "contain" })?.imageFit || "cover",
           };
         })(),
       }));
@@ -421,6 +425,7 @@ export default function Home() {
         phone: displayOverride?.phone || agent.phone,
         image: displayOverride?.image || agent.image,
         imagePosition: displayOverride?.imagePosition || agent.imagePosition,
+        imageFit: displayOverride?.imageFit || (agent as { imageFit?: "cover" | "contain" }).imageFit || "cover",
       };
     });
   }, [homeQuery.data?.agents, officePhone]);
@@ -998,7 +1003,7 @@ export default function Home() {
                     <img
                       src={agent.image}
                       alt={agent.name}
-                      className="h-full w-full object-cover"
+                      className={`h-full w-full ${agent.imageFit === "contain" ? "object-contain p-1" : "object-cover"}`}
                       style={{ objectPosition: agent.imagePosition }}
                       loading="lazy"
                     />
