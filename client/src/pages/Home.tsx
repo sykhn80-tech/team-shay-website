@@ -184,6 +184,7 @@ type AgentDisplayOverride = {
   image?: string;
   imagePosition?: string;
   imageFit?: "cover" | "contain";
+  imageTransform?: string;
 };
 
 const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
@@ -226,6 +227,7 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       image: ELIYA_IMAGE_URL,
       imagePosition: "center top",
       imageFit: "cover",
+      imageTransform: "translateY(-28px) scale(1.2)",
     },
   ],
   [
@@ -237,6 +239,7 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       image: ELIYA_IMAGE_URL,
       imagePosition: "center top",
       imageFit: "cover",
+      imageTransform: "translateY(-28px) scale(1.2)",
     },
   ],
   [
@@ -411,6 +414,7 @@ export default function Home() {
             image: displayOverride?.image || fallbackByName?.image || agent.photoUrl || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
             imagePosition: displayOverride?.imagePosition || fallbackAgent?.imagePosition || "center 20%",
             imageFit: displayOverride?.imageFit || (fallbackAgent as { imageFit?: "cover" | "contain" })?.imageFit || "cover",
+            imageTransform: displayOverride?.imageTransform || (fallbackAgent as { imageTransform?: string })?.imageTransform,
           };
         })(),
       }));
@@ -426,6 +430,7 @@ export default function Home() {
         image: displayOverride?.image || agent.image,
         imagePosition: displayOverride?.imagePosition || agent.imagePosition,
         imageFit: displayOverride?.imageFit || (agent as { imageFit?: "cover" | "contain" }).imageFit || "cover",
+        imageTransform: displayOverride?.imageTransform || (agent as { imageTransform?: string }).imageTransform,
       };
     });
   }, [homeQuery.data?.agents, officePhone]);
@@ -1003,8 +1008,12 @@ export default function Home() {
                     <img
                       src={agent.image}
                       alt={agent.name}
-                      className={`h-full w-full ${agent.imageFit === "contain" ? "object-contain p-1" : "object-cover"}`}
-                      style={{ objectPosition: agent.imagePosition }}
+                      className={`h-full w-full transition duration-500 ${agent.imageFit === "contain" ? "object-contain p-1" : "object-cover"}`}
+                      style={{
+                        objectPosition: agent.imagePosition,
+                        transform: agent.imageTransform,
+                        transformOrigin: agent.imageTransform ? "center top" : undefined,
+                      }}
                       loading="lazy"
                     />
                   </div>
@@ -1416,11 +1425,11 @@ export default function Home() {
                         style={{ transitionDelay: testimonialsExpanded ? `${Math.min(index, 5) * 150}ms` : "0ms" }}
                       >
                         {testimonial.whatsappImageUrl ? (
-                          <div className="relative h-40 overflow-hidden bg-slate-950 md:h-44 xl:h-48" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
+                          <div className="relative h-56 overflow-hidden bg-[#FDF8F0] md:h-60 xl:h-64" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                             {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
-                              <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" muted playsInline preload="metadata" />
+                              <video src={testimonial.whatsappImageUrl} className="h-full w-full object-contain" muted playsInline preload="metadata" />
                             ) : (
-                              <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" loading="lazy" />
+                              <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-contain" loading="lazy" />
                             )}
                             <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
                             <span className="absolute bottom-4 right-4 inline-flex translate-y-3 items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2 text-sm font-black text-[#1A1A1A] opacity-0 shadow-lg transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
@@ -1467,11 +1476,11 @@ export default function Home() {
                           style={{ ...stackedStyle, transitionDelay: `${index * 120}ms` }}
                         >
                           {testimonial.whatsappImageUrl ? (
-                            <div className="relative h-40 overflow-hidden bg-slate-950 md:h-44 xl:h-48" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
+                            <div className="relative h-56 overflow-hidden bg-[#FDF8F0] md:h-60 xl:h-64" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                               {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
-                                <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" muted playsInline preload="metadata" />
+                                <video src={testimonial.whatsappImageUrl} className="h-full w-full object-contain" muted playsInline preload="metadata" />
                               ) : (
-                                <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover object-top transition duration-700 group-hover:scale-105" loading="lazy" />
+                                <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-contain" loading="lazy" />
                               )}
                             </div>
                           ) : null}

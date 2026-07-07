@@ -569,12 +569,28 @@ function roundCurrency(value: number) {
   return Math.round(value / 1000) * 1000;
 }
 
+function formatComparableHouseNumber(houseNum: number | string | null | undefined) {
+  const normalizedHouseNumber = String(houseNum ?? "").trim();
+  if (!normalizedHouseNumber) return "";
+
+  const houseNumberValue = Number(normalizedHouseNumber.replace(",", "."));
+  if (Number.isFinite(houseNumberValue)) {
+    if (houseNumberValue === 0) return "";
+    if (houseNumberValue > 0 && houseNumberValue < 1) {
+      return normalizedHouseNumber.replace(",", ".").split(".")[1]?.replace(/^0+/, "") ?? "";
+    }
+    if (houseNumberValue < 0) return "";
+    return Number.isInteger(houseNumberValue) ? String(houseNumberValue) : normalizedHouseNumber;
+  }
+
+  return normalizedHouseNumber === "0" ? "" : normalizedHouseNumber;
+}
+
 function buildComparableAddress(streetName: string | null | undefined, houseNum: number | string | null | undefined) {
   const street = typeof streetName === "string" ? streetName.trim() : "";
-  const normalizedHouseNumber = String(houseNum ?? "").trim();
-  const hasHouseNumber = normalizedHouseNumber !== "" && normalizedHouseNumber !== "0";
+  const houseNumber = formatComparableHouseNumber(houseNum);
 
-  if (street && hasHouseNumber) return `${street} ${normalizedHouseNumber}`;
+  if (street && houseNumber) return `${street} ${houseNumber}`;
   if (street) return street;
   return "כתובת לא זמינה";
 }

@@ -66,6 +66,7 @@ export const agents = [
     image: "/agents/eliya-card.jpeg",
     imagePosition: "center top",
     imageFit: "cover",
+    imageTransform: "translateY(-28px) scale(1.2)",
   },
   {
     id: "yarden",
