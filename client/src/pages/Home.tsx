@@ -224,8 +224,8 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       phone: "050-254-0855",
       expertise: "מלווה משקיעים ורוכשים",
       image: ELIYA_IMAGE_URL,
-      imagePosition: "center center",
-      imageFit: "contain",
+      imagePosition: "center top",
+      imageFit: "cover",
     },
   ],
   [
@@ -235,8 +235,8 @@ const agentDisplayOverrides = new Map<string, AgentDisplayOverride>([
       phone: "050-254-0855",
       expertise: "מלווה משקיעים ורוכשים",
       image: ELIYA_IMAGE_URL,
-      imagePosition: "center center",
-      imageFit: "contain",
+      imagePosition: "center top",
+      imageFit: "cover",
     },
   ],
   [
