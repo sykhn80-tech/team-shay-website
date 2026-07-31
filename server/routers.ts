@@ -1162,17 +1162,33 @@ function selectComparableDeals(
       } satisfies ScoredEntry;
     });
 
-  const scoredDeals = allScoredDeals
-    .filter((entry) => entry.isRecent && entry.strictNeighborhoodMatch && (entry.deal.dealAmount as number) >= CMA_MIN_DEAL_PRICE)
-    .sort((left, right) => {
-      const streetDiff = streetRelationRank[left.streetRelation] - streetRelationRank[right.streetRelation];
-      if (streetDiff !== 0) return streetDiff;
+  const sortByComparableStrength = (left: ScoredEntry, right: ScoredEntry) => {
+    const streetDiff = streetRelationRank[left.streetRelation] - streetRelationRank[right.streetRelation];
+    if (streetDiff !== 0) return streetDiff;
 
-      const roomDiff = (left.roomDelta ?? 99) - (right.roomDelta ?? 99);
-      if (roomDiff !== 0) return roomDiff;
+    const leftSqmDelta = left.sqmDeltaPercent ?? 99;
+    const rightSqmDelta = right.sqmDeltaPercent ?? 99;
+    const sqmDiff = leftSqmDelta - rightSqmDelta;
+    if (Math.abs(sqmDiff) > 0.02) return sqmDiff;
 
-      return left.recencyDays - right.recencyDays;
-    });
+    const roomDiff = (left.roomDelta ?? 99) - (right.roomDelta ?? 99);
+    if (roomDiff !== 0) return roomDiff;
+
+    const scoreDiff = left.score - right.score;
+    if (scoreDiff !== 0) return scoreDiff;
+
+    return left.recencyDays - right.recencyDays;
+  };
+
+  const eligibleDeals = allScoredDeals.filter(
+    (entry) => entry.isRecent && (entry.deal.dealAmount as number) >= CMA_MIN_DEAL_PRICE,
+  );
+
+  const preferredDeals = eligibleDeals.filter(
+    (entry) => entry.strictNeighborhoodMatch || entry.streetRelation !== "neighborhood",
+  );
+
+  const scoredDeals = (preferredDeals.length ? preferredDeals : eligibleDeals).sort(sortByComparableStrength);
 
   const topRankedForReference = scoredDeals.slice(0, 25);
   const pricePerSqmReferencePool = topRankedForReference
@@ -1197,34 +1213,15 @@ function selectComparableDeals(
       return entry.pricePerSqmSpread <= CMA_MAX_PRICE_PER_SQM_SPREAD;
     });
 
-  const topSpreadScopedDeals = filteredBySpread.slice(0, 30);
-  const tightDeals = pickDealsWithinPricePerSqmSpread(
-    topSpreadScopedDeals,
-    CMA_MAX_PRICE_PER_SQM_SPREAD,
-    5,
-  );
-
-	  const fallbackScopedDeals: ScoredEntry[] =
-	    tightDeals.length > 0
-	      ? tightDeals
-	      : allScoredDeals
-	          .filter((entry) => entry.isRecent && (entry.deal.dealAmount as number) >= CMA_MIN_DEAL_PRICE)
-	          .sort((left, right) => {
-	            const streetDiff = streetRelationRank[left.streetRelation] - streetRelationRank[right.streetRelation];
-	            if (streetDiff !== 0) return streetDiff;
-
-	            const roomDiff = (left.roomDelta ?? 99) - (right.roomDelta ?? 99);
-	            if (roomDiff !== 0) return roomDiff;
-
-	            return left.recencyDays - right.recencyDays;
-	          })
-	          .slice(0, 8);
+  const fallbackScopedDeals: ScoredEntry[] = filteredBySpread.length
+    ? filteredBySpread
+    : eligibleDeals.sort(sortByComparableStrength).slice(0, 12);
 
   const assessedDeals = fallbackScopedDeals.map((entry) => {
     let matchScore = 0;
 
-    if (entry.streetRelation === "same") matchScore += 40;
-    else if (entry.streetRelation === "near") matchScore += 26;
+    if (entry.streetRelation === "same") matchScore += 44;
+    else if (entry.streetRelation === "near") matchScore += 34;
     else matchScore += normalizedStreet ? 12 : 18;
 
     if (entry.roomDelta == null) matchScore += 7;
@@ -1233,15 +1230,16 @@ function selectComparableDeals(
     else if (entry.roomDelta === 2) matchScore += 5;
 
     if (entry.sqmDeltaPercent == null) matchScore += 8;
-    else if (entry.sqmDeltaPercent <= 0.1) matchScore += 15;
-    else if (entry.sqmDeltaPercent <= 0.2) matchScore += 11;
+    else if (entry.sqmDeltaPercent <= 0.08) matchScore += 22;
+    else if (entry.sqmDeltaPercent <= 0.15) matchScore += 18;
+    else if (entry.sqmDeltaPercent <= 0.25) matchScore += 12;
     else if (entry.sqmDeltaPercent <= 0.35) matchScore += 6;
     else matchScore += 2;
 
-    if (entry.recencyDays <= 365) matchScore += 20;
-    else if (entry.recencyDays <= 730) matchScore += 15;
-    else if (entry.recencyDays <= 1095) matchScore += 10;
-    else matchScore += 5;
+    if (entry.recencyDays <= 365) matchScore += 14;
+    else if (entry.recencyDays <= 730) matchScore += 11;
+    else if (entry.recencyDays <= 1095) matchScore += 8;
+    else matchScore += 4;
 
     matchScore += Math.round(entry.dataCompleteness * 10);
 
@@ -1286,33 +1284,35 @@ function selectComparableDeals(
     };
   });
 
-	  const qualityScopedDeals = assessedDeals
-	    .filter((entry) => entry.matchScore >= CMA_MATCH_MIN_QUALITY_SCORE)
-	    .sort((left, right) => {
-        const streetDiff = streetRelationRank[left.streetRelation] - streetRelationRank[right.streetRelation];
-        if (streetDiff !== 0) return streetDiff;
+  const sortedAssessedDeals = assessedDeals.sort((left, right) => {
+    const streetDiff = streetRelationRank[left.streetRelation] - streetRelationRank[right.streetRelation];
+    if (streetDiff !== 0) return streetDiff;
 
-        const roomDiff = (left.roomDelta ?? 99) - (right.roomDelta ?? 99);
-        if (roomDiff !== 0) return roomDiff;
+    const leftSqmDelta = left.sqmDeltaPercent ?? 99;
+    const rightSqmDelta = right.sqmDeltaPercent ?? 99;
+    const sqmDiff = leftSqmDelta - rightSqmDelta;
+    if (Math.abs(sqmDiff) > 0.02) return sqmDiff;
 
-        const recencyDiff = left.recencyDays - right.recencyDays;
-        if (recencyDiff !== 0) return recencyDiff;
+    const scoreDiff = right.matchScore - left.matchScore;
+    if (scoreDiff !== 0) return scoreDiff;
 
-        return right.matchScore - left.matchScore;
-      });
+    const roomDiff = (left.roomDelta ?? 99) - (right.roomDelta ?? 99);
+    if (roomDiff !== 0) return roomDiff;
 
-  const limitedDeals =
-    qualityScopedDeals.length >= 5 && qualityScopedDeals[4].matchScore >= 86
-      ? qualityScopedDeals.slice(0, 5)
-      : qualityScopedDeals.slice(0, 4);
+    return left.recencyDays - right.recencyDays;
+  });
+
+  const qualityScopedDeals = sortedAssessedDeals.filter((entry) => entry.matchScore >= CMA_MATCH_MIN_QUALITY_SCORE);
+
+  const limitedDeals = (qualityScopedDeals.length ? qualityScopedDeals : sortedAssessedDeals).slice(0, 5);
 
   const topScore = limitedDeals[0]?.matchScore ?? 0;
 
   return limitedDeals.map((entry) => {
     const matchLevel: "high" | "medium" | "low" =
-      topScore >= 84 && entry.matchScore >= 84 && entry.matchScore >= topScore - 6
+      entry.matchScore >= 82
         ? "high"
-        : entry.matchScore >= 66 && entry.matchScore >= topScore - 20
+        : entry.matchScore >= 66 && entry.matchScore >= topScore - 24
           ? "medium"
           : "low";
     const matchLabel =

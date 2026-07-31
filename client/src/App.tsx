@@ -1,6 +1,7 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster as SonnerToaster } from "sonner";
 import { Route, Switch } from "wouter";
+import AccessibilityButton from "./components/AccessibilityButton";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import AddProperty from "./pages/AddProperty";
@@ -39,6 +40,7 @@ function App() {
         <TooltipProvider>
           <SonnerToaster richColors position="top-center" />
           <Router />
+          <AccessibilityButton />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

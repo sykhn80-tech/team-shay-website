@@ -327,6 +327,25 @@ All global tokens should support a modern, clean, conversion-first interface.
 }
 
 @layer utilities {
+  .accessibility-large-text body {
+    font-size: 112%;
+  }
+
+  .accessibility-high-contrast body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .accessibility-high-contrast img {
+    filter: contrast(1.08);
+  }
+
+  .accessibility-underline-links a[href] {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
   .cms-marquee-track {
     animation: cms-marquee 42s linear infinite;
     will-change: transform;
@@ -340,5 +359,41 @@ All global tokens should support a modern, clean, conversion-first interface.
   .sold-properties-marquee {
     animation: sold-properties-marquee 30s linear infinite;
     will-change: transform;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html,
+  body,
+  #root {
+    background: #ffffff !important;
+  }
+
+  .agent-shell {
+    background: #ffffff !important;
+    min-height: auto !important;
+  }
+
+  .agent-shell-sidebar,
+  .agent-mobile-bar,
+  .agent-mobile-overlay,
+  .agent-mobile-drawer,
+  .site-accessibility-widget,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  .agent-shell-main {
+    margin-right: 0 !important;
+  }
+
+  .cma-print-report {
+    width: 100% !important;
+    box-shadow: none !important;
   }
 }

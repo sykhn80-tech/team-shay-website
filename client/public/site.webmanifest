@@ -1,0 +1,23 @@
+{
+  "name": "Team Shay",
+  "short_name": "Team Shay",
+  "description": "סוכנות נדל״ן יוקרתית בירושלים והסביבה",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF8F0",
+  "theme_color": "#D4AF37",
+  "dir": "rtl",
+  "lang": "he",
+  "icons": [
+    {
+      "src": "/favicon-48x48.png",
+      "sizes": "48x48",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

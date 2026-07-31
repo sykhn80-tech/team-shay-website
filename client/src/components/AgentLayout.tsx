@@ -110,10 +110,10 @@ export default function AgentLayout({ children }: Props) {
   );
 
   return (
-    <div className="min-h-screen bg-[#f5f3ee]" dir="rtl">
+    <div className="agent-shell min-h-screen bg-[#f5f3ee]" dir="rtl">
 
       {/* ── Mobile top bar ──────────────────────────────── */}
-      <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between gap-3 bg-[#0d0d0d] px-4 py-2.5 shadow-lg shadow-black/20">
+      <div className="agent-mobile-bar lg:hidden sticky top-0 z-40 flex items-center justify-between gap-3 bg-[#0d0d0d] px-4 py-2.5 shadow-lg shadow-black/20 print:hidden">
         <button
           onClick={() => setMobileOpen(true)}
           aria-label="פתח תפריט"
@@ -135,14 +135,14 @@ export default function AgentLayout({ children }: Props) {
       {/* ── Mobile overlay ───────────────────────────────── */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
+          className="agent-mobile-overlay lg:hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm print:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* ── Mobile drawer ───────────────────────────────── */}
       <div
-        className={`lg:hidden fixed top-0 right-0 z-[60] h-full w-[270px] bg-[#0d0d0d] px-5 py-6 shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out border-l border-[#d9ae4c]/20 ${
+        className={`agent-mobile-drawer lg:hidden fixed top-0 right-0 z-[60] h-full w-[270px] bg-[#0d0d0d] px-5 py-6 shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out border-l border-[#d9ae4c]/20 print:hidden ${
           mobileOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -158,12 +158,12 @@ export default function AgentLayout({ children }: Props) {
       </div>
 
       {/* ── Desktop sidebar ──────────────────────────────── */}
-      <aside className="hidden lg:flex lg:fixed lg:right-0 lg:top-0 lg:z-30 lg:h-screen lg:w-[265px] lg:flex-col lg:overflow-y-auto bg-[#0d0d0d] px-5 py-6 border-l border-[#d9ae4c]/15">
+      <aside className="agent-shell-sidebar hidden lg:flex lg:fixed lg:right-0 lg:top-0 lg:z-30 lg:h-screen lg:w-[265px] lg:flex-col lg:overflow-y-auto bg-[#0d0d0d] px-5 py-6 border-l border-[#d9ae4c]/15 print:hidden">
         <SidebarInner />
       </aside>
 
       {/* ── Main content ─────────────────────────────────── */}
-      <main className="lg:mr-[265px]">
+      <main className="agent-shell-main lg:mr-[265px] print:mr-0">
         {children}
       </main>
     </div>

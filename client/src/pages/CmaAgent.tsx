@@ -11,6 +11,7 @@ import {
   MessageCircle,
   Pencil,
   Plus,
+  Printer,
   Save,
   Trash2,
 } from "lucide-react";
@@ -296,8 +297,18 @@ export default function CmaAgent() {
     window.open(`https://wa.me/?text=${encodeURIComponent(whatsappText)}`, "_blank", "noopener,noreferrer");
   }
 
+  function printCleanReport(message: string) {
+    setIsEditMode(false);
+    toast.info(message);
+    window.setTimeout(() => window.print(), 80);
+  }
+
+  function handlePrint() {
+    printCleanReport("פותח חלון הדפסה נקי לדוח.");
+  }
+
   function handleDownloadPdf() {
-    window.print();
+    printCleanReport("בחר ״שמירה כ-PDF״ בחלון ההדפסה.");
   }
 
   function parseNumberLike(value: string) {
@@ -442,7 +453,7 @@ export default function CmaAgent() {
                 </div>
               </section>
 
-              <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.05)] print:rounded-none print:border-0 print:shadow-none">
+              <section className="cma-print-report rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.05)] print:rounded-none print:border-0 print:shadow-none">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="flex items-center gap-3">
                     <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo h-14 w-auto object-contain" />
@@ -503,9 +514,18 @@ export default function CmaAgent() {
                         <MessageCircle className="size-4" />
                         שלח בוואטסאפ
                       </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handlePrint}
+                        className="rounded-full border-slate-200 text-slate-700 hover:bg-slate-50"
+                      >
+                        <Printer className="size-4" />
+                        הדפסה
+                      </Button>
                       <Button type="button" onClick={handleDownloadPdf} className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">
                         <FileDown className="size-4" />
-                        הורד PDF
+                        PDF
                       </Button>
                     </div>
                   ) : null}
