@@ -212,6 +212,7 @@ const cmaInputSchema = z.object({
   neighborhood: z.string().trim().min(2),
   street: z.string().trim().default(""),
   rooms: z.string().trim().min(1),
+  floor: z.string().trim().default(""),
   minSqm: z.string().trim().default(""),
   maxSqm: z.string().trim().default(""),
   notes: z.string().trim().default(""),
@@ -543,6 +544,22 @@ function parseNumericInput(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function parseFloorInput(value: string | number | null | undefined) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value !== "string") return null;
+
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized.includes("קרקע")) return 0;
+  if (normalized.includes("מרתף")) return -1;
+
+  const numericMatch = normalized.match(/-?\d+(?:\.\d+)?/);
+  if (!numericMatch) return null;
+
+  const parsed = Number(numericMatch[0]);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 function parseGovmapPointShape(shape: string) {
   const pointMatch = shape.match(/^POINT\(([-\d.]+)\s+([-\d.]+)\)$/i);
   if (pointMatch) {
@@ -665,6 +682,7 @@ function buildCmaPrompt(
 - שכונה: ${input.neighborhood}
 - רחוב יעד (אם קיים): ${input.street || "לא הוזן"}
 - חדרים מבוקשים: ${input.rooms}
+- קומה מבוקשת: ${input.floor || "לא הוזנה"}
 - טווח מ"ר: ${input.minSqm || "לא הוזן"} - ${input.maxSqm || "לא הוזן"}
 - דגשים מהסוכן: ${input.notes || "ללא"}
 - ממוצע מחיר למ"ר שחושב מהעסקאות: ${fallbackSummary.averagePricePerSqm}
@@ -1057,6 +1075,7 @@ function selectComparableDeals(
     strictNeighborhoodMatch: boolean;
     pricePerSqm: number | null;
     roomDelta: number | null;
+    floorDelta: number | null;
     sqmDeltaPercent: number | null;
     recencyDays: number;
     streetRelation: StreetRelation;
@@ -1073,8 +1092,14 @@ function selectComparableDeals(
   const normalizedNeighborhood = normalizeHebrewToken(input.neighborhood);
   const normalizedStreet = normalizeHebrewToken(input.street);
   const targetRooms = parseNumericInput(input.rooms);
+  const targetFloor = parseFloorInput(input.floor);
   const minSqm = parseNumericInput(input.minSqm);
   const maxSqm = parseNumericInput(input.maxSqm);
+
+  if (minSqm != null && maxSqm != null && minSqm > maxSqm) {
+    return [];
+  }
+
   const targetSqmAnchor =
     minSqm != null && maxSqm != null
       ? (minSqm + maxSqm) / 2
@@ -1083,11 +1108,20 @@ function selectComparableDeals(
   fromDate.setFullYear(fromDate.getFullYear() - 4);
 
   const allScoredDeals = deals
-    .filter((deal) => typeof deal.dealId === "number" && typeof deal.dealAmount === "number" && Boolean(deal.dealDate))
+    .filter((deal) => {
+      if (typeof deal.dealId !== "number" || typeof deal.dealAmount !== "number" || !deal.dealDate) return false;
+      if (minSqm == null && maxSqm == null) return true;
+      if (typeof deal.assetArea !== "number") return false;
+      if (minSqm != null && deal.assetArea < minSqm) return false;
+      if (maxSqm != null && deal.assetArea > maxSqm) return false;
+      return true;
+    })
     .map((deal) => {
       const normalizedDealNeighborhood = normalizeHebrewToken(deal.neighborhood);
       const normalizedDealStreet = normalizeHebrewToken(deal.streetNameHeb);
       const roomDelta = targetRooms == null || deal.assetRoomNum == null ? null : Math.abs(deal.assetRoomNum - targetRooms);
+      const dealFloor = parseFloorInput(deal.floorNo);
+      const floorDelta = targetFloor == null || dealFloor == null ? null : Math.abs(dealFloor - targetFloor);
       const sqmPenalty =
         typeof deal.assetArea !== "number"
           ? 0
@@ -1143,6 +1177,7 @@ function selectComparableDeals(
           neighborhoodMatchScore +
           streetMatchScore +
           (roomDelta ?? 0) * 2200 +
+          (floorDelta ?? 0) * 900 +
           sqmPenalty * 6 +
           recencyDays * 0.8,
         isRecent: !Number.isNaN(dealDate.getTime()) && dealDate >= fromDate,
@@ -1154,6 +1189,7 @@ function selectComparableDeals(
             ? Math.round((deal.dealAmount as number) / deal.assetArea)
             : null,
         roomDelta,
+        floorDelta,
         sqmDeltaPercent,
         recencyDays,
         streetRelation,
@@ -1165,6 +1201,11 @@ function selectComparableDeals(
   const sortByComparableStrength = (left: ScoredEntry, right: ScoredEntry) => {
     const streetDiff = streetRelationRank[left.streetRelation] - streetRelationRank[right.streetRelation];
     if (streetDiff !== 0) return streetDiff;
+
+    if (targetFloor != null) {
+      const floorDiff = (left.floorDelta ?? 99) - (right.floorDelta ?? 99);
+      if (floorDiff !== 0) return floorDiff;
+    }
 
     const leftSqmDelta = left.sqmDeltaPercent ?? 99;
     const rightSqmDelta = right.sqmDeltaPercent ?? 99;
@@ -1229,6 +1270,12 @@ function selectComparableDeals(
     else if (entry.roomDelta === 1) matchScore += 11;
     else if (entry.roomDelta === 2) matchScore += 5;
 
+    if (targetFloor != null && entry.floorDelta != null) {
+      if (entry.floorDelta === 0) matchScore += 12;
+      else if (entry.floorDelta === 1) matchScore += 8;
+      else if (entry.floorDelta === 2) matchScore += 4;
+    }
+
     if (entry.sqmDeltaPercent == null) matchScore += 8;
     else if (entry.sqmDeltaPercent <= 0.08) matchScore += 22;
     else if (entry.sqmDeltaPercent <= 0.15) matchScore += 18;
@@ -1259,6 +1306,9 @@ function selectComparableDeals(
     if (entry.roomDelta === 0) strengths.push("חדרים זהים");
     else if (entry.roomDelta === 1) strengths.push("חדרים דומים");
 
+    if (targetFloor != null && entry.floorDelta === 0) strengths.push("קומה זהה");
+    else if (targetFloor != null && entry.floorDelta === 1) strengths.push("קומה קרובה");
+
     if (entry.sqmDeltaPercent != null) {
       if (entry.sqmDeltaPercent <= 0.12) strengths.push("שטח דומה");
       else if (entry.sqmDeltaPercent <= 0.25) strengths.push("שטח קרוב");
@@ -1274,6 +1324,9 @@ function selectComparableDeals(
       weaknesses.push("פער מחיר למ\"ר יחסית לקבוצה");
     }
     if (entry.roomDelta != null && entry.roomDelta > 1) weaknesses.push("פער חדרים ביחס לנכס");
+    const floorDelta = entry.floorDelta;
+    if (targetFloor != null && floorDelta == null) weaknesses.push("נתון קומה חסר");
+    else if (targetFloor != null && typeof floorDelta === "number" && floorDelta > 2) weaknesses.push("פער קומה מורגש");
     if (entry.sqmDeltaPercent != null && entry.sqmDeltaPercent > 0.25) weaknesses.push("פער שטח מורגש");
 
     return {
@@ -1287,6 +1340,11 @@ function selectComparableDeals(
   const sortedAssessedDeals = assessedDeals.sort((left, right) => {
     const streetDiff = streetRelationRank[left.streetRelation] - streetRelationRank[right.streetRelation];
     if (streetDiff !== 0) return streetDiff;
+
+    if (targetFloor != null) {
+      const floorDiff = (left.floorDelta ?? 99) - (right.floorDelta ?? 99);
+      if (floorDiff !== 0) return floorDiff;
+    }
 
     const leftSqmDelta = left.sqmDeltaPercent ?? 99;
     const rightSqmDelta = right.sqmDeltaPercent ?? 99;

@@ -23,6 +23,7 @@ interface CmaFormState {
   neighborhood: string;
   street: string;
   rooms: string;
+  floor: string;
   minSqm: string;
   maxSqm: string;
   notes: string;
@@ -82,6 +83,7 @@ const EMPTY_FORM: CmaFormState = {
   neighborhood: "",
   street: "",
   rooms: "",
+  floor: "",
   minSqm: "",
   maxSqm: "",
   notes: "",
@@ -280,6 +282,13 @@ export default function CmaAgent() {
       return;
     }
 
+    const minSqm = parseNumberLike(form.minSqm);
+    const maxSqm = parseNumberLike(form.maxSqm);
+    if (minSqm != null && maxSqm != null && minSqm > maxSqm) {
+      toast.error("מ\"ר מינימום לא יכול להיות גבוה ממ\"ר מקסימום.");
+      return;
+    }
+
     try {
       const nextResult = await generateCmaMutation.mutateAsync(form);
       setReport(nextResult);
@@ -396,6 +405,17 @@ export default function CmaAgent() {
                     />
                   </label>
 
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-slate-700">קומת הנכס (רשות)</span>
+                    <input
+                      value={form.floor}
+                      onChange={(event) => setField("floor", event.target.value)}
+                      placeholder="למשל: 3"
+                      inputMode="numeric"
+                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                    />
+                  </label>
+
                   <div className="grid gap-4 md:grid-cols-2">
                     <label className="grid gap-2">
                       <span className="text-sm font-bold text-slate-700">מ"ר מינימום</span>
@@ -417,6 +437,8 @@ export default function CmaAgent() {
                       />
                     </label>
                   </div>
+
+                  <p className="text-xs leading-6 text-slate-500">עסקאות מחוץ לטווח המ\"ר שהוזן לא יוצגו בדוח.</p>
 
                   <label className="grid gap-2">
                     <span className="text-sm font-bold text-slate-700">דגשים מקומיים (פינוי בינוי, יתרון רחוב וכו')</span>
