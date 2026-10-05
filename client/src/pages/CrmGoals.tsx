@@ -67,7 +67,7 @@ export default function CrmGoals() {
                           key={delta}
                           type="button"
                           onClick={() => adjustMutation.mutate({ activityType: key, date: localDate(), delta })}
-                          className="flex size-7 items-center justify-center rounded-full border border-[#D4AF37] text-sm font-black text-[#9a7319] hover:bg-[#D4AF37] hover:text-black"
+                          className="flex size-7 items-center justify-center rounded-full border border-[#4b8067] text-sm font-black text-[#9a7319] hover:bg-[#4b8067] hover:text-black"
                         >
                           {delta > 0 ? "+" : "−"}
                         </button>

@@ -51,7 +51,7 @@ export default function CrmFinance() {
           </div>
           <div className="rounded-xl bg-[#f8f6f1] p-3">
             <p className="flex items-center gap-2 text-sm font-black text-emerald-700"><Scale className="size-4" />רווח נקי</p>
-            <p className="mt-1 text-2xl font-black text-[#b98b2f]">₪{(summaryQuery.data?.profit ?? 0).toLocaleString("he-IL")}</p>
+            <p className="mt-1 text-2xl font-black text-[#2f6653]">₪{(summaryQuery.data?.profit ?? 0).toLocaleString("he-IL")}</p>
           </div>
           <div className="rounded-xl bg-blue-50 p-3"><p className="flex items-center gap-2 text-sm font-black text-blue-700"><Landmark className="size-4" />יתרה לתשלום</p><p className="mt-1 text-2xl font-black text-blue-900">₪{Math.max(0, vatIncome - vatExpense).toLocaleString("he-IL")}</p></div>
         </div>
@@ -59,7 +59,7 @@ export default function CrmFinance() {
 
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-xl font-black">פירוט מע״מ</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-xl bg-slate-50 p-4"><p className="text-sm font-bold">מע״מ על הכנסות (חובה)</p><p className="mt-2 text-xl font-black">₪{vatIncome.toLocaleString("he-IL")}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-sm font-bold">מע״מ על הוצאות (זיכוי)</p><p className="mt-2 text-xl font-black">₪{vatExpense.toLocaleString("he-IL")}</p></div><div className="rounded-xl bg-[#fff4d8] p-4"><p className="text-sm font-bold">יתרה לתשלום</p><p className="mt-2 text-xl font-black">₪{Math.max(0, vatIncome - vatExpense).toLocaleString("he-IL")}</p></div></div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-xl bg-slate-50 p-4"><p className="text-sm font-bold">מע״מ על הכנסות (חובה)</p><p className="mt-2 text-xl font-black">₪{vatIncome.toLocaleString("he-IL")}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-sm font-bold">מע״מ על הוצאות (זיכוי)</p><p className="mt-2 text-xl font-black">₪{vatExpense.toLocaleString("he-IL")}</p></div><div className="rounded-xl bg-[#eef3ef] p-4"><p className="text-sm font-bold">יתרה לתשלום</p><p className="mt-2 text-xl font-black">₪{Math.max(0, vatIncome - vatExpense).toLocaleString("he-IL")}</p></div></div>
       </section>
 
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
@@ -89,7 +89,7 @@ export default function CrmFinance() {
                 leadId,
               });
             }}
-            className="h-11 rounded-xl bg-[#d9ae4c] text-black hover:bg-[#c99a31]"
+            className="h-11 rounded-xl bg-[#4b8067] text-black hover:bg-[#3a6b55]"
           >
             שמור
           </Button>
@@ -124,7 +124,7 @@ export default function CrmFinance() {
                   <td className="px-3 py-2">{entry.category}</td>
                   <td className="px-3 py-2 font-black">₪{entry.amount.toLocaleString("he-IL")}</td>
                   <td className="px-3 py-2">{entry.description ?? "-"}</td>
-                  <td className="px-3 py-2 font-bold text-[#b98b2f]">{entry.leadId ? leadLabel((leadsQuery.data ?? []).find((lead) => lead.id === entry.leadId)) : "-"}</td>
+                  <td className="px-3 py-2 font-bold text-[#2f6653]">{entry.leadId ? leadLabel((leadsQuery.data ?? []).find((lead) => lead.id === entry.leadId)) : "-"}</td>
                 </tr>
               ))}
             </tbody>

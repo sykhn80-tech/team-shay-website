@@ -1,5 +1,7 @@
-export const TEAM_LOGO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-header-logo_e291cb40.png";
-export const LANDSMAN_LOGO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/jerusalem_8ba016e6.png";
+export const BRAND_NAME = "Shay Group";
+export const BRAND_NAME_HE = "קבוצת שי";
+export const TEAM_LOGO = "/brand/shay-group-logo-transparent.png";
+export const TEAM_LOGO_FULL = "/brand/shay-group-logo-full.png";
 export const JERUSALEM_HERO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/Gemini_Generated_Image_aq472haq472haq47_8d4eeb1f.webp";
 export const SHAY_ABOUT_IMAGE = "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/tryiton__gray_suit_white_shirt_black_tie_office_plants_198335_54781063.png";
 export const WHATSAPP_LINK = "https://wa.me/message/6RX7H74VQ4BPI1";
@@ -24,7 +26,7 @@ export const heroTrustBadges = [
 export const aboutChecklist = [
   "אסטרטגיית שיווק ותמחור שנבנית סביב הנכס והיעד שלכם.",
   "ליווי אישי, שקוף וזמין משלב האפיון ועד לחתימה.",
-  "חיבור לרשת Landsman ולמאגר קונים פעיל בירושלים והסביבה.",
+  "מאגר קונים פעיל, שיתופי פעולה מקצועיים והיכרות עמוקה עם ירושלים והסביבה.",
   "ניהול משא ומתן ששומר על המחיר, על הקצב ועל האינטרס של המוכר.",
 ] as const;
 
@@ -36,7 +38,7 @@ export const agents = [
     email: "shay2003ai@gmail.com",
     phone: "052-863-6631",
     image: SHAY_ABOUT_IMAGE,
-    imagePosition: "center 18%",
+    imagePosition: "center center",
   },
   {
     id: "aviad",
@@ -45,7 +47,7 @@ export const agents = [
     email: "aviad5436@gmail.com",
     phone: "052-533-5251",
     image: "/agents/aviad-card.jpeg",
-    imagePosition: "center 35%",
+    imagePosition: "center center",
   },
   {
     id: "ronen",
@@ -55,7 +57,7 @@ export const agents = [
     phone: "050-900-5161",
     image:
       "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/tryiton_1760536418265_f4vv644shhrm80csx0jvzt3etm2_d3afa6a6.png",
-    imagePosition: "center 18%",
+    imagePosition: "center center",
   },
   {
     id: "eliya",
@@ -64,7 +66,7 @@ export const agents = [
     email: "eliyamarciano1@gmail.com",
     phone: "050-254-0855",
     image: "/agents/eliya-card.jpeg",
-    imagePosition: "center top",
+    imagePosition: "center center",
     imageFit: "cover",
     imageTransform: "translateY(-28px) scale(1.2)",
   },
@@ -76,7 +78,7 @@ export const agents = [
     phone: "050-253-5095",
     image:
       "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/WhatsAppImage2026-04-13at17.31.35_58f082a2.jpeg",
-    imagePosition: "center 26%",
+    imagePosition: "center center",
   },
   {
     id: "hodiya",
@@ -85,7 +87,7 @@ export const agents = [
     email: "",
     phone: OFFICE_PHONE,
     image: "/agents/hodiya-card.png",
-    imagePosition: "center 34%",
+    imagePosition: "center center",
   },
 ] as const;
 

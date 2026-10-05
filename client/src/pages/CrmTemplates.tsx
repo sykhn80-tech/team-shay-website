@@ -78,7 +78,7 @@ export default function CrmTemplates() {
             });
           }}
           disabled={createMutation.isPending}
-          className="mt-4 rounded-full bg-[#d9ae4c] text-black hover:bg-[#c99a31]"
+          className="mt-4 rounded-full bg-[#4b8067] text-black hover:bg-[#3a6b55]"
         >
           צור תבנית
         </Button>
@@ -91,7 +91,7 @@ export default function CrmTemplates() {
         <h3 className="mt-5 font-black">תגיות ליד</h3>
         <div className="mt-2 flex flex-wrap gap-2">{["{שם הלקוח}", "{כתובת הנכס}", "{טלפון}"].map((tag) => <code key={tag} className="rounded-lg bg-slate-100 px-2 py-1 text-xs">{tag}</code>)}</div>
         <h3 className="mt-5 font-black">תגיות פעולות שיווק</h3>
-        <div className="mt-2 flex flex-wrap gap-2">{["יד2", "מדלן", "פייסבוק", "אורגני דיגיטל", "ממומן דיגיטל", "שת״פ מתווכים", "וואטסאפ", "פליירים", "מכתבי שכנים", "צילום", "עיתון מקומי", "בית פתוח", "פניות טלפון", "שלטים"].map((tag) => <code key={tag} className="rounded-lg bg-[#fff4d8] px-2 py-1 text-xs">{`{${tag}}`}</code>)}</div>
+        <div className="mt-2 flex flex-wrap gap-2">{["יד2", "מדלן", "פייסבוק", "אורגני דיגיטל", "ממומן דיגיטל", "שת״פ מתווכים", "וואטסאפ", "פליירים", "מכתבי שכנים", "צילום", "עיתון מקומי", "בית פתוח", "פניות טלפון", "שלטים"].map((tag) => <code key={tag} className="rounded-lg bg-[#eef3ef] px-2 py-1 text-xs">{`{${tag}}`}</code>)}</div>
       </aside>
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-xl font-black text-slate-950">תבניות פעילות</h2>

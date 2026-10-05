@@ -63,7 +63,6 @@ type SiteSettingsFormState = {
   siteName: string;
   headerLogoUrl: ImageFieldState;
   footerLogoUrl: ImageFieldState;
-  landsmanLogoUrl: ImageFieldState;
   heroBackgroundUrl: ImageFieldState;
   shayAboutImageUrl: ImageFieldState;
   heroHeadline: string;
@@ -72,8 +71,6 @@ type SiteSettingsFormState = {
   officePhone: string;
   aboutTitle: string;
   aboutSubtitle: string;
-  landsmanTitle: string;
-  landsmanBody: string;
   footerSlogan: string;
 };
 
@@ -90,6 +87,18 @@ type MarketingSectionFormState = {
     mediaUrl: ImageFieldState;
     posterUrl: ImageFieldState;
   }>;
+};
+
+type ProjectFormState = {
+  id: string;
+  title: string;
+  neighborhood: string;
+  city: string;
+  description: string;
+  status: "בקרוב" | "בשיווק" | "הושלם";
+  coverImageUrl: ImageFieldState;
+  isPublished: boolean;
+  sortOrder: number;
 };
 
 type PropertyGalleryDraft = {
@@ -145,7 +154,6 @@ const emptySettingsForm: SiteSettingsFormState = {
   siteName: "",
   headerLogoUrl: buildImageField(),
   footerLogoUrl: buildImageField(),
-  landsmanLogoUrl: buildImageField(),
   heroBackgroundUrl: buildImageField(),
   shayAboutImageUrl: buildImageField(),
   heroHeadline: "",
@@ -154,8 +162,6 @@ const emptySettingsForm: SiteSettingsFormState = {
   officePhone: "",
   aboutTitle: "",
   aboutSubtitle: "",
-  landsmanTitle: "",
-  landsmanBody: "",
   footerSlogan: "",
 };
 
@@ -168,6 +174,20 @@ const emptyMarketingSectionForm: MarketingSectionFormState = {
 };
 
 const maxMarketingSectionItems = 10;
+
+function buildProjectForm(index: number): ProjectFormState {
+  return {
+    id: `project-${Date.now()}-${index}`,
+    title: "",
+    neighborhood: "",
+    city: "ירושלים",
+    description: "",
+    status: "בשיווק",
+    coverImageUrl: buildImageField(),
+    isPublished: false,
+    sortOrder: index,
+  };
+}
 
 function buildMarketingSectionItem(index: number) {
   return {
@@ -226,12 +246,12 @@ function ImageUploadField({
 }) {
   return (
     <div className="rounded-[24px] border border-slate-200 bg-[#fbfdff] p-4">
-      <div className="flex items-center gap-2 text-[#d9ae4c]">
+      <div className="flex items-center gap-2 text-[#4b8067]">
         <ImagePlus className="size-4" />
         <p className="text-sm font-black">{label}</p>
       </div>
       <p className="mt-2 text-sm leading-6 text-slate-500">{hint}</p>
-      <label className="mt-4 flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[#d9ae4c]/35 bg-white px-4 text-sm font-bold text-[#b98b2f] transition hover:bg-[#fff4d8]">
+      <label className="mt-4 flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[#4b8067]/35 bg-white px-4 text-sm font-bold text-[#2f6653] transition hover:bg-[#eef3ef]">
         <Upload className="size-4" />
         בחירת קובץ מהמחשב
         <input
@@ -278,12 +298,12 @@ function MediaUploadField({
 
   return (
     <div className="rounded-[24px] border border-slate-200 bg-[#fbfdff] p-4">
-      <div className="flex items-center gap-2 text-[#d9ae4c]">
+      <div className="flex items-center gap-2 text-[#4b8067]">
         <ImagePlus className="size-4" />
         <p className="text-sm font-black">{label}</p>
       </div>
       <p className="mt-2 text-sm leading-6 text-slate-500">{hint}</p>
-      <label className="mt-4 flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[#d9ae4c]/35 bg-white px-4 text-sm font-bold text-[#b98b2f] transition hover:bg-[#fff4d8]">
+      <label className="mt-4 flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[#4b8067]/35 bg-white px-4 text-sm font-bold text-[#2f6653] transition hover:bg-[#eef3ef]">
         <Upload className="size-4" />
         בחירת תמונה או וידאו
         <input
@@ -308,7 +328,7 @@ function MediaUploadField({
             <button
               type="button"
               onClick={onPreview}
-              className="flex w-full items-center justify-center gap-2 border-t border-slate-100 bg-white px-4 py-3 text-sm font-black text-[#B8960C] transition hover:bg-[#fff7df]"
+              className="flex w-full items-center justify-center gap-2 border-t border-slate-100 bg-white px-4 py-3 text-sm font-black text-[#2f6653] transition hover:bg-[#fff7df]"
             >
               <Eye className="size-4" />
               תצוגה בגודל מלא
@@ -332,6 +352,7 @@ export default function AdminPanel() {
   const [, navigate] = useLocation();
   const [settingsForm, setSettingsForm] = useState<SiteSettingsFormState>(emptySettingsForm);
   const [marketingSectionForm, setMarketingSectionForm] = useState<MarketingSectionFormState>(emptyMarketingSectionForm);
+  const [projectsForm, setProjectsForm] = useState<ProjectFormState[]>([]);
   const [newStaff, setNewStaff] = useState<StaffFormState>(emptyStaffForm);
   const [newTestimonial, setNewTestimonial] = useState<TestimonialFormState>(emptyTestimonialForm);
   const [editingStaffId, setEditingStaffId] = useState<number | null>(null);
@@ -358,6 +379,13 @@ export default function AdminPanel() {
       toast.success("סקשן שיטות השיווק נשמר ועודכן באתר.");
     },
     onError: (error) => toast.error(error.message || "שמירת סקשן השיווק נכשלה."),
+  });
+  const updateProjectsMutation = trpc.admin.updateProjects.useMutation({
+    onSuccess: async () => {
+      await Promise.all([utils.admin.dashboard.invalidate(), utils.publicSite.projects.invalidate()]);
+      toast.success("הפרויקטים נשמרו ועודכנו באתר.");
+    },
+    onError: (error) => toast.error(error.message || "שמירת הפרויקטים נכשלה."),
   });
   const createStaffMutation = trpc.admin.createStaff.useMutation({
     onSuccess: async () => {
@@ -443,7 +471,6 @@ export default function AdminPanel() {
       siteName: dashboardQuery.data.settings.siteName ?? "",
       headerLogoUrl: buildImageField(dashboardQuery.data.settings.headerLogoUrl),
       footerLogoUrl: buildImageField(dashboardQuery.data.settings.footerLogoUrl),
-      landsmanLogoUrl: buildImageField(dashboardQuery.data.settings.landsmanLogoUrl),
       heroBackgroundUrl: buildImageField(dashboardQuery.data.settings.heroBackgroundUrl),
       shayAboutImageUrl: buildImageField(dashboardQuery.data.settings.shayAboutImageUrl),
       heroHeadline: dashboardQuery.data.settings.heroHeadline ?? "",
@@ -452,8 +479,6 @@ export default function AdminPanel() {
       officePhone: dashboardQuery.data.settings.officePhone ?? "",
       aboutTitle: dashboardQuery.data.settings.aboutTitle ?? "",
       aboutSubtitle: dashboardQuery.data.settings.aboutSubtitle ?? "",
-      landsmanTitle: dashboardQuery.data.settings.landsmanTitle ?? "",
-      landsmanBody: dashboardQuery.data.settings.landsmanBody ?? "",
       footerSlogan: dashboardQuery.data.settings.footerSlogan ?? "",
     });
   }, [dashboardQuery.data?.settings]);
@@ -478,10 +503,30 @@ export default function AdminPanel() {
     });
   }, [dashboardQuery.data?.marketingSection]);
 
+  useEffect(() => {
+    const projects = dashboardQuery.data?.projects;
+    if (!projects) return;
+
+    setProjectsForm(
+      projects.map((project) => ({
+        id: project.id,
+        title: project.title,
+        neighborhood: project.neighborhood,
+        city: project.city,
+        description: project.description,
+        status: project.status,
+        coverImageUrl: buildImageField(project.coverImageUrl),
+        isPublished: project.isPublished,
+        sortOrder: project.sortOrder,
+      })),
+    );
+  }, [dashboardQuery.data?.projects]);
+
   const activeStaff = useMemo(() => dashboardQuery.data?.staff ?? [], [dashboardQuery.data?.staff]);
   const testimonials = useMemo(() => dashboardQuery.data?.testimonials ?? [], [dashboardQuery.data?.testimonials]);
   const properties = useMemo(() => dashboardQuery.data?.properties ?? [], [dashboardQuery.data?.properties]);
   const leads = useMemo(() => dashboardQuery.data?.leads ?? [], [dashboardQuery.data?.leads]);
+  const projectCount = useMemo(() => dashboardQuery.data?.projects?.length ?? 0, [dashboardQuery.data?.projects]);
 
   useEffect(() => {
     setPropertyGalleryDrafts(
@@ -536,7 +581,6 @@ export default function AdminPanel() {
       siteName: settingsForm.siteName,
       headerLogoUrl: serializeImageField(settingsForm.headerLogoUrl),
       footerLogoUrl: serializeImageField(settingsForm.footerLogoUrl),
-      landsmanLogoUrl: serializeImageField(settingsForm.landsmanLogoUrl),
       heroBackgroundUrl: serializeImageField(settingsForm.heroBackgroundUrl),
       shayAboutImageUrl: serializeImageField(settingsForm.shayAboutImageUrl),
       heroHeadline: settingsForm.heroHeadline,
@@ -545,8 +589,6 @@ export default function AdminPanel() {
       officePhone: settingsForm.officePhone,
       aboutTitle: settingsForm.aboutTitle,
       aboutSubtitle: settingsForm.aboutSubtitle,
-      landsmanTitle: settingsForm.landsmanTitle,
-      landsmanBody: settingsForm.landsmanBody,
       footerSlogan: settingsForm.footerSlogan,
     });
   };
@@ -592,6 +634,31 @@ export default function AdminPanel() {
         items: prev.items.filter((_, currentIndex) => currentIndex !== index),
       };
     });
+  };
+
+  const handleSaveProjects = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    await updateProjectsMutation.mutateAsync({
+      projects: projectsForm.map((project) => ({
+        id: project.id,
+        title: project.title,
+        neighborhood: project.neighborhood,
+        city: project.city,
+        description: project.description,
+        status: project.status,
+        coverImageUrl: serializeImageField(project.coverImageUrl),
+        isPublished: project.isPublished,
+        sortOrder: project.sortOrder,
+      })),
+    });
+  };
+
+  const handleAddProject = () => {
+    setProjectsForm((projects) => [...projects, buildProjectForm(projects.length + 1)]);
+  };
+
+  const handleRemoveProject = (projectId: string) => {
+    setProjectsForm((projects) => projects.filter((project) => project.id !== projectId));
   };
 
   const handleCreateStaff = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -697,7 +764,7 @@ export default function AdminPanel() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#fffdf7]" dir="rtl">
         <div className="inline-flex items-center gap-3 rounded-full bg-white px-5 py-3 text-base font-bold text-slate-700 shadow-md">
-          <Loader2 className="size-5 animate-spin text-[#d9ae4c]" />
+          <Loader2 className="size-5 animate-spin text-[#4b8067]" />
           טוענים את פאנל הניהול המאובטח...
         </div>
       </div>
@@ -712,7 +779,7 @@ export default function AdminPanel() {
     <AgentLayout>
     <div className="py-6 px-4" dir="rtl">
       <div className="mx-auto max-w-[1160px] space-y-8">
-        <header className="rounded-[32px] bg-[#d9ae4c] px-6 py-6 text-white shadow-[0_20px_50px_rgba(217,174,76,0.25)] md:px-8">
+        <header className="rounded-[32px] bg-[#4b8067] px-6 py-6 text-white shadow-[0_20px_50px_rgba(75,128,103,0.25)] md:px-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-black uppercase tracking-[0.08em] text-white/75">Admin Panel</p>
@@ -726,7 +793,7 @@ export default function AdminPanel() {
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link href="/agent-dashboard/new-property">
-                <Button className="rounded-full bg-[#fff2a8] text-black hover:bg-[#ffe97a]">
+                <Button className="rounded-full bg-[#f2f0e7] text-black hover:bg-[#e3eee7]">
                   <Plus className="size-4" />
                   הוספת נכס חדש
                 </Button>
@@ -741,15 +808,16 @@ export default function AdminPanel() {
           </div>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-4">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {[
             { title: "נכסים", value: properties.length, icon: Building2 },
             { title: "סוכנים ואדמינים", value: activeStaff.length, icon: Users },
             { title: "המלצות", value: testimonials.length, icon: MessageSquareQuote },
             { title: "לידים חדשים", value: leads.length, icon: ShieldCheck },
+            { title: "פרויקטים", value: projectCount, icon: Building2 },
           ].map((item) => (
             <article key={item.title} className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_14px_30px_rgba(15,23,42,0.05)]">
-              <item.icon className="size-6 text-[#d9ae4c]" />
+              <item.icon className="size-6 text-[#4b8067]" />
               <p className="mt-4 text-sm font-black uppercase tracking-[0.06em] text-slate-500">{item.title}</p>
               <p className="mt-2 text-4xl font-black text-slate-950">{item.value}</p>
             </article>
@@ -759,9 +827,9 @@ export default function AdminPanel() {
         <section className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
           <form id="admin-site-settings" onSubmit={handleSaveSettings} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center gap-3">
-              <Settings className="size-5 text-[#d9ae4c]" />
+              <Settings className="size-5 text-[#4b8067]" />
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#d9ae4c]">Global Site Manager</p>
+                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#4b8067]">Global Site Manager</p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">הגדרות אתר גלובליות</h2>
               </div>
             </div>
@@ -774,15 +842,14 @@ export default function AdminPanel() {
                 ["heroHeadline", "כותרת Hero"],
                 ["heroTypingText", "טקסט אנימציית typing"],
                 ["aboutTitle", "כותרת אזור אודות"],
-                ["landsmanTitle", "כותרת Landsman"],
                 ["footerSlogan", "סלוגן footer"],
               ].map(([key, label]) => (
                 <label key={key} className="grid gap-2">
                   <span className="text-sm font-bold text-slate-700">{label}</span>
                   <input
-                    value={settingsForm[key as keyof Omit<SiteSettingsFormState, "headerLogoUrl" | "footerLogoUrl" | "landsmanLogoUrl" | "heroBackgroundUrl" | "shayAboutImageUrl" | "aboutSubtitle" | "landsmanBody">] as string}
+                    value={settingsForm[key as keyof Omit<SiteSettingsFormState, "headerLogoUrl" | "footerLogoUrl" | "heroBackgroundUrl" | "shayAboutImageUrl" | "aboutSubtitle">] as string}
                     onChange={(event) => setSettingsForm((prev) => ({ ...prev, [key]: event.target.value }))}
-                    className="h-12 rounded-2xl border border-slate-200 px-4 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                    className="h-12 rounded-2xl border border-slate-200 px-4 outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                   />
                 </label>
               ))}
@@ -827,49 +894,27 @@ export default function AdminPanel() {
                   )
                 }
               />
-              <div className="md:col-span-2">
-                <ImageUploadField
-                  label="לוגו Landsman"
-                  hint="לוגו שותף המופיע במקטעי האמון והחיבור לרשת."
-                  value={settingsForm.landsmanLogoUrl}
-                  onFileSelected={(file) =>
-                    handleSingleImageSelection(file, (updater) =>
-                      setSettingsForm((prev) => ({ ...prev, landsmanLogoUrl: updater(prev.landsmanLogoUrl) })),
-                    )
-                  }
-                />
-              </div>
-
               <label className="grid gap-2 md:col-span-2">
                 <span className="text-sm font-bold text-slate-700">תיאור אודות</span>
                 <textarea
                   value={settingsForm.aboutSubtitle}
                   onChange={(event) => setSettingsForm((prev) => ({ ...prev, aboutSubtitle: event.target.value }))}
                   rows={4}
-                  className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
-                />
-              </label>
-              <label className="grid gap-2 md:col-span-2">
-                <span className="text-sm font-bold text-slate-700">טקסט Landsman</span>
-                <textarea
-                  value={settingsForm.landsmanBody}
-                  onChange={(event) => setSettingsForm((prev) => ({ ...prev, landsmanBody: event.target.value }))}
-                  rows={4}
-                  className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                  className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                 />
               </label>
             </div>
 
-            <Button type="submit" disabled={updateSettingsMutation.isPending} className="mt-6 rounded-full bg-[#d9ae4c] px-8 text-white hover:bg-[#c99a31]">
+            <Button type="submit" disabled={updateSettingsMutation.isPending} className="mt-6 rounded-full bg-[#4b8067] px-8 text-white hover:bg-[#3a6b55]">
               {updateSettingsMutation.isPending ? "שומרים..." : "שמירת הגדרות האתר"}
             </Button>
           </form>
 
           <section id="admin-leads" className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center gap-3">
-              <ShieldCheck className="size-5 text-[#d9ae4c]" />
+              <ShieldCheck className="size-5 text-[#4b8067]" />
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#d9ae4c]">Lead Inbox</p>
+                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#4b8067]">Lead Inbox</p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">לידים אחרונים</h2>
               </div>
             </div>
@@ -882,7 +927,7 @@ export default function AdminPanel() {
                   <article key={lead.id} className="rounded-[24px] border border-slate-200 bg-[#fbfdff] p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-lg font-black text-slate-950">{lead.fullName}</p>
-                      <span className="rounded-full bg-[#fff4d8] px-3 py-1 text-xs font-black text-[#d9ae4c]">{lead.neighborhood}</span>
+                      <span className="rounded-full bg-[#eef3ef] px-3 py-1 text-xs font-black text-[#4b8067]">{lead.neighborhood}</span>
                     </div>
                     <p className="mt-2 text-sm font-semibold text-slate-600">טלפון: {lead.phone}</p>
                     <p className="mt-2 text-sm leading-7 text-slate-600">
@@ -899,14 +944,14 @@ export default function AdminPanel() {
         <section className="grid gap-8 xl:grid-cols-2">
           <section id="admin-staff" className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center gap-3">
-              <Users className="size-5 text-[#d9ae4c]" />
+              <Users className="size-5 text-[#4b8067]" />
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#d9ae4c]">Team Manager</p>
+                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#4b8067]">Team Manager</p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">ניהול סוכנים ואדמינים</h2>
               </div>
             </div>
 
-            <form onSubmit={handleCreateStaff} className="mt-6 grid gap-4 rounded-[28px] bg-[#fff8e6] p-5">
+            <form onSubmit={handleCreateStaff} className="mt-6 grid gap-4 rounded-[28px] bg-[#fbfaf5] p-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <input placeholder="שם מלא" value={newStaff.name} onChange={(e) => setNewStaff((prev) => ({ ...prev, name: e.target.value }))} className="h-12 rounded-2xl border border-slate-200 px-4" />
                 <input placeholder="אימייל" type="email" value={newStaff.email} onChange={(e) => setNewStaff((prev) => ({ ...prev, email: e.target.value }))} className="h-12 rounded-2xl border border-slate-200 px-4" />
@@ -934,7 +979,7 @@ export default function AdminPanel() {
                 <label className="inline-flex items-center gap-2"><input type="checkbox" checked={newStaff.isFeaturedOnHomepage} onChange={(e) => setNewStaff((prev) => ({ ...prev, isFeaturedOnHomepage: e.target.checked }))} /> מוצג בדף הבית</label>
                 <label className="inline-flex items-center gap-2"><input type="checkbox" checked={newStaff.isActive} onChange={(e) => setNewStaff((prev) => ({ ...prev, isActive: e.target.checked }))} /> פעיל</label>
               </div>
-              <Button type="submit" disabled={createStaffMutation.isPending} className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">
+              <Button type="submit" disabled={createStaffMutation.isPending} className="rounded-full bg-[#4b8067] text-white hover:bg-[#3a6b55]">
                 {createStaffMutation.isPending ? "יוצרים חשבון..." : "יצירת חשבון חדש"}
               </Button>
             </form>
@@ -974,7 +1019,7 @@ export default function AdminPanel() {
                           <label className="inline-flex items-center gap-2"><input type="checkbox" checked={editingStaffForm.isActive} onChange={(e) => setEditingStaffForm((prev) => ({ ...prev, isActive: e.target.checked }))} /> פעיל</label>
                         </div>
                         <div className="flex gap-3">
-                          <Button type="button" disabled={updateStaffMutation.isPending} onClick={() => handleSaveStaff(member.id)} className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">
+                          <Button type="button" disabled={updateStaffMutation.isPending} onClick={() => handleSaveStaff(member.id)} className="rounded-full bg-[#4b8067] text-white hover:bg-[#3a6b55]">
                             {updateStaffMutation.isPending ? "שומר..." : "שמירת שינויים"}
                           </Button>
                           <Button type="button" variant="outline" onClick={() => setEditingStaffId(null)} className="rounded-full">ביטול</Button>
@@ -1021,9 +1066,9 @@ export default function AdminPanel() {
                           </div>
                         </div>
                         <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
-                          <span className="rounded-full bg-[#fff4d8] px-3 py-1 text-[#d9ae4c]">{member.accountRole === "admin" ? "אדמין" : "סוכן"}</span>
+                          <span className="rounded-full bg-[#eef3ef] px-3 py-1 text-[#4b8067]">{member.accountRole === "admin" ? "אדמין" : "סוכן"}</span>
                           <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">{member.phone}</span>
-                          {member.isFeaturedOnHomepage ? <span className="rounded-full bg-[#fff8d7] px-3 py-1 text-[#b8860b]">מוצג בדף הבית</span> : null}
+                          {member.isFeaturedOnHomepage ? <span className="rounded-full bg-[#eef3ef] px-3 py-1 text-[#2f6653]">מוצג בדף הבית</span> : null}
                         </div>
                       </>
                     )}
@@ -1036,13 +1081,13 @@ export default function AdminPanel() {
         <form
           id="admin-marketing-section"
           onSubmit={handleSaveMarketingSection}
-          className="rounded-[32px] border border-[#D4AF37]/25 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8"
+          className="rounded-[32px] border border-[#4b8067]/25 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8"
         >
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="flex items-center gap-3">
-              <ImagePlus className="size-5 text-[#d9ae4c]" />
+              <ImagePlus className="size-5 text-[#4b8067]" />
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#d9ae4c]">Marketing Section</p>
+                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#4b8067]">Marketing Section</p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">סקשן שיטות השיווק באתר</h2>
                 <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
                   כאן אפשר לשנות כותרות, טקסטים, הדגשים, תמונות וסרטונים שמופיעים מתחת ל״השיטה״ בדף הבית.
@@ -1052,7 +1097,7 @@ export default function AdminPanel() {
             <Button
               type="submit"
               disabled={updateMarketingSectionMutation.isPending}
-              className="rounded-full bg-[#d9ae4c] px-8 text-black hover:bg-[#c99a31]"
+              className="rounded-full bg-[#4b8067] px-8 text-black hover:bg-[#3a6b55]"
             >
               {updateMarketingSectionMutation.isPending ? "שומרים..." : "שמירת סקשן השיווק"}
             </Button>
@@ -1068,7 +1113,7 @@ export default function AdminPanel() {
                 <input
                   value={marketingSectionForm[key as "eyebrow" | "title"]}
                   onChange={(event) => setMarketingSectionForm((prev) => ({ ...prev, [key]: event.target.value }))}
-                  className="h-12 rounded-2xl border border-slate-200 px-4 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                  className="h-12 rounded-2xl border border-slate-200 px-4 outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                 />
               </label>
             ))}
@@ -1078,7 +1123,7 @@ export default function AdminPanel() {
                 value={marketingSectionForm.subtitle}
                 onChange={(event) => setMarketingSectionForm((prev) => ({ ...prev, subtitle: event.target.value }))}
                 rows={3}
-                className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
               />
             </label>
             <label className="grid gap-2 md:col-span-2">
@@ -1087,7 +1132,7 @@ export default function AdminPanel() {
                 value={marketingSectionForm.highlightsText}
                 onChange={(event) => setMarketingSectionForm((prev) => ({ ...prev, highlightsText: event.target.value }))}
                 rows={4}
-                className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
               />
             </label>
           </div>
@@ -1101,7 +1146,7 @@ export default function AdminPanel() {
               type="button"
               onClick={handleAddMarketingSectionItem}
               disabled={marketingSectionForm.items.length >= maxMarketingSectionItems}
-              className="rounded-full bg-[#1A1A1A] px-5 text-white hover:bg-[#D4AF37] hover:text-black disabled:opacity-40"
+              className="rounded-full bg-[#1A1A1A] px-5 text-white hover:bg-[#4b8067] hover:text-black disabled:opacity-40"
             >
               <Plus className="ml-2 size-4" />
               הוספת כרטיס שיווק
@@ -1124,7 +1169,7 @@ export default function AdminPanel() {
                           ),
                         }))
                       }
-                      className="h-10 rounded-2xl border border-[#D4AF37]/50 bg-white px-3 text-sm font-bold outline-none"
+                      className="h-10 rounded-2xl border border-[#4b8067]/50 bg-white px-3 text-sm font-bold outline-none"
                     >
                       <option value="image">תמונה</option>
                       <option value="video">וידאו</option>
@@ -1156,7 +1201,7 @@ export default function AdminPanel() {
                           ),
                         }))
                       }
-                      className="h-12 rounded-2xl border border-slate-200 px-4 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="h-12 rounded-2xl border border-slate-200 px-4 outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
                   <label className="grid gap-2">
@@ -1172,7 +1217,7 @@ export default function AdminPanel() {
                         }))
                       }
                       rows={3}
-                      className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
                   <MediaUploadField
@@ -1232,6 +1277,94 @@ export default function AdminPanel() {
           </div>
         </form>
 
+        <form id="admin-projects" onSubmit={handleSaveProjects} className="rounded-[32px] border border-[#4b8067]/20 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex items-center gap-3">
+              <Building2 className="size-5 text-[#4b8067]" />
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#4b8067]">Projects Manager</p>
+                <h2 className="mt-1 text-2xl font-black text-slate-950">ניהול פרויקטים</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">פרויקטים שמסומנים כמפורסמים יוצגו בעמוד הפרויקטים באתר.</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button type="button" variant="outline" onClick={handleAddProject} className="rounded-full border-[#4b8067]/30 text-[#2f6653] hover:bg-[#eef3ef]">
+                <Plus className="size-4" />
+                הוספת פרויקט
+              </Button>
+              <Button type="submit" disabled={updateProjectsMutation.isPending} className="rounded-full bg-[#4b8067] text-white hover:bg-[#3a6b55]">
+                {updateProjectsMutation.isPending ? "שומרים..." : "שמירת פרויקטים"}
+              </Button>
+            </div>
+          </div>
+
+          {projectsForm.length ? (
+            <div className="mt-8 grid gap-6 xl:grid-cols-2">
+              {projectsForm.map((project, index) => (
+                <article key={project.id} className="rounded-[24px] border border-slate-200 bg-[#fbfaf5] p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-lg font-black text-slate-950">פרויקט #{index + 1}</p>
+                    <Button type="button" variant="outline" size="icon" onClick={() => handleRemoveProject(project.id)} className="size-10 rounded-full border-red-100 text-red-600 hover:bg-red-50" aria-label={`מחיקת ${project.title || "פרויקט"}`}>
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                    <label className="grid gap-2 sm:col-span-2">
+                      <span className="text-sm font-bold text-slate-700">שם הפרויקט</span>
+                      <input value={project.title} onChange={(event) => setProjectsForm((projects) => projects.map((item) => item.id === project.id ? { ...item, title: event.target.value } : item))} className="h-12 rounded-2xl border border-slate-200 bg-white px-4" placeholder="לדוגמה: נוף ירושלים" />
+                    </label>
+                    <label className="grid gap-2">
+                      <span className="text-sm font-bold text-slate-700">שכונה / אזור</span>
+                      <input value={project.neighborhood} onChange={(event) => setProjectsForm((projects) => projects.map((item) => item.id === project.id ? { ...item, neighborhood: event.target.value } : item))} className="h-12 rounded-2xl border border-slate-200 bg-white px-4" placeholder="לדוגמה: קטמונים" />
+                    </label>
+                    <label className="grid gap-2">
+                      <span className="text-sm font-bold text-slate-700">עיר</span>
+                      <input value={project.city} onChange={(event) => setProjectsForm((projects) => projects.map((item) => item.id === project.id ? { ...item, city: event.target.value } : item))} className="h-12 rounded-2xl border border-slate-200 bg-white px-4" />
+                    </label>
+                    <label className="grid gap-2">
+                      <span className="text-sm font-bold text-slate-700">סטטוס</span>
+                      <select value={project.status} onChange={(event) => setProjectsForm((projects) => projects.map((item) => item.id === project.id ? { ...item, status: event.target.value as ProjectFormState["status"] } : item))} className="h-12 rounded-2xl border border-slate-200 bg-white px-4">
+                        <option value="בקרוב">בקרוב</option>
+                        <option value="בשיווק">בשיווק</option>
+                        <option value="הושלם">הושלם</option>
+                      </select>
+                    </label>
+                    <label className="grid gap-2">
+                      <span className="text-sm font-bold text-slate-700">סדר הצגה</span>
+                      <input type="number" min={0} value={project.sortOrder} onChange={(event) => setProjectsForm((projects) => projects.map((item) => item.id === project.id ? { ...item, sortOrder: Number(event.target.value) } : item))} className="h-12 rounded-2xl border border-slate-200 bg-white px-4" />
+                    </label>
+                    <label className="grid gap-2 sm:col-span-2">
+                      <span className="text-sm font-bold text-slate-700">תיאור הפרויקט</span>
+                      <textarea value={project.description} onChange={(event) => setProjectsForm((projects) => projects.map((item) => item.id === project.id ? { ...item, description: event.target.value } : item))} rows={4} className="rounded-2xl border border-slate-200 bg-white px-4 py-3" placeholder="מה חשוב לדעת על הפרויקט?" />
+                    </label>
+                  </div>
+                  <div className="mt-5">
+                    <ImageUploadField
+                      label="תמונת פרויקט"
+                      hint="תמונת הכיסוי מוצגת בכרטיס הפרויקט באתר הציבורי."
+                      value={project.coverImageUrl}
+                      onFileSelected={(file) =>
+                        handleSingleImageSelection(file, (updater) =>
+                          setProjectsForm((projects) => projects.map((item) => item.id === project.id ? { ...item, coverImageUrl: updater(item.coverImageUrl) } : item)),
+                        )
+                      }
+                    />
+                  </div>
+                  <label className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <input type="checkbox" checked={project.isPublished} onChange={(event) => setProjectsForm((projects) => projects.map((item) => item.id === project.id ? { ...item, isPublished: event.target.checked } : item))} />
+                    לפרסם את הפרויקט באתר
+                  </label>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-8 border-y border-dashed border-[#4b8067]/25 py-10 text-center">
+              <p className="text-lg font-black text-slate-950">עדיין לא נוספו פרויקטים.</p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">התחילו בפרויקט הראשון, שמרו אותו, ובחרו אם לפרסם אותו מיד באתר.</p>
+            </div>
+          )}
+        </form>
+
         {adminMediaPreview ? (
           <div
             className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 p-4"
@@ -1265,14 +1398,14 @@ export default function AdminPanel() {
 
         <section id="admin-testimonials" className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center gap-3">
-              <MessageSquareQuote className="size-5 text-[#d9ae4c]" />
+              <MessageSquareQuote className="size-5 text-[#4b8067]" />
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#d9ae4c]">Testimonials Manager</p>
+                <p className="text-sm font-black uppercase tracking-[0.06em] text-[#4b8067]">Testimonials Manager</p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">ניהול המלצות וקרוסלה</h2>
               </div>
             </div>
 
-            <form onSubmit={handleCreateTestimonial} className="mt-6 grid gap-4 rounded-[28px] bg-[#fff8e6] p-5">
+            <form onSubmit={handleCreateTestimonial} className="mt-6 grid gap-4 rounded-[28px] bg-[#fbfaf5] p-5">
               <input placeholder="שם מקור / כותרת" value={newTestimonial.sourceName} onChange={(e) => setNewTestimonial((prev) => ({ ...prev, sourceName: e.target.value }))} className="h-12 rounded-2xl border border-slate-200 px-4" />
               <textarea placeholder="טקסט ההמלצה" value={newTestimonial.quote} onChange={(e) => setNewTestimonial((prev) => ({ ...prev, quote: e.target.value }))} rows={4} className="rounded-2xl border border-slate-200 px-4 py-3" />
               <div className="grid gap-4 md:grid-cols-3">
@@ -1299,7 +1432,7 @@ export default function AdminPanel() {
                 }}
               />
               <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={newTestimonial.isPublished} onChange={(e) => setNewTestimonial((prev) => ({ ...prev, isPublished: e.target.checked }))} /> מפורסם באתר</label>
-              <Button type="submit" disabled={createTestimonialMutation.isPending} className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">
+              <Button type="submit" disabled={createTestimonialMutation.isPending} className="rounded-full bg-[#4b8067] text-white hover:bg-[#3a6b55]">
                 {createTestimonialMutation.isPending ? "מוסיפים המלצה..." : "הוספת המלצה חדשה"}
               </Button>
             </form>
@@ -1337,7 +1470,7 @@ export default function AdminPanel() {
                           }}
                         />
                         <div className="flex gap-3">
-                          <Button type="button" onClick={() => handleSaveTestimonial(item.id)} className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">שמירת שינויים</Button>
+                          <Button type="button" onClick={() => handleSaveTestimonial(item.id)} className="rounded-full bg-[#4b8067] text-white hover:bg-[#3a6b55]">שמירת שינויים</Button>
                           <Button type="button" variant="outline" onClick={() => setEditingTestimonialId(null)} className="rounded-full">ביטול</Button>
                         </div>
                       </div>
@@ -1383,8 +1516,8 @@ export default function AdminPanel() {
                           </div>
                         </div>
                         <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
-                          <span className="rounded-full bg-[#fff4d8] px-3 py-1 text-[#d9ae4c]">{item.sourceLabel}</span>
-                          <span className="rounded-full bg-[#fff8d7] px-3 py-1 text-[#b8860b]">{item.stars} כוכבים</span>
+                          <span className="rounded-full bg-[#eef3ef] px-3 py-1 text-[#4b8067]">{item.sourceLabel}</span>
+                          <span className="rounded-full bg-[#eef3ef] px-3 py-1 text-[#2f6653]">{item.stars} כוכבים</span>
                           <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">מיקום {item.displayOrder}</span>
                         </div>
                       </>
@@ -1400,21 +1533,21 @@ export default function AdminPanel() {
           <section id="admin-properties" className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.05)] md:p-8">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <Building2 className="size-5 text-[#d9ae4c]" />
+                <Building2 className="size-5 text-[#4b8067]" />
                 <div>
-                  <p className="text-sm font-black uppercase tracking-[0.06em] text-[#d9ae4c]">Property Manager</p>
+                  <p className="text-sm font-black uppercase tracking-[0.06em] text-[#4b8067]">Property Manager</p>
                   <h2 className="mt-1 text-2xl font-black text-slate-950">ניהול נכסים</h2>
                 </div>
               </div>
               <Link href="/agent-dashboard/new-property">
-                <Button className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">
+                <Button className="rounded-full bg-[#4b8067] text-white hover:bg-[#3a6b55]">
                   <Plus className="size-4" />
                   הוספת נכס
                 </Button>
               </Link>
             </div>
 
-            <div className="mt-4 rounded-[24px] bg-[#fff8e6] p-4 text-sm leading-7 text-slate-600">
+            <div className="mt-4 rounded-[24px] bg-[#fbfaf5] p-4 text-sm leading-7 text-slate-600">
               כעת אפשר להעלות מתוך /admin קבצי JPG, PNG ו-WebP ישירות ללוגואים, תמונות התוכן וגלריות הנכסים. לאחר השמירה התמונות נשמרות באחסון הקבוע, מקושרות למסד ומתעדכנות מיד באתר הציבורי.
             </div>
 
@@ -1438,9 +1571,9 @@ export default function AdminPanel() {
                         <p className="mt-2 text-sm text-slate-600">{property.address}, {property.neighborhood}</p>
                         <p className="mt-2 text-sm font-semibold text-slate-600">₪{property.price.toLocaleString("he-IL")} · {property.rooms} חדרים · {property.sqm} מ״ר</p>
                         <div className="mt-3 flex flex-wrap gap-2 text-xs font-black">
-                          <span className="rounded-full bg-[#fff4d8] px-3 py-1 text-[#d9ae4c]">{property.status}</span>
+                          <span className="rounded-full bg-[#eef3ef] px-3 py-1 text-[#4b8067]">{property.status}</span>
                           <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">נכס מנוהל במערכת</span>
-                          {property.isPublished ? <span className="rounded-full bg-[#fff8d7] px-3 py-1 text-[#b8860b]">מפורסם</span> : null}
+                          {property.isPublished ? <span className="rounded-full bg-[#eef3ef] px-3 py-1 text-[#2f6653]">מפורסם</span> : null}
                         </div>
                       </div>
                     </div>
@@ -1456,13 +1589,13 @@ export default function AdminPanel() {
                     </div>
                   </div>
 
-                  <div className="mt-5 rounded-[24px] bg-[#fff8e6] p-4">
+                  <div className="mt-5 rounded-[24px] bg-[#fbfaf5] p-4">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                       <div>
                         <p className="text-sm font-black text-slate-950">גלריית תמונות הנכס</p>
                         <p className="mt-1 text-sm leading-6 text-slate-600">בחירת תמונות לגלריה מתוך המחשב תחליף את גלריית הנכס הנוכחית לאחר השמירה. אפשר גם לבחור איזו תמונה תופיע כתמונה הראשית.</p>
                       </div>
-                      <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[#d9ae4c]/35 bg-white px-4 text-sm font-bold text-[#b98b2f] transition hover:bg-[#fff4d8]">
+                      <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-[#4b8067]/35 bg-white px-4 text-sm font-bold text-[#2f6653] transition hover:bg-[#eef3ef]">
                         <Upload className="size-4" />
                         בחירת תמונות לגלריה
                         <input
@@ -1496,14 +1629,14 @@ export default function AdminPanel() {
                             }
                             className={`relative overflow-hidden rounded-2xl border-2 text-right transition ${
                               featuredImageIndex === index
-                                ? "border-[#d9ae4c] shadow-[0_10px_24px_rgba(217,174,76,0.22)]"
+                                ? "border-[#4b8067] shadow-[0_10px_24px_rgba(75,128,103,0.22)]"
                                 : "border-transparent"
                             }`}
                           >
                             <img src={imageUrl} alt={`${property.title} ${index + 1}`} className="h-24 w-full object-cover" />
                             <span className={`absolute right-2 top-2 rounded-full px-3 py-1 text-[11px] font-black ${
                               featuredImageIndex === index
-                                ? "bg-[#d9ae4c] text-white"
+                                ? "bg-[#4b8067] text-white"
                                 : "bg-white/90 text-slate-700"
                             }`}>
                               {featuredImageIndex === index ? "תמונה ראשית" : "הגדר כראשית"}
@@ -1522,7 +1655,7 @@ export default function AdminPanel() {
                         type="button"
                         onClick={() => void handleSavePropertyGallery(property)}
                         disabled={updatePropertyMutation.isPending}
-                        className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]"
+                        className="rounded-full bg-[#4b8067] text-white hover:bg-[#3a6b55]"
                       >
                         {updatePropertyMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
                         שמירת גלריה לאתר

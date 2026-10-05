@@ -14,6 +14,8 @@ const dbMocks = vi.hoisted(() => ({
   ensureDefaultAgentAccounts: vi.fn(),
   getAgentPropertyById: vi.fn(),
   getHomepagePayload: vi.fn(),
+  getMarketingSection: vi.fn(),
+  getProjects: vi.fn(),
   getPropertyById: vi.fn(),
   getSiteSettings: vi.fn(),
   listAgentProperties: vi.fn(),
@@ -21,8 +23,11 @@ const dbMocks = vi.hoisted(() => ({
   listAllTestimonials: vi.fn(),
   listLeadSubmissions: vi.fn(),
   listPublishedProperties: vi.fn(),
+  listPublishedProjects: vi.fn(),
   listStaffAccounts: vi.fn(),
   updateAgentProperty: vi.fn(),
+  updateMarketingSection: vi.fn(),
+  updateProjects: vi.fn(),
   updatePropertyById: vi.fn(),
   updateSiteSettings: vi.fn(),
   updateStaffAccount: vi.fn(),
@@ -62,7 +67,7 @@ describe("CMS routers", () => {
 
   it("returns public homepage payload from the CMS source", async () => {
     const homepagePayload = {
-      settings: { siteName: "Team Shay", footerSlogan: "מתווכים בצד שלך" },
+      settings: { siteName: "Shay Group", footerSlogan: "מתווכים בצד שלך" },
       agents: [{ id: 1, name: "שי כהן" }],
       testimonials: [{ id: 1, quote: "מעולה" }],
       properties: [{ id: 1, title: "דירה בירושלים" }],
@@ -98,7 +103,7 @@ describe("CMS routers", () => {
       sqm: 110,
       notes: "מבקש שיחה בשעות הערב",
     });
-    expect(result).toEqual({ success: true, leadId: 42 });
+    expect(result).toMatchObject({ success: true, leadSaved: true, leadId: 42 });
   });
 
   it("authenticates an agent only when the submitted email and password match a stored agent record", async () => {
@@ -159,11 +164,13 @@ describe("CMS routers", () => {
   });
 
   it("allows admin dashboard access when the staff session is admin", async () => {
-    dbMocks.getSiteSettings.mockResolvedValue({ id: 1, siteName: "Team Shay" });
+    dbMocks.getSiteSettings.mockResolvedValue({ id: 1, siteName: "Shay Group" });
     dbMocks.listAllTestimonials.mockResolvedValue([{ id: 1, quote: "מעולה" }]);
     dbMocks.listStaffAccounts.mockResolvedValue([{ id: 1, name: "שי כהן" }]);
     dbMocks.listAllProperties.mockResolvedValue([{ id: 1, title: "פנטהאוז" }]);
     dbMocks.listLeadSubmissions.mockResolvedValue([{ id: 9, fullName: "דני כהן" }]);
+    dbMocks.getMarketingSection.mockResolvedValue({ items: [] });
+    dbMocks.getProjects.mockResolvedValue([]);
 
     const caller = appRouter.createCaller(
       createContext({
@@ -181,10 +188,11 @@ describe("CMS routers", () => {
 
     const result = await caller.admin.dashboard();
 
-    expect(result.settings).toEqual({ id: 1, siteName: "Team Shay" });
+    expect(result.settings).toEqual({ id: 1, siteName: "Shay Group" });
     expect(result.testimonials).toHaveLength(1);
     expect(result.staff).toHaveLength(1);
     expect(result.properties).toHaveLength(1);
     expect(result.leads).toHaveLength(1);
+    expect(result.projects).toEqual([]);
   });
 });

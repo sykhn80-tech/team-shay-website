@@ -189,9 +189,9 @@ function SectionCard({ title, icon, children, className = "" }: {
   className?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-[#D4AF37]/35 bg-white p-4 shadow-sm ${className}`}>
-      <div className="mb-4 flex items-center gap-2 border-b border-[#D4AF37]/20 pb-3">
-        <span className="flex size-8 items-center justify-center rounded-xl bg-[#fff7df] text-[#b98b2f]">{icon}</span>
+    <section className={`rounded-2xl border border-[#4b8067]/35 bg-white p-4 shadow-sm ${className}`}>
+      <div className="mb-4 flex items-center gap-2 border-b border-[#4b8067]/20 pb-3">
+        <span className="flex size-8 items-center justify-center rounded-xl bg-[#fff7df] text-[#2f6653]">{icon}</span>
         <h3 className="text-base font-black text-slate-900">{title}</h3>
       </div>
       {children}
@@ -340,8 +340,8 @@ function LeadModal({ initial, agents, isAdmin, currentAgentId, onClose, onSave, 
               onClick={() => setForm(previous => ({ ...previous, [key]: option.value }))}
               className={`rounded-full border px-3.5 py-2 text-xs font-black transition ${
                 active
-                  ? "border-[#d9ae4c] bg-[#d9ae4c] text-black shadow-sm"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-[#d9ae4c]/70 hover:bg-amber-50"
+                  ? "border-[#4b8067] bg-[#4b8067] text-black shadow-sm"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-[#4b8067]/70 hover:bg-amber-50"
               }`}
             >
               {option.label}
@@ -359,7 +359,7 @@ function LeadModal({ initial, agents, isAdmin, currentAgentId, onClose, onSave, 
         {/* Header */}
         <div className="z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4 md:px-7">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#b98b2f]">{initial ? `ליד #${initial.id}` : "רשומה חדשה"}</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#2f6653]">{initial ? `ליד #${initial.id}` : "רשומה חדשה"}</p>
             <h2 className="mt-1 text-2xl font-black text-slate-950">{initial ? `עריכת ${initial.name}` : "יצירת ליד חדש"}</h2>
             <p className="mt-1 text-sm text-slate-500">כל המידע החשוב במסך אחד. שדות ריקים יכולים להישאר ריקים.</p>
           </div>
@@ -460,7 +460,7 @@ function LeadModal({ initial, agents, isAdmin, currentAgentId, onClose, onSave, 
               }
               onSave(form);
             }}
-              className="rounded-full bg-[#d9ae4c] px-6 font-black text-black hover:bg-[#c99a31]"
+              className="rounded-full bg-[#4b8067] px-6 font-black text-black hover:bg-[#3a6b55]"
           >
             <Check size={15} />
             {isSaving ? "שומר..." : initial ? "שמור שינויים" : "הוסף ליד"}
@@ -613,7 +613,7 @@ export default function CrmPage({
               </Button>
               <Button
                 onClick={() => { setEditingLead(null); setModalOpen(true); }}
-                className="rounded-full bg-[#d9ae4c] hover:bg-[#c99a31] text-black font-black h-9 px-5 shadow-md shadow-amber-200/60"
+                className="rounded-full bg-[#4b8067] hover:bg-[#3a6b55] text-black font-black h-9 px-5 shadow-md shadow-amber-200/60"
               >
                 <Plus size={15} />
                 ליד חדש
@@ -651,7 +651,7 @@ export default function CrmPage({
                   type="button"
                   onClick={filter.action}
                   className={`rounded-full px-4 py-2 text-xs font-black transition ${
-                    filter.active ? "bg-[#1a1a1a] text-[#d4af37]" : "border border-slate-200 bg-white text-slate-600 hover:border-[#d4af37]"
+                    filter.active ? "bg-[#1a1a1a] text-[#4b8067]" : "border border-slate-200 bg-white text-slate-600 hover:border-[#4b8067]"
                   }`}
                 >
                   {filter.label}
@@ -674,7 +674,7 @@ export default function CrmPage({
                   onChange={event => setFilterNeighborhood(event.target.value)}
                   autoComplete="off"
                   placeholder="חיפוש שכונה"
-                  className="h-11 w-full rounded-lg border-[1.5px] border-[#D4AF37] bg-[#FAFAFA] pr-8 pl-3 text-sm font-bold outline-none focus:shadow-[0_0_0_3px_rgba(212,175,55,0.2)]"
+                  className="h-11 w-full rounded-lg border-[1.5px] border-[#4b8067] bg-[#FAFAFA] pr-8 pl-3 text-sm font-bold outline-none focus:shadow-[0_0_0_3px_rgba(75,128,103,0.2)]"
                 />
               </div>
               {[
@@ -708,14 +708,14 @@ export default function CrmPage({
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             {leadsQuery.isLoading ? (
               <div className="p-14 text-center">
-                <div className="inline-block size-7 rounded-full border-2 border-[#d9ae4c] border-t-transparent animate-spin mb-3" />
+                <div className="inline-block size-7 rounded-full border-2 border-[#4b8067] border-t-transparent animate-spin mb-3" />
                 <p className="text-sm text-slate-400">טוען לידים...</p>
               </div>
             ) : filtered.length === 0 ? (
               <div className="p-14 text-center text-slate-400">
                 <User size={40} className="mx-auto mb-3 opacity-20" />
                 <p className="font-bold text-slate-600">אין לידים להצגה</p>
-                <button onClick={() => setModalOpen(true)} className="mt-2 text-sm text-[#d9ae4c] font-bold hover:underline">
+                <button onClick={() => setModalOpen(true)} className="mt-2 text-sm text-[#4b8067] font-bold hover:underline">
                   הוסף ליד ראשון +
                 </button>
               </div>
@@ -742,7 +742,7 @@ export default function CrmPage({
                             <p className="font-black text-slate-900 leading-tight">{lead.name}</p>
                             {leadLocation(lead) && (
                               <p className="mt-1 flex items-center gap-1 text-xs font-bold text-slate-600">
-                                <MapPin size={11} className="shrink-0 text-[#d9ae4c]" />
+                                <MapPin size={11} className="shrink-0 text-[#4b8067]" />
                                 {leadLocation(lead)}
                               </p>
                             )}
@@ -751,13 +751,13 @@ export default function CrmPage({
                           {/* Phone */}
                           <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                             <a href={`tel:${lead.phone}`}
-                              className="inline-flex items-center gap-1.5 font-bold text-[#d9ae4c] hover:text-[#b98b2f] transition text-xs"
+                              className="inline-flex items-center gap-1.5 font-bold text-[#4b8067] hover:text-[#2f6653] transition text-xs"
                               dir="ltr"
                             >
                               <Phone size={12} />{lead.phone}
                             </a>
                             {lead.secondaryPhone && (
-                              <a href={`tel:${lead.secondaryPhone}`} className="block text-xs text-slate-400 mt-0.5 hover:text-[#d9ae4c]" dir="ltr">
+                              <a href={`tel:${lead.secondaryPhone}`} className="block text-xs text-slate-400 mt-0.5 hover:text-[#4b8067]" dir="ltr">
                                 {lead.secondaryPhone}
                               </a>
                             )}
@@ -773,7 +773,7 @@ export default function CrmPage({
 
                           {/* Agent */}
                           <td className="px-4 py-3">
-                            <span className="text-xs font-black text-[#b98b2f]">{agentName(lead.agentId)}</span>
+                            <span className="text-xs font-black text-[#2f6653]">{agentName(lead.agentId)}</span>
                           </td>
 
                           {/* Source */}
@@ -831,13 +831,13 @@ export default function CrmPage({
                             <TypeBadge type={lead.leadType} />
                           </div>
                           <a href={`tel:${lead.phone}`} onClick={e => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 text-[#d9ae4c] font-bold text-sm mt-0.5" dir="ltr"
+                            className="inline-flex items-center gap-1 text-[#4b8067] font-bold text-sm mt-0.5" dir="ltr"
                           >
                             <Phone size={11} />{lead.phone}
                           </a>
                           {leadLocation(lead) && (
                             <p className="mt-1 flex items-center gap-1 text-xs font-bold text-slate-600">
-                              <MapPin size={11} className="shrink-0 text-[#d9ae4c]" />
+                              <MapPin size={11} className="shrink-0 text-[#4b8067]" />
                               {leadLocation(lead)}
                             </p>
                           )}
@@ -856,7 +856,7 @@ export default function CrmPage({
                       </div>
                       <div className="mt-1.5 flex flex-wrap gap-1.5 items-center">
                         {fmtBudget(lead.budgetMin, lead.budgetMax) && (
-                          <span className="text-xs font-black text-[#d9ae4c]">{fmtBudget(lead.budgetMin, lead.budgetMax)}</span>
+                          <span className="text-xs font-black text-[#4b8067]">{fmtBudget(lead.budgetMin, lead.budgetMax)}</span>
                         )}
                         {lead.processStage && <span className="text-xs text-slate-500">{lead.processStage}</span>}
                       </div>

@@ -38,7 +38,7 @@ export default function CrmDocuments() {
   return (
     <CrmLayout title="מסמכים" subtitle="נהל את כל המסמכים של הלקוחות">
       <div className="mb-5 flex justify-end">
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-3 text-sm font-black text-black"><Plus className="size-4" />העלה מסמך חדש
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-[#4b8067] px-5 py-3 text-sm font-black text-black"><Plus className="size-4" />העלה מסמך חדש
           <input type="file" className="hidden" onChange={async (event) => {
             const file = event.target.files?.[0]; if (!file) return;
             uploadMutation.mutate({ name: file.name, type: "other", mimeType: file.type || "application/octet-stream", dataBase64: await fileToBase64(file), leadId, propertyId: null, notes: null, folderName: folder, folderId: null });
@@ -47,8 +47,8 @@ export default function CrmDocuments() {
       </div>
       <div className="grid gap-6 xl:grid-cols-[280px_1fr]">
         <aside className="rounded-2xl border border-slate-200 bg-white p-4">
-          {defaultFolders.map((name) => <button key={name} type="button" onClick={() => setFolder(name)} className={`mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-3 text-right text-sm font-black ${folder === name ? "bg-[#D4AF37] text-black" : "text-slate-600 hover:bg-slate-50"}`}><Folder className="size-4" />{name}</button>)}
-          <button type="button" className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#D4AF37] px-3 py-3 text-sm font-black text-[#9a7319]"><Plus className="size-4" />תיקיה חדשה</button>
+          {defaultFolders.map((name) => <button key={name} type="button" onClick={() => setFolder(name)} className={`mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-3 text-right text-sm font-black ${folder === name ? "bg-[#4b8067] text-black" : "text-slate-600 hover:bg-slate-50"}`}><Folder className="size-4" />{name}</button>)}
+          <button type="button" className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#4b8067] px-3 py-3 text-sm font-black text-[#9a7319]"><Plus className="size-4" />תיקיה חדשה</button>
         </aside>
         <section>
           <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 md:grid-cols-3">

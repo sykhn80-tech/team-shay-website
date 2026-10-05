@@ -7,6 +7,7 @@ import {
   maxPropertyPrice,
   minPropertyPrice,
   sampleProperties,
+  BRAND_NAME,
   TEAM_LOGO,
   WHATSAPP_LINK,
 } from "@/lib/siteData";
@@ -140,25 +141,25 @@ export default function Properties() {
     <div className="min-h-screen bg-[#FDF8F0] text-slate-950" dir="rtl">
       <section className="px-4 pb-12 pt-10 md:px-6 md:pb-16">
         <div className="mx-auto max-w-7xl overflow-hidden rounded-[36px] border border-slate-200 bg-white shadow-[0_24px_65px_rgba(15,23,42,0.08)]">
-          <div className="flex flex-col gap-8 border-b border-[#D4AF37]/30 bg-white px-6 py-8 md:px-10 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-8 border-b border-[#4b8067]/30 bg-white px-6 py-8 md:px-10 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
-              <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo h-16 w-auto object-contain" />
+              <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-16 w-auto object-contain" style={{ filter: "brightness(0) saturate(100%) invert(31%) sepia(17%) saturate(1364%) hue-rotate(109deg) brightness(91%) contrast(90%)" }} />
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">קטלוג נכסים</p>
+                <p className="text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">קטלוג נכסים</p>
                 <h1 className="mt-2 text-3xl font-black text-[#1A1A1A] md:text-5xl">כל הנכסים במקום אחד</h1>
               </div>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link href="/">
-                <Button variant="outline" className="rounded-full border-[#D4AF37] bg-white text-[#1A1A1A] hover:bg-[#D4AF37] hover:text-black">
+                <Button variant="outline" className="rounded-full border-[#4b8067] bg-white text-[#1A1A1A] hover:bg-[#4b8067] hover:text-black">
                   <ChevronLeft className="size-4" />
                   חזרה לדף הבית
                 </Button>
               </Link>
               <Button
                 onClick={() => window.open(homeQuery.data?.settings?.whatsappLink || WHATSAPP_LINK, "_blank", "noopener,noreferrer")}
-                className="rounded-full bg-[#D4AF37] px-6 text-black hover:bg-[#e5c45e]"
+                className="rounded-full bg-[#4b8067] px-6 text-black hover:bg-[#e5c45e]"
               >
                 דברו איתנו
               </Button>
@@ -167,8 +168,8 @@ export default function Properties() {
 
           <div className="px-6 py-8 md:px-10">
             <div className="grid gap-8 xl:grid-cols-[320px_1fr]">
-              <aside className="order-1 rounded-[30px] border border-[#D4AF37]/35 bg-white p-6 text-slate-950 shadow-[0_18px_40px_rgba(15,23,42,0.07)] xl:order-none">
-                <div className="flex items-center gap-2 text-[#d9ae4c]">
+              <aside className="order-1 rounded-[30px] border border-[#4b8067]/35 bg-white p-6 text-slate-950 shadow-[0_18px_40px_rgba(15,23,42,0.07)] xl:order-none">
+                <div className="flex items-center gap-2 text-[#4b8067]">
                   <SlidersHorizontal className="size-4" />
                   <p className="text-sm font-black uppercase tracking-[0.06em]">סינון חכם</p>
                 </div>
@@ -180,7 +181,7 @@ export default function Properties() {
                 <div className="mt-8 rounded-[24px] border border-slate-200 bg-white p-5">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-black text-slate-700">טווח מחיר</p>
-                    <p className="text-xs font-bold text-[#d9ae4c]">
+                    <p className="text-xs font-bold text-[#4b8067]">
                       {formatPrice(priceRange[0])} — {formatPrice(priceRange[1])}
                     </p>
                   </div>
@@ -195,7 +196,7 @@ export default function Properties() {
                         step={50000}
                         value={priceRange[0]}
                         onChange={(event) => handleMinChange(Number(event.target.value))}
-                        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#f7e7bb] accent-[#d9ae4c]"
+                        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#dde9e2] accent-[#4b8067]"
                       />
                     </div>
                     <div>
@@ -207,7 +208,7 @@ export default function Properties() {
                         step={50000}
                         value={priceRange[1]}
                         onChange={(event) => handleMaxChange(Number(event.target.value))}
-                        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#f7e7bb] accent-[#d9ae4c]"
+                        className="h-2 w-full cursor-pointer appearance-none rounded-full bg-[#dde9e2] accent-[#4b8067]"
                       />
                     </div>
                   </div>
@@ -215,7 +216,7 @@ export default function Properties() {
 
                 <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-5">
                   <label className="text-sm font-black text-slate-700">חיפוש אזור</label>
-                  <div className="mt-3 flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 focus-within:border-[#d9ae4c] focus-within:ring-4 focus-within:ring-[#d9ae4c]/10">
+                  <div className="mt-3 flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 focus-within:border-[#4b8067] focus-within:ring-4 focus-within:ring-[#4b8067]/10">
                     <Search className="size-4 text-slate-400" />
                     <input
                       autoComplete="off"
@@ -235,7 +236,7 @@ export default function Properties() {
                         key={rooms}
                         type="button"
                         onClick={() => setRoomFilter((current) => current === rooms ? "" : rooms)}
-                        className={`rounded-xl py-2 text-sm font-black transition ${roomFilter === rooms ? "bg-[#D4AF37] text-black" : "bg-[#F8F8F8] text-slate-600 hover:bg-[#fff4d8]"}`}
+                        className={`rounded-xl py-2 text-sm font-black transition ${roomFilter === rooms ? "bg-[#4b8067] text-black" : "bg-[#F8F8F8] text-slate-600 hover:bg-[#eef3ef]"}`}
                       >
                         {rooms}
                       </button>
@@ -243,7 +244,7 @@ export default function Properties() {
                   </div>
                 </div>
 
-                <div className="mt-6 rounded-[24px] bg-[#D4AF37] p-5 text-[#1A1A1A]">
+                <div className="mt-6 rounded-[24px] bg-[#4b8067] p-5 text-[#1A1A1A]">
                   <p className="text-sm font-black uppercase tracking-[0.06em] text-black/60">תוצאה נוכחית</p>
                   <p className="mt-3 text-4xl font-black">{filteredProperties.length}</p>
                   <p className="mt-2 text-sm leading-7 text-black/70">נכסים תואמים לטווח המחיר ולאזור שבחרתם.</p>
@@ -253,7 +254,7 @@ export default function Properties() {
               <div className="order-2 xl:order-none">
                 <div className="flex flex-col gap-3 border-b border-slate-100 pb-5 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <p className="text-sm font-black uppercase tracking-[0.06em] text-[#d9ae4c]">מאגר מתעדכן</p>
+                    <p className="text-sm font-black uppercase tracking-[0.06em] text-[#4b8067]">מאגר מתעדכן</p>
                     <h2 className="mt-2 text-2xl font-black">נכסים בירושלים והסביבה</h2>
                   </div>
                   <div className="flex items-center gap-3 text-sm text-slate-500">
@@ -269,11 +270,11 @@ export default function Properties() {
                     return (
                     <article
                       key={property.id}
-                      className="group flex h-full min-h-[620px] flex-col overflow-hidden rounded-[28px] border border-[#D4AF37]/35 bg-white shadow-[0_18px_36px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#D4AF37] hover:shadow-[0_24px_48px_rgba(212,175,55,0.22)]"
+                      className="group flex h-full min-h-[620px] flex-col overflow-hidden rounded-[28px] border border-[#4b8067]/35 bg-white shadow-[0_18px_36px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-1 hover:border-[#4b8067] hover:shadow-[0_24px_48px_rgba(75,128,103,0.22)]"
                     >
                       <div className="relative overflow-hidden">
                         <img src={property.image} alt={property.title} className="h-56 w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />
-                        <span className="absolute right-4 top-4 rounded-full bg-[#D4AF37] px-3 py-1.5 text-xs font-black text-black shadow-lg">{property.status}</span>
+                        <span className="absolute right-4 top-4 rounded-full bg-[#4b8067] px-3 py-1.5 text-xs font-black text-black shadow-lg">{property.status}</span>
                       </div>
                       <div className="flex flex-1 flex-col p-5">
                         <div className="flex items-center justify-between gap-3">
@@ -281,23 +282,23 @@ export default function Properties() {
                         </div>
 
                         <h3 className="mt-3 text-xl font-black text-slate-950">{property.title}</h3>
-                        <div className="mt-4 rounded-[22px] border border-[#D4AF37]/25 bg-[#fffaf0] p-4">
+                        <div className="mt-4 rounded-[22px] border border-[#4b8067]/25 bg-[#fffaf0] p-4">
                           <p className="text-2xl font-black leading-tight text-slate-950">
                             {streetOnly || property.title}
                           </p>
-                          {areaOnly ? <p className="mt-2 text-base font-black text-[#B8960C]">{areaOnly}</p> : null}
+                          {areaOnly ? <p className="mt-2 text-base font-black text-[#2f6653]">{areaOnly}</p> : null}
                         </div>
 
                         <div className="mt-4 grid grid-cols-2 gap-3 text-sm font-bold text-slate-700">
-                          <div className="flex items-center gap-2 rounded-2xl bg-[#fff8e6] px-3 py-3"><BedDouble className="size-4 text-[#D4AF37]" />{property.rooms} חדרים</div>
-                          <div className="flex items-center gap-2 rounded-2xl bg-[#fff8e6] px-3 py-3"><Ruler className="size-4 text-[#D4AF37]" />{property.sqm} מ״ר</div>
+                          <div className="flex items-center gap-2 rounded-2xl bg-[#fbfaf5] px-3 py-3"><BedDouble className="size-4 text-[#4b8067]" />{property.rooms} חדרים</div>
+                          <div className="flex items-center gap-2 rounded-2xl bg-[#fbfaf5] px-3 py-3"><Ruler className="size-4 text-[#4b8067]" />{property.sqm} מ״ר</div>
                         </div>
 
                         <p className="mt-4 line-clamp-4 text-sm leading-7 text-slate-600">{property.description}</p>
 
                         <div className="mt-auto pt-5">
                           <Link href={`/properties/${property.id}`} className="block">
-                            <Button className="w-full rounded-full bg-[#D4AF37] text-[#1A1A1A] hover:bg-[#B8960C] hover:text-black">
+                            <Button className="w-full rounded-full bg-[#4b8067] text-[#1A1A1A] hover:bg-[#2f6653] hover:text-black">
                               לפרטים נוספים
                             </Button>
                           </Link>
@@ -319,7 +320,7 @@ export default function Properties() {
                         setRoomFilter("");
                       }}
                       variant="outline"
-                      className="mt-6 rounded-full border-[#d9ae4c] text-[#d9ae4c] hover:bg-[#fff4d8]"
+                      className="mt-6 rounded-full border-[#4b8067] text-[#4b8067] hover:bg-[#eef3ef]"
                     >
                       איפוס סינון
                     </Button>

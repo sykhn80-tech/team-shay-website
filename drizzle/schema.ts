@@ -43,10 +43,9 @@ export const agentAccounts = mysqlTable("agentAccounts", {
 
 export const siteSettings = mysqlTable("siteSettings", {
   id: int("id").autoincrement().primaryKey(),
-  siteName: varchar("siteName", { length: 160 }).default("Team Shay").notNull(),
+  siteName: varchar("siteName", { length: 160 }).default("Shay Group").notNull(),
   headerLogoUrl: varchar("headerLogoUrl", { length: 512 }),
   footerLogoUrl: varchar("footerLogoUrl", { length: 512 }),
-  landsmanLogoUrl: varchar("landsmanLogoUrl", { length: 512 }),
   heroBackgroundUrl: varchar("heroBackgroundUrl", { length: 512 }),
   shayAboutImageUrl: varchar("shayAboutImageUrl", { length: 512 }),
   heroHeadline: text("heroHeadline"),
@@ -55,8 +54,6 @@ export const siteSettings = mysqlTable("siteSettings", {
   officePhone: varchar("officePhone", { length: 32 }),
   aboutTitle: varchar("aboutTitle", { length: 180 }),
   aboutSubtitle: text("aboutSubtitle"),
-  landsmanTitle: varchar("landsmanTitle", { length: 180 }),
-  landsmanBody: text("landsmanBody"),
   footerSlogan: varchar("footerSlogan", { length: 180 }).default("מתווכים בצד שלך").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

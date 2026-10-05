@@ -56,7 +56,7 @@ export default function CrmCalendar() {
           <button type="button" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="rounded-xl border p-2"><ChevronLeft className="size-4" /></button>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setNewMeeting(true)} className="rounded-full bg-[#D4AF37] text-black"><Plus className="size-4" />פגישה חדשה</Button>
+          <Button onClick={() => setNewMeeting(true)} className="rounded-full bg-[#4b8067] text-black"><Plus className="size-4" />פגישה חדשה</Button>
           <Button asChild variant="outline" className="rounded-full"><a href="/agent-dashboard/crm/tasks"><Plus className="size-4" />משימה חדשה</a></Button>
         </div>
       </div>
@@ -70,8 +70,8 @@ export default function CrmCalendar() {
               const dayEvents = date ? events.filter((event) => event.date === key) : [];
               return (
                 <button key={key} type="button" disabled={!date} onClick={() => date && setSelectedDate(key)}
-                  className={`min-h-28 border-l border-t border-slate-100 p-2 text-right transition ${selectedDate === key ? "bg-[#fff8e6]" : "hover:bg-slate-50"}`}>
-                  {date ? <><span className="font-black text-slate-800">{date.getDate()}</span><div className="mt-3 flex flex-wrap gap-1">{dayEvents.map((event) => <span key={event.id} className={`size-2 rounded-full ${event.type === "פגישה" ? "bg-[#D4AF37]" : "bg-blue-500"}`} />)}</div></> : null}
+                  className={`min-h-28 border-l border-t border-slate-100 p-2 text-right transition ${selectedDate === key ? "bg-[#fbfaf5]" : "hover:bg-slate-50"}`}>
+                  {date ? <><span className="font-black text-slate-800">{date.getDate()}</span><div className="mt-3 flex flex-wrap gap-1">{dayEvents.map((event) => <span key={event.id} className={`size-2 rounded-full ${event.type === "פגישה" ? "bg-[#4b8067]" : "bg-blue-500"}`} />)}</div></> : null}
                 </button>
               );
             })}
@@ -80,7 +80,7 @@ export default function CrmCalendar() {
         <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h3 className="text-lg font-black">אירועים ל־{new Date(selectedDate).toLocaleDateString("he-IL")}</h3>
           <div className="mt-4 space-y-3">
-            {selectedEvents.map((event) => <div key={event.id} className="rounded-xl border border-[#D4AF37]/30 bg-[#fffdf8] p-3"><p className="text-xs font-black text-[#9a7319]">{event.type}{event.time ? ` · ${event.time}` : ""}</p><p className="mt-1 font-bold">{event.title}</p></div>)}
+            {selectedEvents.map((event) => <div key={event.id} className="rounded-xl border border-[#4b8067]/30 bg-[#fffdf8] p-3"><p className="text-xs font-black text-[#9a7319]">{event.type}{event.time ? ` · ${event.time}` : ""}</p><p className="mt-1 font-bold">{event.title}</p></div>)}
             {!selectedEvents.length ? <p className="text-sm text-slate-500">אין אירועים ביום זה.</p> : null}
           </div>
         </aside>
@@ -96,7 +96,7 @@ export default function CrmCalendar() {
               <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
               <CrmSearchSelect value={leadId} onChange={(value) => setLeadId(value == null ? null : Number(value))} placeholder="שיוך לליד" options={(leadsQuery.data ?? []).map((lead) => ({ value: lead.id, label: leadLabel(lead) }))} />
               <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="הערות" rows={3} />
-              <Button onClick={() => title.trim() && createMeeting.mutate({ title: title.trim(), date: selectedDate, time: time || null, notes: notes || null, leadId })} className="bg-[#D4AF37] text-black">שמור פגישה</Button>
+              <Button onClick={() => title.trim() && createMeeting.mutate({ title: title.trim(), date: selectedDate, time: time || null, notes: notes || null, leadId })} className="bg-[#4b8067] text-black">שמור פגישה</Button>
             </div>
           </div>
         </div>

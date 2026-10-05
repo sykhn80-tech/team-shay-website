@@ -41,8 +41,10 @@ vi.mock("@/lib/trpc", () => ({
       publicSite: {
         home: { invalidate: vi.fn() },
         properties: { invalidate: vi.fn() },
+        projects: { invalidate: vi.fn() },
       },
       agent: {
+        me: { invalidate: vi.fn() },
         listProperties: { invalidate: vi.fn() },
         propertyById: { invalidate: vi.fn() },
       },
@@ -68,6 +70,13 @@ vi.mock("@/lib/trpc", () => ({
           isFetching: false,
         }),
       },
+      projects: {
+        useQuery: () => ({
+          data: [],
+          isLoading: false,
+          isFetching: false,
+        }),
+      },
       submitLead: {
         useMutation: () => mutationStub,
       },
@@ -81,6 +90,7 @@ vi.mock("@/lib/trpc", () => ({
         }),
       },
       login: { useMutation: () => mutationStub },
+      logout: { useMutation: () => mutationStub },
       propertyById: {
         useQuery: () => ({
           data: queryState.agentPropertyData,
@@ -99,6 +109,8 @@ vi.mock("@/lib/trpc", () => ({
       },
       login: { useMutation: () => mutationStub },
       updateSiteSettings: { useMutation: () => mutationStub },
+      updateMarketingSection: { useMutation: () => mutationStub },
+      updateProjects: { useMutation: () => mutationStub },
       createStaff: { useMutation: () => mutationStub },
       updateStaff: { useMutation: () => mutationStub },
       deleteStaff: { useMutation: () => mutationStub },
@@ -131,13 +143,12 @@ beforeEach(() => {
 });
 
 describe("frontend CMS rendering", () => {
-  it("renders the updated homepage shell with the white header, gold accents, WhatsApp CTA, icon-based About cards, black network/footer sections, and only eight featured properties", () => {
+  it("renders the updated homepage shell with the white header, green accents, WhatsApp CTA, icon-based About cards, black network/footer sections, and featured properties", () => {
     queryState.homeData = {
       settings: {
-        siteName: "Team Shay CMS",
+        siteName: "Shay Group CMS",
         headerLogoUrl: "https://cdn.example.com/header.png",
         footerLogoUrl: "https://cdn.example.com/footer.png",
-        landsmanLogoUrl: "https://cdn.example.com/landsman.png",
         heroBackgroundUrl: "https://cdn.example.com/hero.png",
         shayAboutImageUrl: "https://cdn.example.com/about.png",
         heroHeadline: "כותרת דינמית מה-CMS",
@@ -146,8 +157,6 @@ describe("frontend CMS rendering", () => {
         officePhone: "052-000-0000",
         aboutTitle: "אודות דינמי",
         aboutSubtitle: "טקסט אודות דינמי",
-        landsmanTitle: "כותרת Landsman דינמית",
-        landsmanBody: "טקסט Landsman דינמי",
         footerSlogan: "סלוגן דינמי מה-CMS",
       },
       agents: [
@@ -248,15 +257,12 @@ describe("frontend CMS rendering", () => {
     expect(markup).toContain("כותרת דינמית מה-CMS");
     expect(markup).toContain("סלוגן דינמי מה-CMS");
     expect(markup).toContain("/media/hero-animation.mp4");
-    expect(markup).toContain("https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/teamshay-logo-new_6990c286.png");
-    expect(markup).toContain("https://cdn.example.com/landsman.png");
+    expect(markup).toContain("/brand/shay-group-logo-transparent.png");
     expect(markup).toContain("bg-[#010101]");
     expect(markup).toContain("mr-auto flex items-center justify-end gap-3 lg:mr-0");
-    expect(markup).toContain("h-14 w-auto md:h-16");
+    expect(markup).toContain("h-16 w-auto brightness-0 invert md:h-20");
     expect(markup).toContain("text-white lg:flex");
     expect(markup).toContain("שלחו הודעה עכשיו");
-    expect(markup).toContain("shay2003ai@gmail.com");
-    expect(markup.indexOf("shay2003ai@gmail.com")).toBeLessThan(markup.indexOf("052-863-6631"));
     expect(markup).toContain("קיר המלצות חי");
     expect(markup).toContain("המלצה חיה 1");
     expect(markup).toContain("המלצה חיה 2");
@@ -264,26 +270,18 @@ describe("frontend CMS rendering", () => {
     expect(markup).toContain("המלצה חיה 4");
     expect(markup).toContain("המלצה חיה 5");
     expect(markup).toContain("המלצה חיה 6");
-    expect(markup).toContain("המלצה חיה 7");
     expect(markup.indexOf("המלצה חיה 1")).toBeLessThan(markup.indexOf("המלצה חיה 2"));
     expect(markup.indexOf("המלצה חיה 2")).toBeLessThan(markup.indexOf("המלצה חיה 3"));
     expect(markup.indexOf("המלצה חיה 3")).toBeLessThan(markup.indexOf("המלצה חיה 4"));
     expect(markup.indexOf("המלצה חיה 4")).toBeLessThan(markup.indexOf("המלצה חיה 5"));
     expect(markup.indexOf("המלצה חיה 5")).toBeLessThan(markup.indexOf("המלצה חיה 6"));
-    expect(markup.indexOf("המלצה חיה 6")).toBeLessThan(markup.indexOf("המלצה חיה 7"));
     expect(markup).toContain("https://cdn.example.com/testimonial-1.png");
-    expect(markup).toContain("h-40 overflow-hidden rounded-[24px] bg-slate-950");
-    expect(markup).toContain("h-full w-full object-cover object-top");
-    expect(markup).toContain("size-5 fill-current");
+    expect(markup).toContain("relative h-44 overflow-hidden bg-[#1A1A1A] md:h-48 xl:h-52");
+    expect(markup).toContain("h-full w-full object-contain");
     expect(markup).toContain("tracking-[0.03em]");
-    expect(markup).toContain("text-[#d9ae4c]");
-    expect(markup).toContain("bg-[#d9ae4c] px-4 py-2 text-sm font-black text-white");
-    expect(markup).toContain("bg-[#d9ae4c] px-3 py-1 text-xs font-black text-white");
+    expect(markup).toContain("text-[#4b8067]");
+    expect(markup).toContain("bg-[#4b8067] px-4 py-2 text-sm font-black text-white");
     expect(markup).toContain("flex flex-col items-center rounded-[24px]");
-    expect(markup).toContain("lucide-bed-double");
-    expect(markup).toContain("lucide-ruler");
-    expect(markup).toContain("חדרים</span>");
-    expect(markup).toContain("מ״ר</span>");
     expect(markup).toContain("bg-[#010101]");
     expect(markup).toContain("האומן 25 , תלפיות");
     expect(markup).toContain("bg-[#010101] px-[5%] py-14 text-white");
@@ -293,7 +291,7 @@ describe("frontend CMS rendering", () => {
     expect(markup).toContain("dir=\"rtl\"");
     expect(markup).toContain("relative flex w-full flex-col items-end gap-12 text-right md:flex-row md:items-start md:justify-between md:text-right");
     expect(markup).toContain("md:absolute md:left-1/2 md:top-0 md:w-fit md:-translate-x-1/2 md:items-center md:text-center");
-    expect(markup).toContain("h-24 w-auto object-contain md:h-32");
+    expect(markup).toContain("h-24 w-auto object-contain brightness-0 invert md:h-32");
     expect(markup).toContain("md:max-w-[28%]");
     expect(markup).toContain("flex flex-row-reverse items-center justify-start gap-2 self-end text-right");
     expect(markup).not.toContain("max-w-[1440px] flex-col gap-12 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]");
@@ -310,17 +308,16 @@ describe("frontend CMS rendering", () => {
     expect(markup).not.toContain("קרוסלת המלצות חיה");
     expect(markup).not.toContain("cms-marquee-track-slow");
     expect(markup).toContain("נכס 8");
-    expect(markup).not.toContain("נכס 9");
+    expect(markup).toContain("נכס 9");
     expect(markup).toContain("/properties/8");
   });
 
   it("renders the public properties catalog from CMS property data", () => {
     queryState.homeData = {
       settings: {
-        siteName: "Team Shay CMS",
+        siteName: "Shay Group CMS",
         headerLogoUrl: "https://cdn.example.com/header.png",
         footerLogoUrl: "https://cdn.example.com/footer.png",
-        landsmanLogoUrl: "https://cdn.example.com/landsman.png",
         heroBackgroundUrl: "https://cdn.example.com/hero.png",
         shayAboutImageUrl: "https://cdn.example.com/about.png",
         heroHeadline: "כותרת",
@@ -329,8 +326,6 @@ describe("frontend CMS rendering", () => {
         officePhone: "052-000-0000",
         aboutTitle: "אודות",
         aboutSubtitle: "טקסט",
-        landsmanTitle: "Landsman",
-        landsmanBody: "טקסט",
         footerSlogan: "סלוגן",
       },
       properties: [
@@ -364,7 +359,7 @@ describe("frontend CMS rendering", () => {
   it("renders a dedicated public property page with the full gallery and property facts", () => {
     queryState.homeData = {
       settings: {
-        siteName: "Team Shay CMS",
+        siteName: "Shay Group CMS",
         headerLogoUrl: "https://cdn.example.com/header.png",
         whatsappLink: "https://wa.me/972500000000",
       },
@@ -411,10 +406,9 @@ describe("frontend CMS rendering", () => {
     };
     queryState.adminDashboardData = {
       settings: {
-        siteName: "Team Shay CMS",
+        siteName: "Shay Group CMS",
         headerLogoUrl: "https://cdn.example.com/header.png",
         footerLogoUrl: "https://cdn.example.com/footer.png",
-        landsmanLogoUrl: "https://cdn.example.com/landsman.png",
         heroBackgroundUrl: "https://cdn.example.com/hero.png",
         shayAboutImageUrl: "https://cdn.example.com/about.png",
         heroHeadline: "כותרת",
@@ -423,8 +417,6 @@ describe("frontend CMS rendering", () => {
         officePhone: "052-000-0000",
         aboutTitle: "אודות",
         aboutSubtitle: "טקסט",
-        landsmanTitle: "Landsman",
-      landsmanBody: "טקסט",
       footerSlogan: "סלוגן",
     },
     testimonials: [
@@ -482,7 +474,7 @@ describe("frontend CMS rendering", () => {
     expect(markup).toContain("ניהול נכסים");
     expect(markup).toContain("לוגו Header");
     expect(markup).toContain("תמונת סוכן");
-    expect(markup).toContain("צילום WhatsApp / מקור");
+    expect(markup).toContain("תמונה או וידאו להמלצה");
     expect(markup).toContain("מיקום בתצוגה");
     expect(markup).toContain("מיקום 1");
     expect(markup).toContain("בחירת קובץ מהמחשב");
@@ -544,10 +536,9 @@ describe("frontend CMS rendering", () => {
     };
     queryState.adminDashboardData = {
       settings: {
-        siteName: "Team Shay CMS",
+        siteName: "Shay Group CMS",
         headerLogoUrl: "https://cdn.example.com/header.png",
         footerLogoUrl: "https://cdn.example.com/footer.png",
-        landsmanLogoUrl: "https://cdn.example.com/landsman.png",
         heroBackgroundUrl: "https://cdn.example.com/hero.png",
         shayAboutImageUrl: "https://cdn.example.com/about.png",
         heroHeadline: "כותרת",
@@ -556,8 +547,6 @@ describe("frontend CMS rendering", () => {
         officePhone: "052-000-0000",
         aboutTitle: "אודות",
         aboutSubtitle: "טקסט",
-        landsmanTitle: "Landsman",
-        landsmanBody: "טקסט",
         footerSlogan: "סלוגן",
       },
       testimonials: [],
@@ -603,7 +592,7 @@ describe("frontend CMS rendering", () => {
     expect(markup).toContain('dir="rtl"');
     expect(markup).toContain("התחברות סוכן");
     expect(markup).toContain("פרטי ההתחברות נמסרים לסוכנים מורשים בלבד");
-    expect(markup).toContain("פאנל הניהול המאובטח");
-    expect(markup).toContain('/admin');
+    expect(markup).toContain("כניסה למסך הניהול");
+    expect(markup).toContain('/agent-dashboard');
   });
 });

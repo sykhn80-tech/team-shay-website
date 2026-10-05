@@ -101,17 +101,14 @@ const defaultStaffAccounts = [
 
 const defaultSiteSettings: InsertSiteSettings = {
   id: 1,
-  siteName: "Team Shay",
+  siteName: "Shay Group",
   heroHeadline: "דואגים למכור לכם את הנכס במחיר המקסימלי ובזמן הקצר ביותר",
   heroTypingText: "צוות מומחי נדל״ן שמביא תוצאות אמיתיות בשטח",
   whatsappLink: "https://wa.me/message/6RX7H74VQ4BPI1",
   officePhone: "052-863-6631",
   aboutTitle: "אמון, תוצאות ומקצוענות שמרגישים כבר מהפגישה הראשונה",
   aboutSubtitle:
-    "Team Shay נבנה סביב תפיסה אחת פשוטה: מוכרים נכס רק כשיש אסטרטגיה ברורה, טיפול אנושי וניהול עסקי חכם.",
-  landsmanTitle: "רשת חזקה מאחוריכם, צוות ממוקד לצדכם",
-  landsmanBody:
-    "Team Shay פועל תחת Landsman ירושלים ומחבר בין ידע מקומי, שיטות שיווק חכמות ונגישות לרשת רחבה של אנשי מקצוע, קונים ושיתופי פעולה.",
+    "Shay Group נבנה סביב תפיסה אחת פשוטה: מוכרים נכס רק כשיש אסטרטגיה ברורה, טיפול אנושי וניהול עסקי חכם.",
   footerSlogan: "מתווכים בצד שלך",
 };
 
@@ -227,6 +224,20 @@ export type MarketingSectionData = {
   items: MarketingSectionItem[];
 };
 
+export type ProjectStatus = "בקרוב" | "בשיווק" | "הושלם";
+
+export type ProjectData = {
+  id: string;
+  title: string;
+  neighborhood: string;
+  city: string;
+  description: string;
+  status: ProjectStatus;
+  coverImageUrl: string | null;
+  isPublished: boolean;
+  sortOrder: number;
+};
+
 export const defaultMarketingSection: MarketingSectionData = {
   eyebrow: "שיטות השיווק שלנו",
   title: "לא רק מעלים מודעה — בונים חוויית מכירה",
@@ -297,10 +308,12 @@ type LocalSiteContent = {
 
 const localCmsDataPath = path.join(process.cwd(), ".local-cms-data", "cms.json");
 const localMarketingSectionPath = path.join(process.cwd(), ".local-cms-data", "marketing-section.json");
+const localProjectsPath = path.join(process.cwd(), ".local-cms-data", "projects.json");
 const localSiteContentPath = path.join(process.cwd(), ".local-cms-data", "site-content.json");
 const blobCmsDataPrefix = "cms/team-shay/cms-";
 const blobCmsCurrentPath = "cms/team-shay/current.json";
 const blobMarketingSectionPath = "cms/team-shay/marketing-section.json";
+const blobProjectsPath = "cms/team-shay/projects.json";
 const blobSiteContentPath = "cms/team-shay/site-content.json";
 const blobCmsCacheTtlMs = 30_000;
 
@@ -309,6 +322,8 @@ let cachedBlobCmsEtag: string | null = null;
 let cachedBlobCmsFetchedAt = 0;
 let cachedMarketingSection: MarketingSectionData | null = null;
 let cachedMarketingSectionFetchedAt = 0;
+let cachedProjects: ProjectData[] | null = null;
+let cachedProjectsFetchedAt = 0;
 let cachedSiteContent: LocalSiteContent | null = null;
 let cachedSiteContentFetchedAt = 0;
 
@@ -358,10 +373,9 @@ function buildDefaultSiteSettings(): SiteSettings {
   const now = new Date(0);
   return {
     id: 1,
-    siteName: defaultSiteSettings.siteName ?? "Team Shay",
+    siteName: defaultSiteSettings.siteName ?? "Shay Group",
     headerLogoUrl: defaultSiteSettings.headerLogoUrl ?? null,
     footerLogoUrl: defaultSiteSettings.footerLogoUrl ?? null,
-    landsmanLogoUrl: defaultSiteSettings.landsmanLogoUrl ?? null,
     heroBackgroundUrl: defaultSiteSettings.heroBackgroundUrl ?? null,
     shayAboutImageUrl: defaultSiteSettings.shayAboutImageUrl ?? null,
     heroHeadline: defaultSiteSettings.heroHeadline ?? null,
@@ -370,8 +384,6 @@ function buildDefaultSiteSettings(): SiteSettings {
     officePhone: defaultSiteSettings.officePhone ?? null,
     aboutTitle: defaultSiteSettings.aboutTitle ?? null,
     aboutSubtitle: defaultSiteSettings.aboutSubtitle ?? null,
-    landsmanTitle: defaultSiteSettings.landsmanTitle ?? null,
-    landsmanBody: defaultSiteSettings.landsmanBody ?? null,
     footerSlogan: defaultSiteSettings.footerSlogan ?? "מתווכים בצד שלך",
     createdAt: now,
     updatedAt: now,
@@ -457,7 +469,7 @@ function normalizeSiteSettings(settings: Partial<SiteSettings> | null | undefine
     ...fallback,
     ...settings,
     id: 1,
-    siteName: settings?.siteName ?? fallback.siteName,
+    siteName: fallback.siteName,
     footerSlogan: settings?.footerSlogan ?? fallback.footerSlogan,
     createdAt: parseDate(settings?.createdAt),
     updatedAt: parseDate(settings?.updatedAt),
@@ -789,6 +801,91 @@ export async function updateMarketingSection(input: MarketingSectionData): Promi
   return normalized;
 }
 
+function normalizeProjects(input: Partial<ProjectData>[] | null | undefined): ProjectData[] {
+  return (input ?? [])
+    .map<ProjectData>((project, index) => ({
+      id: project.id?.trim() || crypto.randomUUID(),
+      title: project.title?.trim() || "פרויקט חדש",
+      neighborhood: project.neighborhood?.trim() || "ירושלים",
+      city: project.city?.trim() || "ירושלים",
+      description: project.description?.trim() || "פרטים נוספים על הפרויקט יפורסמו בקרוב.",
+      status: project.status === "הושלם" || project.status === "בקרוב" ? project.status : "בשיווק",
+      coverImageUrl: project.coverImageUrl?.trim() || null,
+      isPublished: project.isPublished ?? false,
+      sortOrder: Number.isFinite(project.sortOrder) ? Math.max(0, Number(project.sortOrder)) : index + 1,
+    }))
+    .slice(0, 30)
+    .sort((left, right) => left.sortOrder - right.sortOrder || left.title.localeCompare(right.title, "he"));
+}
+
+export async function getProjects(): Promise<ProjectData[]> {
+  if (cachedProjects && Date.now() - cachedProjectsFetchedAt < blobCmsCacheTtlMs) {
+    return cachedProjects;
+  }
+
+  if (hasBlobStorage()) {
+    try {
+      const result = await blobGet(blobProjectsPath, { access: "public" });
+      if (result?.statusCode === 200 && result.stream) {
+        cachedProjects = normalizeProjects(JSON.parse(await streamToText(result.stream)) as Partial<ProjectData>[]);
+        cachedProjectsFetchedAt = Date.now();
+        return cachedProjects;
+      }
+    } catch (error) {
+      console.warn("[Projects] Failed to read Blob config:", error);
+    }
+  }
+
+  try {
+    cachedProjects = normalizeProjects(JSON.parse(await readFile(localProjectsPath, "utf8")) as Partial<ProjectData>[]);
+    cachedProjectsFetchedAt = Date.now();
+    return cachedProjects;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      console.warn("[Projects] Failed to read local config:", error);
+    }
+    return [];
+  }
+}
+
+export async function listPublishedProjects(): Promise<ProjectData[]> {
+  return (await getProjects()).filter((project) => project.isPublished);
+}
+
+export async function updateProjects(input: Partial<ProjectData>[]): Promise<ProjectData[]> {
+  const normalized = normalizeProjects(input);
+  const payload = `${JSON.stringify(normalized, null, 2)}\n`;
+  let saved = false;
+
+  if (hasBlobStorage()) {
+    try {
+      await blobPut(blobProjectsPath, payload, {
+        access: "public",
+        allowOverwrite: true,
+        addRandomSuffix: false,
+        contentType: "application/json",
+      });
+      saved = true;
+    } catch (error) {
+      console.warn("[Projects] Failed to save Blob config:", error);
+    }
+  }
+
+  if (canWriteLocalCmsBackup()) {
+    await mkdir(path.dirname(localProjectsPath), { recursive: true });
+    await writeFile(localProjectsPath, payload);
+    saved = true;
+  }
+
+  if (!saved) {
+    throw new Error("שמירת הפרויקטים נכשלה.");
+  }
+
+  cachedProjects = normalized;
+  cachedProjectsFetchedAt = Date.now();
+  return normalized;
+}
+
 function sortByNewestProperty(left: Property, right: Property) {
   return right.createdAt.getTime() - left.createdAt.getTime();
 }
@@ -1092,13 +1189,13 @@ export async function getSiteSettings() {
   const db = await getDb();
   if (!db) {
     const data = await readSiteContent();
-    return data.siteSettings;
+    return normalizeSiteSettings(data.siteSettings);
   }
 
   await ensureDefaultSiteSettings();
 
   const rows = await db.select().from(siteSettings).limit(1);
-  return rows[0] ?? null;
+  return normalizeSiteSettings(rows[0]);
 }
 
 export async function updateSiteSettings(input: Partial<InsertSiteSettings>) {
@@ -2390,7 +2487,7 @@ const defaultTemplatesSeed: Array<Omit<MessageTemplate, "id" | "createdAt" | "up
   {
     name: "שבת שלום",
     type: "shabbat",
-    content: "שבת שלום {name}, מאחלים לך ולמשפחה סוף שבוע רגוע ומבורך מצוות Team Shay.",
+    content: "שבת שלום {name}, מאחלים לך ולמשפחה סוף שבוע רגוע ומבורך מצוות Shay Group.",
     imageUrl: null,
     isActive: true,
   },

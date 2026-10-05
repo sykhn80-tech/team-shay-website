@@ -6,7 +6,7 @@ import { storeAgentSessionToken } from "@/lib/agentSession";
 import { trpc } from "@/lib/trpc";
 import { AlertCircle, ChevronLeft, LockKeyhole, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { JERUSALEM_HERO, TEAM_LOGO } from "@/lib/siteData";
+import { BRAND_NAME, JERUSALEM_HERO, TEAM_LOGO_FULL } from "@/lib/siteData";
 
 function getRedirectTarget() {
   return "/agent-dashboard";
@@ -129,13 +129,13 @@ export default function AgentLogin() {
         <section
           className="relative hidden overflow-hidden lg:block"
           style={{
-            backgroundImage: `linear-gradient(180deg, rgba(217, 174, 76, 0.58), rgba(4, 12, 24, 0.75)), url(${JERUSALEM_HERO})`,
+            backgroundImage: `linear-gradient(180deg, rgba(47, 102, 83, 0.58), rgba(4, 12, 24, 0.75)), url(${JERUSALEM_HERO})`,
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
             backgroundSize: "cover",
           }}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,242,168,0.18),transparent_38%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(242,240,231,0.22),transparent_38%)]" />
           <div className="relative flex h-full flex-col justify-between p-10 text-white">
             <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-white/90">
               <ChevronLeft className="size-4" />
@@ -143,7 +143,7 @@ export default function AgentLogin() {
             </Link>
 
             <div className="max-w-xl">
-              <p className="text-sm font-black uppercase tracking-[0.08em] text-[#fff2a8]">Agent Area</p>
+              <p className="text-sm font-black uppercase tracking-[0.08em] text-[#f2f0e7]">Agent Area</p>
               <h1 className="mt-4 text-5xl font-black leading-tight">מערכת סוכנים נקייה, מהירה וממוקדת עבודה</h1>
               <p className="mt-5 text-lg leading-8 text-white/88">
                 התחברות לסוכנים מאפשרת גישה לנכסים, ניהול מלאי ועדכון מהיר של מידע שיווקי בממשק אחד מסודר.
@@ -155,8 +155,8 @@ export default function AgentLogin() {
         <section className="flex items-center justify-center px-4 py-12 md:px-6">
           <div className="w-full max-w-md rounded-[32px] border border-slate-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:p-10">
             <div className="text-center">
-              <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo mx-auto h-16 w-auto object-contain" />
-              <p className="mt-6 text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">התחברות סוכן</p>
+              <img src={TEAM_LOGO_FULL} alt={BRAND_NAME} className="team-shay-logo mx-auto size-28 object-contain" />
+              <p className="mt-6 text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">התחברות סוכן</p>
               <h2 className="mt-3 text-3xl font-black text-black">כניסה למסך הניהול</h2>
               <p className="mt-4 text-base leading-7 text-slate-600">
                 התחברו עם האימייל שלכם. הסיסמה היא תחילת כתובת המייל לפני הסימן @ ולאחר אימות תועברו ישירות למסך האדמין.
@@ -167,7 +167,7 @@ export default function AgentLogin() {
               <label className="grid gap-2">
                 <span className="text-sm font-bold text-slate-700">אימייל</span>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-[#d9ae4c]" />
+                  <Mail className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-[#4b8067]" />
                   <Input
                     type="email"
                     value={email}
@@ -185,7 +185,7 @@ export default function AgentLogin() {
               <label className="grid gap-2">
                 <span className="text-sm font-bold text-slate-700">סיסמה</span>
                 <div className="relative">
-                  <LockKeyhole className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-[#d9ae4c]" />
+                  <LockKeyhole className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-[#4b8067]" />
                   <Input
                     type="password"
                     value={password}
@@ -210,13 +210,13 @@ export default function AgentLogin() {
               <Button
                 type="submit"
                 disabled={loginMutation.isPending}
-                className="mt-2 h-13 rounded-full bg-[#d9ae4c] text-base font-black text-white hover:bg-[#c99a31]"
+                className="mt-2 h-13 rounded-full bg-[#4b8067] text-base font-black text-white hover:bg-[#3a6b55]"
               >
                 {loginMutation.isPending ? "מתחברים..." : "כניסה למערכת"}
               </Button>
             </form>
 
-            <div className="mt-6 rounded-[24px] bg-[#fff8e6] p-4 text-sm leading-7 text-slate-600">
+            <div className="mt-6 rounded-[24px] bg-[#fbfaf5] p-4 text-sm leading-7 text-slate-600">
               <p className="font-black text-black">גישה למערכת</p>
               <p className="mt-2">
                 פרטי ההתחברות נמסרים לסוכנים מורשים בלבד. אם אתם חלק מהצוות ואין לכם גישה,
@@ -226,10 +226,10 @@ export default function AgentLogin() {
 
             <div className="mt-6 grid gap-3 text-center text-sm text-slate-500">
               <p>
-                צריכים לחזור לדף הראשי? <Link href="/" className="font-bold text-[#d9ae4c]">לחצו כאן</Link>
+                צריכים לחזור לדף הראשי? <Link href="/" className="font-bold text-[#4b8067]">לחצו כאן</Link>
               </p>
               <p>
-                לאחר התחברות תקינה תועברו ישירות אל <Link href="/agent-dashboard" className="font-bold text-[#d9ae4c]">דשבורד הסוכן</Link>
+                לאחר התחברות תקינה תועברו ישירות אל <Link href="/agent-dashboard" className="font-bold text-[#4b8067]">דשבורד הסוכן</Link>
               </p>
             </div>
           </div>

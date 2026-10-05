@@ -1,8 +1,8 @@
 /*
 Design reminder for this file:
-High-end RTL real estate branding for Team Shay.
+High-end RTL real estate branding for Shay Group.
 Keep the canvas bright and fast, with white backgrounds, black typography,
-gold brand framing, warm trust accents, and light-yellow call-to-action energy.
+cream surfaces and restrained classic-green accents.
 All global tokens should support a modern, clean, conversion-first interface.
 */
 
@@ -55,38 +55,38 @@ All global tokens should support a modern, clean, conversion-first interface.
 
 :root {
   --radius: 1.25rem;
-  --background: #fdf8f0;
+  --background: #fbfaf5;
   --foreground: #000000;
   --card: #ffffff;
   --card-foreground: #000000;
   --popover: #ffffff;
   --popover-foreground: #000000;
-  --primary: #d4af37;
+  --primary: #4b8067;
   --primary-foreground: #1a1a1a;
-  --secondary: #fdf8f0;
+  --secondary: #fbfaf5;
   --secondary-foreground: #000000;
-  --muted: #f7f2e8;
+  --muted: #f2f0e7;
   --muted-foreground: #6b6b6b;
-  --accent: #f7e4a8;
+  --accent: #e4ece6;
   --accent-foreground: #000000;
   --destructive: oklch(0.61 0.23 27);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: #eadfca;
+  --border: #d8e4dc;
   --input: #ffffff;
-  --ring: #d4af37;
-  --chart-1: #d4af37;
+  --ring: #4b8067;
+  --chart-1: #4b8067;
   --chart-2: #1ac7ff;
-  --chart-3: #f7e4a8;
+  --chart-3: #e4ece6;
   --chart-4: #d9f4ff;
   --chart-5: #0d1c27;
   --sidebar: #ffffff;
   --sidebar-foreground: #000000;
-  --sidebar-primary: #d4af37;
+  --sidebar-primary: #4b8067;
   --sidebar-primary-foreground: #1a1a1a;
-  --sidebar-accent: #fff4d8;
+  --sidebar-accent: #eef3ef;
   --sidebar-accent-foreground: #000000;
-  --sidebar-border: #eadfca;
-  --sidebar-ring: #d4af37;
+  --sidebar-border: #d8e4dc;
+  --sidebar-ring: #4b8067;
 }
 
 .dark {
@@ -247,7 +247,7 @@ All global tokens should support a modern, clean, conversion-first interface.
   .crm-shell textarea,
   .crm-field {
     min-height: 44px;
-    border: 1.5px solid #d4af37;
+    border: 1.5px solid #4b8067;
     border-radius: 8px;
     background: #fafafa;
     color: #1a1a1a;
@@ -259,7 +259,7 @@ All global tokens should support a modern, clean, conversion-first interface.
   .crm-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):focus,
   .crm-shell textarea:focus,
   .crm-field:focus {
-    border-color: #d4af37;
+    border-color: #4b8067;
     background: #ffffff;
     box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
     outline: none;

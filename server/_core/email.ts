@@ -47,7 +47,7 @@ export async function sendLeadNotificationEmail(input: LeadNotificationInput) {
   const html = `
     <div dir="rtl" style="font-family:Arial, sans-serif;background:#FDF8F0;padding:24px;">
       <div style="max-width:620px;margin:0 auto;background:white;border-radius:18px;padding:24px;border:1px solid #ead9aa;">
-        <p style="margin:0;color:#D4AF37;font-weight:800;">Team Shay</p>
+        <p style="margin:0;color:#D4AF37;font-weight:800;">Shay Group</p>
         <h1 style="margin:8px 0 18px;color:#1A1A1A;">ליד חדש מהאתר</h1>
         <table style="width:100%;border-collapse:collapse;">${htmlRows}</table>
       </div>

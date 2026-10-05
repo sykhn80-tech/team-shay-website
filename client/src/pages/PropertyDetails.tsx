@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { LANDSMAN_LOGO, TEAM_LOGO, WHATSAPP_LINK } from "@/lib/siteData";
+import { BRAND_NAME, TEAM_LOGO, WHATSAPP_LINK } from "@/lib/siteData";
 import { formatPropertyLocation, propertyStreetOnly } from "@/lib/property-display";
 
 type PropertyDetailsProps = {
@@ -103,9 +103,9 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
 
   if (propertyQuery.isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#fff8e6]" dir="rtl">
+      <div className="flex min-h-screen items-center justify-center bg-[#fbfaf5]" dir="rtl">
         <div className="inline-flex items-center gap-3 rounded-full bg-white px-5 py-3 text-base font-bold text-slate-700 shadow-md">
-          <Loader2 className="size-5 animate-spin text-[#d9ae4c]" />
+          <Loader2 className="size-5 animate-spin text-[#4b8067]" />
           טוענים את פרטי הנכס...
         </div>
       </div>
@@ -114,16 +114,16 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
 
   if (!property) {
     return (
-      <div className="min-h-screen bg-[#fff8e6] px-4 py-10 text-slate-950" dir="rtl">
+      <div className="min-h-screen bg-[#fbfaf5] px-4 py-10 text-slate-950" dir="rtl">
         <div className="mx-auto max-w-4xl rounded-[36px] bg-white p-8 text-center shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
-          <img src={headerLogoUrl} alt="Team Shay" className="team-shay-logo mx-auto h-16 w-auto object-contain" />
+          <img src={headerLogoUrl} alt={BRAND_NAME} className="team-shay-logo mx-auto h-16 w-auto object-contain" style={{ filter: "brightness(0) saturate(100%) invert(31%) sepia(17%) saturate(1364%) hue-rotate(109deg) brightness(91%) contrast(90%)" }} />
           <h1 className="mt-6 text-3xl font-black">הנכס המבוקש לא נמצא</h1>
           <p className="mt-4 text-base leading-8 text-slate-600">
             ייתכן שהנכס הוסר מהאתר, אינו מפורסם כרגע או שהקישור שהוזן אינו תקין.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link href="/properties">
-              <Button className="rounded-full bg-[#d9ae4c] px-6 text-white hover:bg-[#c99a31]">
+              <Button className="rounded-full bg-[#4b8067] px-6 text-white hover:bg-[#3a6b55]">
                 חזרה לכל הנכסים
               </Button>
             </Link>
@@ -139,25 +139,21 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#fff8e6] text-slate-950" dir="rtl">
+    <div className="min-h-screen bg-[#fbfaf5] text-slate-950" dir="rtl">
       <section className="px-4 pb-12 pt-10 md:px-6 md:pb-16">
         <div className="mx-auto max-w-7xl overflow-hidden rounded-[36px] bg-white shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
           <div className="flex flex-col gap-8 border-b border-slate-100 px-6 py-8 md:px-10 lg:flex-row lg:items-start lg:justify-between">
             <div className="text-right">
-              <p className="text-base font-black uppercase tracking-[0.1em] text-[#d9ae4c]">Property Showcase</p>
+              <p className="text-base font-black uppercase tracking-[0.1em] text-[#4b8067]">Property Showcase</p>
               <h1 className="mt-3 text-4xl font-black leading-tight md:text-6xl">{property.title}</h1>
             </div>
 
             <div className="flex flex-col gap-4 lg:items-start">
-              <div className="flex items-center gap-4">
-                <img src={headerLogoUrl} alt="Team Shay" className="team-shay-logo h-20 w-auto object-contain md:h-28" />
-                <div className="w-px h-14 bg-slate-200 shrink-0 mx-1" />
-                <img src={LANDSMAN_LOGO} alt="Landsman Jerusalem" className="h-16 w-auto object-contain md:h-20" />
-              </div>
+              <img src={headerLogoUrl} alt={BRAND_NAME} className="team-shay-logo h-20 w-auto object-contain md:h-28" style={{ filter: "brightness(0) saturate(100%) invert(31%) sepia(17%) saturate(1364%) hue-rotate(109deg) brightness(91%) contrast(90%)" }} />
               <div className="flex flex-col gap-3 sm:flex-row lg:me-4 xl:me-8">
                 <Button
                   onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}
-                  className="h-12 rounded-full bg-[#d9ae4c] px-7 text-base font-black text-white hover:bg-[#c99a31]"
+                  className="h-12 rounded-full bg-[#4b8067] px-7 text-base font-black text-white hover:bg-[#3a6b55]"
                 >
                   <Phone className="size-4" />
                   יצירת קשר לגבי הנכס
@@ -193,7 +189,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
                       onClick={() => setSelectedImageIndex(index)}
                       className={`overflow-hidden rounded-[20px] border-2 transition ${
                         selectedImageIndex === index
-                          ? "border-[#d9ae4c] shadow-[0_12px_24px_rgba(217,174,76,0.22)]"
+                          ? "border-[#4b8067] shadow-[0_12px_24px_rgba(75,128,103,0.22)]"
                           : "border-transparent"
                       }`}
                     >
@@ -205,43 +201,43 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
             </section>
 
             <aside className="space-y-6" dir="rtl">
-              <div className="rounded-[32px] bg-[#fff8e6] p-6">
+              <div className="rounded-[32px] bg-[#fbfaf5] p-6">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-4xl font-black text-slate-950 md:text-5xl">{formatPrice(property.price)}</p>
-                  <span className="rounded-full bg-[#d9ae4c] px-4 py-2 text-base font-black text-white">
+                  <span className="rounded-full bg-[#4b8067] px-4 py-2 text-base font-black text-white">
                     {property.status}
                   </span>
                 </div>
                 <div className="mt-4 flex items-center gap-2 text-lg font-semibold text-slate-600">
-                  <MapPin className="size-5 text-[#d9ae4c]" />
+                  <MapPin className="size-5 text-[#4b8067]" />
                   {formatPropertyLocation(property)}
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-[24px] border border-slate-200 bg-white p-5">
-                  <div className="flex items-center gap-2 text-[#d9ae4c]">
+                  <div className="flex items-center gap-2 text-[#4b8067]">
                     <BedDouble className="size-6" />
                     <p className="text-base font-black">חדרים</p>
                   </div>
                   <p className="mt-3 text-3xl font-black text-slate-950">{property.rooms}</p>
                 </div>
                 <div className="rounded-[24px] border border-slate-200 bg-white p-5">
-                  <div className="flex items-center gap-2 text-[#d9ae4c]">
+                  <div className="flex items-center gap-2 text-[#4b8067]">
                     <Ruler className="size-6" />
                     <p className="text-base font-black">מ״ר בנוי</p>
                   </div>
                   <p className="mt-3 text-3xl font-black text-slate-950">{property.sqm}</p>
                 </div>
                 <div className="rounded-[24px] border border-slate-200 bg-white p-5">
-                  <div className="flex items-center gap-2 text-[#d9ae4c]">
+                  <div className="flex items-center gap-2 text-[#4b8067]">
                     <SquareStack className="size-6" />
                     <p className="text-base font-black">מ״ר עיקרי</p>
                   </div>
                   <p className="mt-3 text-3xl font-black text-slate-950">{property.builtSqm ?? "לא צוין"}</p>
                 </div>
                 <div className="rounded-[24px] border border-slate-200 bg-white p-5">
-                  <div className="flex items-center gap-2 text-[#d9ae4c]">
+                  <div className="flex items-center gap-2 text-[#4b8067]">
                     <MapPin className="size-6" />
                     <p className="text-base font-black">קומה</p>
                   </div>
@@ -250,7 +246,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
               </div>
 
               <div className="rounded-[32px] border border-slate-200 bg-white p-6">
-                <p className="text-base font-black uppercase tracking-[0.08em] text-[#d9ae4c]">פרטי הנכס</p>
+                <p className="text-base font-black uppercase tracking-[0.08em] text-[#4b8067]">פרטי הנכס</p>
                 <div className="mt-4 space-y-3 text-lg leading-8 text-slate-700">
                   <p><span className="font-black text-slate-950">שכונה:</span> {property.neighborhood}</p>
                   <p><span className="font-black text-slate-950">עיר:</span> {property.city}</p>
@@ -263,7 +259,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
 
           <div className="border-t border-slate-100 px-6 py-8 md:px-10">
             <div className="max-w-4xl">
-              <p className="text-base font-black uppercase tracking-[0.08em] text-[#d9ae4c]">תיאור מלא</p>
+              <p className="text-base font-black uppercase tracking-[0.08em] text-[#4b8067]">תיאור מלא</p>
               <h2 className="mt-3 text-3xl font-black text-slate-950 md:text-4xl">כל מה שחשוב לדעת על הנכס</h2>
               <p className="mt-5 whitespace-pre-line text-lg leading-9 text-slate-600">
                 {property.description}

@@ -20,7 +20,7 @@ function StatCard({
   value,
   icon: Icon,
   change,
-  color = "bg-[#fff8e6] text-[#b98b2f]",
+  color = "bg-[#fbfaf5] text-[#2f6653]",
 }: {
   label: string;
   value: string | number;
@@ -30,7 +30,7 @@ function StatCard({
 }) {
   const positive = (change ?? 0) >= 0;
   return (
-    <article className="rounded-[24px] border border-[#d4af37]/25 bg-white p-5 shadow-[0_14px_32px_rgba(15,23,42,0.06)]">
+    <article className="rounded-[24px] border border-[#4b8067]/25 bg-white p-5 shadow-[0_14px_32px_rgba(15,23,42,0.06)]">
       <div className="flex items-center justify-between gap-3">
         <span className={`flex size-11 items-center justify-center rounded-2xl ${color}`}><Icon className="size-5" /></span>
         {change !== undefined ? (
@@ -98,7 +98,7 @@ export default function CrmDashboard() {
   return (
     <CrmLayout title={`שלום ${agentQuery.data?.name ?? "סוכן"}${agentQuery.data?.accountRole === "admin" ? " (ראש צוות)" : ""}`} subtitle="תמונת מצב חיה של כל פעילות הצוות.">
       <div className="mb-5 flex justify-end">
-        <Link href="/agent-dashboard/crm/leads" className="rounded-full bg-[#D4AF37] px-5 py-3 text-sm font-black text-black shadow-sm">ליד חדש +</Link>
+        <Link href="/agent-dashboard/crm/leads" className="rounded-full bg-[#4b8067] px-5 py-3 text-sm font-black text-black shadow-sm">ליד חדש +</Link>
       </div>
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <StatCard label={'סה"כ לידים'} value={leads.length} icon={Users} color="bg-slate-100 text-slate-700" />
@@ -158,7 +158,7 @@ export default function CrmDashboard() {
           <h2 className="text-xl font-black text-slate-950">פעילות אחרונה</h2>
           <div className="mt-4 divide-y divide-slate-100">
             {leads.slice(0, 5).map((lead) => (
-              <Link key={lead.id} href="/crm" className="flex items-center justify-between gap-4 py-3 transition hover:text-[#b98b2f]">
+              <Link key={lead.id} href="/crm" className="flex items-center justify-between gap-4 py-3 transition hover:text-[#2f6653]">
                 <div>
                   <p className="text-sm font-black">{lead.name}</p>
                   <p className="mt-1 text-xs font-bold text-slate-500">{leadTypeLabel(lead.leadType)} · {leadLocation(lead) || "ללא כתובת"}</p>
@@ -204,7 +204,7 @@ export default function CrmDashboard() {
             <div key={item.month} className="rounded-xl bg-[#f8f6f1] p-3">
               <p className="text-xs font-black text-slate-500">{item.month}</p>
               <div className="mt-2 flex h-24 items-end rounded-lg bg-white p-2">
-                <div className="w-full rounded bg-[#d9ae4c]" style={{ height: `${Math.max(6, (item.income / maxValue) * 80)}px` }} />
+                <div className="w-full rounded bg-[#4b8067]" style={{ height: `${Math.max(6, (item.income / maxValue) * 80)}px` }} />
               </div>
               <p className="mt-2 text-xs font-bold text-slate-600">₪{item.income.toLocaleString("he-IL")}</p>
             </div>

@@ -112,18 +112,18 @@ export default function MarketingAgent() {
 
   return (
     <AgentLayout>
-      <div className="min-h-screen bg-[#fff8e6] text-black px-4 py-6 md:px-8 md:py-8" dir="rtl">
+      <div className="min-h-screen bg-[#fbfaf5] text-black px-4 py-6 md:px-8 md:py-8" dir="rtl">
         <main>
           <div className="mx-auto max-w-5xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Marketing Agent</p>
+                <p className="text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">Marketing Agent</p>
                 <h2 className="mt-3 text-3xl font-black text-black md:text-4xl">שיווק נכסים</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
                   הזן פרטי נכס ← קבל נוסח מדויק ומותאם ליד2, פייסבוק, וואטסאפ ואינסטגרם.
                 </p>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#fff4d8] px-4 py-2 text-sm font-bold text-[#d9ae4c]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#eef3ef] px-4 py-2 text-sm font-bold text-[#4b8067]">
                 <CirclePlus className="size-4" />
                 {agent?.email ?? "סוכן מחובר"}
               </div>
@@ -143,7 +143,7 @@ export default function MarketingAgent() {
                       value={form.neighborhood}
                       onChange={(e) => set("neighborhood", e.target.value)}
                       placeholder="למשל: קטמונים"
-                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#d9ae4c] focus:ring-1 focus:ring-[#d9ae4c] transition"
+                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#4b8067] focus:ring-1 focus:ring-[#4b8067] transition"
                     />
                   </div>
 
@@ -154,7 +154,7 @@ export default function MarketingAgent() {
                       value={form.street}
                       onChange={(e) => set("street", e.target.value)}
                       placeholder="למשל: סן מרטין 9"
-                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#d9ae4c] focus:ring-1 focus:ring-[#d9ae4c] transition"
+                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#4b8067] focus:ring-1 focus:ring-[#4b8067] transition"
                     />
                   </div>
 
@@ -165,7 +165,7 @@ export default function MarketingAgent() {
                       value={form.floor}
                       onChange={(e) => set("floor", e.target.value)}
                       placeholder="למשל: 3 מתוך 5"
-                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#d9ae4c] focus:ring-1 focus:ring-[#d9ae4c] transition"
+                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#4b8067] focus:ring-1 focus:ring-[#4b8067] transition"
                     />
                   </div>
 
@@ -176,7 +176,7 @@ export default function MarketingAgent() {
                       value={form.rooms}
                       onChange={(e) => set("rooms", e.target.value)}
                       placeholder="למשל: 3"
-                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#d9ae4c] focus:ring-1 focus:ring-[#d9ae4c] transition"
+                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#4b8067] focus:ring-1 focus:ring-[#4b8067] transition"
                     />
                   </div>
 
@@ -187,7 +187,7 @@ export default function MarketingAgent() {
                       value={form.sqm}
                       onChange={(e) => set("sqm", e.target.value)}
                       placeholder="למשל: 84"
-                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#d9ae4c] focus:ring-1 focus:ring-[#d9ae4c] transition"
+                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#4b8067] focus:ring-1 focus:ring-[#4b8067] transition"
                     />
                   </div>
 
@@ -198,7 +198,7 @@ export default function MarketingAgent() {
                       value={form.balcony}
                       onChange={(e) => set("balcony", e.target.value)}
                       placeholder="למשל: גינה 6 מ״ר"
-                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#d9ae4c] focus:ring-1 focus:ring-[#d9ae4c] transition"
+                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#4b8067] focus:ring-1 focus:ring-[#4b8067] transition"
                     />
                   </div>
 
@@ -210,7 +210,7 @@ export default function MarketingAgent() {
                       onChange={(e) => set("price", e.target.value)}
                       placeholder="למשל: 2600000"
                       type="number"
-                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#d9ae4c] focus:ring-1 focus:ring-[#d9ae4c] transition"
+                      className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#4b8067] focus:ring-1 focus:ring-[#4b8067] transition"
                     />
                   </div>
                 </div>
@@ -226,7 +226,7 @@ export default function MarketingAgent() {
                       <div
                         onClick={() => set(key, !form[key])}
                         className={`h-5 w-5 rounded-md border-2 flex items-center justify-center cursor-pointer transition ${
-                          form[key] ? "bg-[#d9ae4c] border-[#d9ae4c]" : "border-slate-300 bg-white"
+                          form[key] ? "bg-[#4b8067] border-[#4b8067]" : "border-slate-300 bg-white"
                         }`}
                       >
                         {form[key] && <Check className="size-3 text-white" />}
@@ -241,7 +241,7 @@ export default function MarketingAgent() {
                     <div
                       onClick={() => set("exclusive", !form.exclusive)}
                       className={`h-5 w-5 rounded-md border-2 flex items-center justify-center cursor-pointer transition ${
-                        form.exclusive ? "bg-[#d9ae4c] border-[#d9ae4c]" : "border-slate-300 bg-white"
+                        form.exclusive ? "bg-[#4b8067] border-[#4b8067]" : "border-slate-300 bg-white"
                       }`}
                     >
                       {form.exclusive && <Check className="size-3 text-white" />}
@@ -258,14 +258,14 @@ export default function MarketingAgent() {
                     onChange={(e) => set("notes", e.target.value)}
                     placeholder="כיווני אוויר, נוף, שכנים, קרבה לתחבורה, כל יתרון שרוצים להדגיש..."
                     rows={3}
-                    className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#d9ae4c] focus:ring-1 focus:ring-[#d9ae4c] transition resize-none"
+                    className="w-full rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-2.5 text-sm outline-none focus:border-[#4b8067] focus:ring-1 focus:ring-[#4b8067] transition resize-none"
                   />
                 </div>
 
                 <Button
                   onClick={handleGenerate}
                   disabled={generating}
-                  className="mt-6 h-12 w-full rounded-full bg-[#d9ae4c] text-base font-black text-white hover:bg-[#c99a31] disabled:opacity-60"
+                  className="mt-6 h-12 w-full rounded-full bg-[#4b8067] text-base font-black text-white hover:bg-[#3a6b55] disabled:opacity-60"
                 >
                   {generating ? <>מייצר תוכן שיווקי...</> : <><Sparkles className="size-4" /> ייצר תוכן שיווקי</>}
                 </Button>
@@ -276,28 +276,28 @@ export default function MarketingAgent() {
                 <p className="mt-1 text-sm text-slate-500">התוכן מוכן להעתקה ישירה לכל פלטפורמה</p>
 
                 {!output && !generating && (
-                  <div className="mt-8 rounded-[24px] bg-[#fff8e6] p-8 text-center">
-                    <Megaphone className="mx-auto size-12 text-[#d9ae4c] opacity-40" />
+                  <div className="mt-8 rounded-[24px] bg-[#fbfaf5] p-8 text-center">
+                    <Megaphone className="mx-auto size-12 text-[#4b8067] opacity-40" />
                     <p className="mt-4 text-sm font-bold text-slate-500">מלא את פרטי הנכס ולחץ על ייצר תוכן</p>
                   </div>
                 )}
 
                 {generating && (
-                  <div className="mt-8 rounded-[24px] bg-[#fff8e6] p-8 text-center">
-                    <Sparkles className="mx-auto size-12 text-[#d9ae4c] animate-pulse" />
+                  <div className="mt-8 rounded-[24px] bg-[#fbfaf5] p-8 text-center">
+                    <Sparkles className="mx-auto size-12 text-[#4b8067] animate-pulse" />
                     <p className="mt-4 text-sm font-bold text-slate-500">הסוכן מייצר תוכן שיווקי...</p>
                   </div>
                 )}
 
                 {output && (
                   <div className="mt-5">
-                    <div className="flex rounded-2xl bg-[#fff8e6] p-1 gap-1">
+                    <div className="flex rounded-2xl bg-[#fbfaf5] p-1 gap-1">
                       {tabs.map(({ key, label }) => (
                         <button
                           key={key}
                           onClick={() => setActiveTab(key)}
                           className={`flex-1 rounded-xl py-2 text-sm font-black transition ${
-                            activeTab === key ? "bg-[#d9ae4c] text-white shadow-sm" : "text-slate-600 hover:text-[#d9ae4c]"
+                            activeTab === key ? "bg-[#4b8067] text-white shadow-sm" : "text-slate-600 hover:text-[#4b8067]"
                           }`}
                         >
                           {label}

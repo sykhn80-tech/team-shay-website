@@ -73,14 +73,14 @@ export default function AgentDashboard() {
           {/* Header */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Dashboard</p>
+              <p className="text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">Dashboard</p>
               <h2 className="mt-2 text-3xl font-black text-black md:text-4xl">הנכסים שלי</h2>
               <p className="mt-2 text-base leading-7 text-slate-500">
                 מאגר הנכסים הפעיל — עריכה, עדכון סטטוסים והוספה מהירה.
               </p>
             </div>
             <Link href="/agent-dashboard/new-property">
-              <Button className="h-12 rounded-full bg-[#d9ae4c] px-6 text-base font-black text-white hover:bg-[#c99a31] shadow-md shadow-amber-200/50">
+              <Button className="h-12 rounded-full bg-[#4b8067] px-6 text-base font-black text-white hover:bg-[#3a6b55] shadow-md shadow-amber-200/50">
                 <Plus className="size-4" />
                 הוספת נכס חדש
               </Button>
@@ -90,7 +90,7 @@ export default function AgentDashboard() {
           {/* Stats */}
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {[
-              { label: "סה״כ נכסים", value: String(totalProperties), color: "text-[#d9ae4c]" },
+              { label: "סה״כ נכסים", value: String(totalProperties), color: "text-[#4b8067]" },
               { label: "נכסים פעילים", value: String(activeProperties), color: "text-emerald-500" },
               { label: "נכסים שנמכרו", value: String(soldProperties), color: "text-slate-400" },
             ].map((item) => (
@@ -112,7 +112,7 @@ export default function AgentDashboard() {
                   <h3 className="text-xl font-black text-black">כרטיסי הנכסים שלי</h3>
                   <p className="mt-1 text-sm text-slate-500">לחץ "צפייה" לפרטים מורחבים בצד ימין.</p>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#fff4d8] px-4 py-2 text-sm font-bold text-[#d9ae4c]">
+                <div className="inline-flex items-center gap-2 rounded-full bg-[#eef3ef] px-4 py-2 text-sm font-bold text-[#4b8067]">
                   <CirclePlus className="size-4" />
                   {agent?.email ?? "סוכן מחובר"}
                 </div>
@@ -134,7 +134,7 @@ export default function AgentDashboard() {
                           className="h-44 w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-44 items-center justify-center bg-[#fff4d8] text-sm font-bold text-slate-400">
+                        <div className="flex h-44 items-center justify-center bg-[#eef3ef] text-sm font-bold text-slate-400">
                           אין עדיין תמונה ראשית
                         </div>
                       )}
@@ -145,16 +145,16 @@ export default function AgentDashboard() {
                             <h4 className="text-lg font-black text-black">{property.title}</h4>
                             <p className="mt-1 text-sm text-slate-500">{property.address}</p>
                           </div>
-                          <span className="rounded-full bg-[#fff8d7] px-3 py-1 text-xs font-black text-[#b8860b] whitespace-nowrap">
+                          <span className="rounded-full bg-[#eef3ef] px-3 py-1 text-xs font-black text-[#2f6653] whitespace-nowrap">
                             {property.status}
                           </span>
                         </div>
 
                         <div className="mt-4 grid grid-cols-2 gap-2 text-sm font-bold text-slate-700">
-                          <div className="rounded-xl bg-[#fff8e6] px-3 py-2">{property.neighborhood}</div>
-                          <div className="rounded-xl bg-[#fff8e6] px-3 py-2">₪{property.price.toLocaleString("he-IL")}</div>
-                          <div className="rounded-xl bg-[#fff8e6] px-3 py-2">{property.rooms} חדרים</div>
-                          <div className="rounded-xl bg-[#fff8e6] px-3 py-2">{property.sqm} מ״ר</div>
+                          <div className="rounded-xl bg-[#fbfaf5] px-3 py-2">{property.neighborhood}</div>
+                          <div className="rounded-xl bg-[#fbfaf5] px-3 py-2">₪{property.price.toLocaleString("he-IL")}</div>
+                          <div className="rounded-xl bg-[#fbfaf5] px-3 py-2">{property.rooms} חדרים</div>
+                          <div className="rounded-xl bg-[#fbfaf5] px-3 py-2">{property.sqm} מ״ר</div>
                         </div>
 
                         <div className="mt-4 flex flex-wrap justify-end gap-2">
@@ -171,7 +171,7 @@ export default function AgentDashboard() {
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedPropertyId(property.id)}
-                            className="rounded-full border-[#d9ae4c] text-[#d9ae4c] hover:bg-[#fff4d8] font-bold"
+                            className="rounded-full border-[#4b8067] text-[#4b8067] hover:bg-[#eef3ef] font-bold"
                           >
                             <Eye className="size-3.5" />
                             צפייה
@@ -215,23 +215,23 @@ export default function AgentDashboard() {
                       className="h-52 w-full rounded-[20px] object-cover"
                     />
                   ) : (
-                    <div className="flex h-52 items-center justify-center rounded-[20px] bg-[#fff8e6] text-slate-400 text-sm">
+                    <div className="flex h-52 items-center justify-center rounded-[20px] bg-[#fbfaf5] text-slate-400 text-sm">
                       אין עדיין תמונה
                     </div>
                   )}
                   <h4 className="mt-5 text-xl font-black text-black">{selectedProperty.title}</h4>
                   <p className="mt-1 text-sm text-slate-500">{selectedProperty.address}</p>
                   <div className="mt-3 flex flex-wrap gap-2 text-sm font-bold text-slate-700">
-                    <span className="rounded-full bg-[#fff8e6] px-3 py-1">{selectedProperty.neighborhood}</span>
-                    <span className="rounded-full bg-[#fff8e6] px-3 py-1">{selectedSummary?.rooms}</span>
-                    <span className="rounded-full bg-[#fff8e6] px-3 py-1">{selectedSummary?.sqm}</span>
+                    <span className="rounded-full bg-[#fbfaf5] px-3 py-1">{selectedProperty.neighborhood}</span>
+                    <span className="rounded-full bg-[#fbfaf5] px-3 py-1">{selectedSummary?.rooms}</span>
+                    <span className="rounded-full bg-[#fbfaf5] px-3 py-1">{selectedSummary?.sqm}</span>
                   </div>
-                  <p className="mt-3 text-xl font-black text-[#d9ae4c]">{selectedSummary?.price}</p>
+                  <p className="mt-3 text-xl font-black text-[#4b8067]">{selectedSummary?.price}</p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">{selectedProperty.description}</p>
                   <div className="mt-5 flex flex-wrap gap-3">
                     <Button
                       onClick={() => navigate(`/agent-dashboard/new-property?id=${selectedProperty.id}`)}
-                      className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31] font-bold"
+                      className="rounded-full bg-[#4b8067] text-white hover:bg-[#3a6b55] font-bold"
                     >
                       עריכת הנכס
                     </Button>
@@ -245,7 +245,7 @@ export default function AgentDashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-5 rounded-[20px] bg-[#fff8e6] p-5 text-sm leading-7 text-slate-500 text-center">
+                <div className="mt-5 rounded-[20px] bg-[#fbfaf5] p-5 text-sm leading-7 text-slate-500 text-center">
                   בחר נכס מהרשימה כדי לראות פרטים
                 </div>
               )}

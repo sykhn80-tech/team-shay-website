@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { agents as fallbackAgents, LANDSMAN_LOGO, TEAM_LOGO } from "@/lib/siteData";
+import { agents as fallbackAgents, BRAND_NAME, TEAM_LOGO } from "@/lib/siteData";
 import {
   BarChart2,
   CirclePlus,
@@ -127,7 +127,7 @@ export default function CmaAgent() {
   const [manualCompetitors, setManualCompetitors] = useState<ManualCompetitor[]>(EMPTY_COMPETITORS);
   const agentFallback = getAgentFallback(agent?.email, agent?.name);
   const agentPhotoUrl = agent?.photoUrl || agentFallback?.image || "";
-  const agentDisplayName = agent?.name ?? agentFallback?.name ?? "Team Shay";
+  const agentDisplayName = agent?.name ?? agentFallback?.name ?? BRAND_NAME;
   const agentPhone = agent?.phone || agentFallback?.phone || "052-863-6631";
   const agentEmail = agent?.email || agentFallback?.email || "";
 
@@ -336,19 +336,19 @@ export default function CmaAgent() {
 
   return (
     <AgentLayout>
-      <div className="min-h-screen overflow-x-hidden bg-[#fff8e6] text-black print:bg-white" dir="rtl">
+      <div className="min-h-screen overflow-x-hidden bg-[#fbfaf5] text-black print:bg-white" dir="rtl">
         <main className="overflow-x-hidden px-4 py-6 md:px-8 md:py-8 print:px-0 print:py-0">
           <div className="mx-auto max-w-6xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between print:hidden">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">CMA</p>
+                <p className="text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">CMA</p>
                 <h2 className="mt-3 text-3xl font-black text-black md:text-4xl">הערכת שווי CMA</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
                   מזינים עיר, שכונה, רחוב, חדרים וטווח מ"ר, ומקבלים דוח שאפשר לערוך ידנית לפני שליחה ללקוח.
                 </p>
               </div>
 
-              <div className="inline-flex items-center gap-2 rounded-full bg-[#fff4d8] px-4 py-2 text-sm font-bold text-[#d9ae4c]">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#eef3ef] px-4 py-2 text-sm font-bold text-[#4b8067]">
                 <CirclePlus className="size-4" />
                 {agent?.email ?? "סוכן מחובר"}
               </div>
@@ -357,7 +357,7 @@ export default function CmaAgent() {
             <div className={`mt-8 ${report ? "space-y-6" : "grid gap-6 xl:grid-cols-[380px_1fr]"}`}>
               <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.05)] print:hidden">
                 <div className="flex items-center gap-3">
-                  <BarChart2 className="size-5 text-[#d9ae4c]" />
+                  <BarChart2 className="size-5 text-[#4b8067]" />
                   <div>
                     <h3 className="text-xl font-black text-black">פרטי החיפוש</h3>
                     <p className="mt-1 text-sm text-slate-500">עדיפות אוטומטית ניתנת לאותו הרחוב המדויק כאשר הוא מוזן.</p>
@@ -371,7 +371,7 @@ export default function CmaAgent() {
                       value={form.city}
                       onChange={(event) => setField("city", event.target.value)}
                       placeholder="למשל: ירושלים"
-                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
 
@@ -381,7 +381,7 @@ export default function CmaAgent() {
                       value={form.neighborhood}
                       onChange={(event) => setField("neighborhood", event.target.value)}
                       placeholder="למשל: קטמונים"
-                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
 
@@ -391,7 +391,7 @@ export default function CmaAgent() {
                       value={form.street}
                       onChange={(event) => setField("street", event.target.value)}
                       placeholder="למשל: מקור חיים"
-                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
 
@@ -401,7 +401,7 @@ export default function CmaAgent() {
                       value={form.rooms}
                       onChange={(event) => setField("rooms", event.target.value)}
                       placeholder="למשל: 4"
-                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
 
@@ -412,7 +412,7 @@ export default function CmaAgent() {
                       onChange={(event) => setField("floor", event.target.value)}
                       placeholder="למשל: 3"
                       inputMode="numeric"
-                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
 
@@ -423,7 +423,7 @@ export default function CmaAgent() {
                         value={form.minSqm}
                         onChange={(event) => setField("minSqm", event.target.value)}
                         placeholder="80"
-                        className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                        className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                       />
                     </label>
 
@@ -433,7 +433,7 @@ export default function CmaAgent() {
                         value={form.maxSqm}
                         onChange={(event) => setField("maxSqm", event.target.value)}
                         placeholder="120"
-                        className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                        className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                       />
                     </label>
                   </div>
@@ -447,7 +447,7 @@ export default function CmaAgent() {
                       onChange={(event) => setField("notes", event.target.value)}
                       rows={3}
                       placeholder="לדוגמה: רחוב עם ביקוש גבוה, תכנית פינוי-בינוי פעילה, קרבה לצירים מרכזיים"
-                      className="rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-3 text-sm outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="rounded-2xl border border-slate-200 bg-[#fafafa] px-4 py-3 text-sm outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
                 </div>
@@ -455,7 +455,7 @@ export default function CmaAgent() {
                 <Button
                   onClick={handleGenerate}
                   disabled={generateCmaMutation.isPending}
-                  className="mt-6 h-12 w-full rounded-full bg-[#d9ae4c] text-base font-black text-white hover:bg-[#c99a31] disabled:opacity-60"
+                  className="mt-6 h-12 w-full rounded-full bg-[#4b8067] text-base font-black text-white hover:bg-[#3a6b55] disabled:opacity-60"
                 >
                   {generateCmaMutation.isPending ? (
                     <>
@@ -470,7 +470,7 @@ export default function CmaAgent() {
                   )}
                 </Button>
 
-                <div className="mt-4 rounded-[24px] bg-[#fff8e6] p-4 text-sm leading-7 text-slate-600">
+                <div className="mt-4 rounded-[24px] bg-[#fbfaf5] p-4 text-sm leading-7 text-slate-600">
                   אחרי ההפקה אפשר לערוך הכל ידנית: עסקאות, סיכום, טווח מחיר וקישורי יד2.
                 </div>
               </section>
@@ -478,31 +478,29 @@ export default function CmaAgent() {
               <section className="cma-print-report rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_18px_40px_rgba(15,23,42,0.05)] print:rounded-none print:border-0 print:shadow-none">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="flex items-center gap-3">
-                    <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo h-14 w-auto object-contain" />
-                    <span className="h-10 w-px bg-slate-200" aria-hidden="true" />
-                    <img src={LANDSMAN_LOGO} alt="Landsman ירושלים" className="h-12 w-auto object-contain print:h-14" />
+                    <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-14 w-auto object-contain" style={{ filter: "brightness(0) saturate(100%) invert(31%) sepia(17%) saturate(1364%) hue-rotate(109deg) brightness(91%) contrast(90%)" }} />
                     <div>
-                      <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Team Shay | Landsman Jerusalem</p>
+                      <p className="text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">{BRAND_NAME}</p>
                       <h3 className="mt-1 text-2xl font-black text-slate-950">דוח CMA מקצועי</h3>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 rounded-[24px] border border-[#d9ae4c]/30 bg-[#fff8e6] px-4 py-3 text-right print:border-slate-200 print:bg-white">
+                  <div className="flex items-center gap-3 rounded-[24px] border border-[#4b8067]/30 bg-[#fbfaf5] px-4 py-3 text-right print:border-slate-200 print:bg-white">
                     {agentPhotoUrl ? (
                       <img
                         src={agentPhotoUrl}
                         alt={agentDisplayName}
-                        className="size-14 rounded-full border-2 border-[#d9ae4c] bg-white object-cover"
+                        className="size-14 rounded-full border-2 border-[#4b8067] bg-white object-cover"
                         loading="lazy"
                       />
                     ) : (
-                      <span className="grid size-14 place-items-center rounded-full border-2 border-[#d9ae4c] bg-white text-lg font-black text-[#1A1A1A]">
+                      <span className="grid size-14 place-items-center rounded-full border-2 border-[#4b8067] bg-white text-lg font-black text-[#1A1A1A]">
                         {agentDisplayName.slice(0, 1)}
                       </span>
                     )}
                     <div>
                       <p className="text-sm font-black text-slate-950">{agentDisplayName}</p>
-                      <p className="mt-1 text-xs font-bold text-[#b98b2f]">{agentPhone}</p>
+                      <p className="mt-1 text-xs font-bold text-[#2f6653]">{agentPhone}</p>
                       {agentEmail ? <p className="mt-0.5 text-xs font-semibold text-slate-500">{agentEmail}</p> : null}
                     </div>
                   </div>
@@ -545,7 +543,7 @@ export default function CmaAgent() {
                         <Printer className="size-4" />
                         הדפסה
                       </Button>
-                      <Button type="button" onClick={handleDownloadPdf} className="rounded-full bg-[#d9ae4c] text-white hover:bg-[#c99a31]">
+                      <Button type="button" onClick={handleDownloadPdf} className="rounded-full bg-[#4b8067] text-white hover:bg-[#3a6b55]">
                         <FileDown className="size-4" />
                         PDF
                       </Button>
@@ -554,16 +552,16 @@ export default function CmaAgent() {
                 </div>
 
                 {!report && !generateCmaMutation.isPending ? (
-                  <div className="mt-10 rounded-[28px] bg-[#fff8e6] p-10 text-center">
-                    <BarChart2 className="mx-auto size-14 text-[#d9ae4c] opacity-40" />
+                  <div className="mt-10 rounded-[28px] bg-[#fbfaf5] p-10 text-center">
+                    <BarChart2 className="mx-auto size-14 text-[#4b8067] opacity-40" />
                     <p className="mt-4 text-lg font-black text-slate-700">ממתינים לנתוני שכונה כדי לבנות את הדוח</p>
                     <p className="mt-2 text-sm leading-7 text-slate-500">לאחר לחיצה על "הפק דוח CMA" יופיעו כאן העסקאות, הסיכום והרחובות להשוואה.</p>
                   </div>
                 ) : null}
 
                 {generateCmaMutation.isPending ? (
-                  <div className="mt-10 rounded-[28px] bg-[#fff8e6] p-10 text-center">
-                    <Loader2 className="mx-auto size-14 animate-spin text-[#d9ae4c]" />
+                  <div className="mt-10 rounded-[28px] bg-[#fbfaf5] p-10 text-center">
+                    <Loader2 className="mx-auto size-14 animate-spin text-[#4b8067]" />
                     <p className="mt-4 text-lg font-black text-slate-700">מושכים עסקאות אחרונות ומרכיבים דוח...</p>
                   </div>
                 ) : null}
@@ -585,7 +583,7 @@ export default function CmaAgent() {
                           value: String(reportStats.matchingDealsCount),
                         },
                       ].map((item) => (
-                        <article key={item.label} className="rounded-[24px] bg-[#fff8e6] p-4">
+                        <article key={item.label} className="rounded-[24px] bg-[#fbfaf5] p-4">
                           <p className="text-sm font-bold text-slate-500">{item.label}</p>
                           <p className="mt-2 text-2xl font-black text-slate-950">{item.value}</p>
                         </article>
@@ -595,10 +593,10 @@ export default function CmaAgent() {
                     <section className="rounded-[28px] border border-slate-200 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Recent Deals</p>
+                          <p className="text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">Recent Deals</p>
                           <h4 className="mt-1 text-xl font-black text-slate-950">{report.deals.length} עסקאות אחרונות להשוואה</h4>
                         </div>
-                        <div className="rounded-full bg-[#fff4d8] px-4 py-2 text-sm font-bold text-[#b98b2f]">
+                        <div className="rounded-full bg-[#eef3ef] px-4 py-2 text-sm font-bold text-[#2f6653]">
                           {report.neighborhoodLabel}, {report.settlementName}
                         </div>
                       </div>
@@ -725,8 +723,8 @@ export default function CmaAgent() {
                       </div>
                     </section>
 
-                    <section className="rounded-[28px] bg-[#fff8e6] p-5">
-                      <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">AI Summary</p>
+                    <section className="rounded-[28px] bg-[#fbfaf5] p-5">
+                      <p className="text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">AI Summary</p>
                       <div className="mt-3 grid gap-3 md:grid-cols-2">
                         <label className="grid gap-2">
                           <span className="text-xs font-bold text-slate-600">טווח מינימום</span>
@@ -770,7 +768,7 @@ export default function CmaAgent() {
                     <section className="rounded-[28px] border border-slate-200 p-5 print:hidden">
                       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <div>
-                          <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Yad2 Comparables</p>
+                          <p className="text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">Yad2 Comparables</p>
                           <h4 className="mt-1 text-xl font-black text-slate-950">רחובות להשוואה ועדכון ידני</h4>
                         </div>
                         <div className="flex gap-2">
@@ -871,7 +869,7 @@ export default function CmaAgent() {
                       {/* כותרת — מוסתרת בהדפסה */}
                       <div className="flex items-center justify-between print:hidden">
                         <div>
-                          <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Manual Competitors</p>
+                          <p className="text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">Manual Competitors</p>
                           <h4 className="mt-1 text-xl font-black text-slate-950">5 נכסים מתחרים (הזנה ידנית)</h4>
                         </div>
                       </div>

@@ -61,7 +61,7 @@ export default function CrmFollowup() {
                 const text = drafts[lead.id]?.trim();
                 if (!text) return;
                 createTask.mutate({ title: text, description: null, dueDate: null, priority: "medium", status: "open", leadId: lead.id, propertyId: null });
-              }} className="bg-[#D4AF37] text-black"><Plus className="size-4" /></Button>
+              }} className="bg-[#4b8067] text-black"><Plus className="size-4" /></Button>
             </div>
           </article>
         ))}

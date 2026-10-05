@@ -31,9 +31,9 @@ import {
 import { trpc } from "@/lib/trpc";
 import {
   agents as fallbackAgents,
+  BRAND_NAME,
   heroTrustBadges,
   JERUSALEM_HERO,
-  LANDSMAN_LOGO,
   OFFICE_PHONE,
   OFFICE_PHONE_LINK,
   propertyImages,
@@ -50,6 +50,7 @@ const navItems: Array<{ label: string; href: string; isRoute: boolean }> = [
   { label: "שיטה", href: "#method", isRoute: false },
   { label: "שיווק", href: "#marketing-methods", isRoute: false },
   { label: "נכסים", href: "/properties", isRoute: true },
+  { label: "פרויקטים", href: "/projects", isRoute: true },
   { label: "התחברות סוכנים", href: "/agent-login", isRoute: true },
 ];
 
@@ -72,10 +73,9 @@ const HERO_TYPING_PHRASES = [
 ] as const;
 
 const fallbackSettings = {
-  siteName: "Team Shay",
+  siteName: BRAND_NAME,
   headerLogoUrl: TEAM_LOGO,
   footerLogoUrl: TEAM_LOGO,
-  landsmanLogoUrl: LANDSMAN_LOGO,
   heroBackgroundUrl: JERUSALEM_HERO,
   shayAboutImageUrl: SHAY_ABOUT_IMAGE,
   heroHeadline: "דואגים למכור לכם את הנכס במחיר המקסימלי ובזמן הקצר ביותר",
@@ -84,10 +84,7 @@ const fallbackSettings = {
   officePhone: OFFICE_PHONE,
   aboutTitle: "אמון, תוצאות ומקצוענות שמרגישים מהרגע הראשון",
   aboutSubtitle:
-    "צוות שי כהן מבית Landsman ירושלים נבנה במטרה אחת: לתת לכם שקט נפשי. אנחנו לא רק 'מציגים' נכסים, אנחנו מנהלים אסטרטגיית שיווק חכמה, מדויקת ואגרסיבית כדי למקסם את שווי הנכס שלכם, במינימום זמן ובמקסימום שקיפות",
-  landsmanTitle: "רשת חזקה מאחוריכם, צוות ממוקד לצדכם",
-  landsmanBody:
-    "Team Shay פועל תחת Landsman ירושלים ומחבר בין ידע מקומי, שיטות שיווק חכמות ונגישות לרשת רחבה של אנשי מקצוע, קונים ושיתופי פעולה, 15 סניפים ברחבי הארץ, הצטרפו לרשת הצומחת בישראל.",
+    "Shay Group נבנה במטרה אחת: לתת לכם שקט נפשי. אנחנו לא רק מציגים נכסים, אלא מנהלים אסטרטגיית שיווק חכמה, מדויקת ואישית כדי למקסם את שווי הנכס שלכם, בזמן הנכון ובשקיפות מלאה.",
   footerSlogan: "״מתווכים בצד שלך״",
 };
 
@@ -106,7 +103,7 @@ const aboutChecklistItems = [
   },
   {
     icon: Building2,
-    text: "הגב של רשת Landsman – מאגר קונים עצום ובלעדי וחיבורים עמוקים בשוק.",
+    text: "מאגר קונים פעיל ושיתופי פעולה מקצועיים שמרחיבים את החשיפה לנכס שלכם.",
   },
 ];
 
@@ -731,7 +728,7 @@ export default function Home() {
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
             <Button
               onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}
-              className="hidden rounded-full bg-[#d9ae4c] px-6 text-base font-black text-black shadow-[0_10px_28px_rgba(217,174,76,0.32)] hover:bg-[#c99a31] md:inline-flex"
+              className="hidden rounded-full bg-[#4b8067] px-6 text-base font-black text-black shadow-[0_10px_28px_rgba(75,128,103,0.32)] hover:bg-[#3a6b55] md:inline-flex"
             >
               ליצירת קשר
             </Button>
@@ -739,11 +736,11 @@ export default function Home() {
             <nav className="hidden items-center justify-center gap-8 text-[1.12rem] font-extrabold text-white lg:flex xl:gap-10 xl:text-[1.24rem]">
               {navItems.map((item) =>
                 item.isRoute ? (
-                    <Link key={item.label} href={item.href} className="transition hover:text-[#d9ae4c]">
+                    <Link key={item.label} href={item.href} className="transition hover:text-[#4b8067]">
                     {item.label}
                   </Link>
                 ) : (
-                  <a key={item.label} href={item.href} className="transition hover:text-[#d9ae4c]">
+                  <a key={item.label} href={item.href} className="transition hover:text-[#4b8067]">
                     {item.label}
                   </a>
                 ),
@@ -762,7 +759,7 @@ export default function Home() {
                 <span className="block h-[2px] w-6 rounded-full bg-white" />
               </button>
               <div className="flex items-center justify-center">
-                <img src={TEAM_LOGO} alt={settings?.siteName || "Team Shay"} className="team-shay-logo h-16 w-auto brightness-0 invert md:h-20" />
+                <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-16 w-auto brightness-0 invert md:h-20" />
               </div>
             </div>
           </div>
@@ -780,17 +777,17 @@ export default function Home() {
 
         <div
           className={`fixed top-0 right-0 z-[70] flex h-full w-80 flex-col overflow-hidden shadow-2xl transition-transform duration-300 ease-in-out lg:hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
-          style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #d9ae4c" }}
+          style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #4b8067" }}
           dir="rtl"
         >
           <div className="flex items-center justify-between px-5 py-5" style={{ backgroundColor: "#0d0d0d" }}>
-            <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo h-14 w-auto brightness-0 invert" />
-            <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#d9ae4c" }} className="p-2 rounded-lg transition" aria-label="סגור">
+            <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-14 w-auto brightness-0 invert" />
+            <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#4b8067" }} className="p-2 rounded-lg transition" aria-label="סגור">
               <X className="size-5" />
             </button>
           </div>
           <div style={{ flex: 1, background: "#fafafa", padding: "20px 16px", overflowY: "auto" }}>
-            <p style={{ color: "#d9ae4c", fontSize: "0.75rem", fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>
+            <p style={{ color: "#4b8067", fontSize: "0.75rem", fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>
               ניווט מהיר
             </p>
             <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -805,25 +802,25 @@ export default function Home() {
                   color: "#0d0d0d",
                   fontWeight: 800,
                   fontSize: "1.05rem",
-                  border: "2px solid #f0e8d0",
+                  border: "2px solid #e1eae4",
                   textDecoration: "none",
                   cursor: "pointer",
                   transition: "background 0.15s, border-color 0.15s",
                 };
 
                 const handleEnter = (e: React.MouseEvent<HTMLElement>) => {
-                  (e.currentTarget as HTMLElement).style.background = "#fff8e6";
-                  (e.currentTarget as HTMLElement).style.borderColor = "#d9ae4c";
+                  (e.currentTarget as HTMLElement).style.background = "#fbfaf5";
+                  (e.currentTarget as HTMLElement).style.borderColor = "#4b8067";
                 };
                 const handleLeave = (e: React.MouseEvent<HTMLElement>) => {
                   (e.currentTarget as HTMLElement).style.background = "#ffffff";
-                  (e.currentTarget as HTMLElement).style.borderColor = "#f0e8d0";
+                  (e.currentTarget as HTMLElement).style.borderColor = "#e1eae4";
                 };
 
                 const inner = (
                   <>
                     <span>{item.label}</span>
-                    <ChevronLeft style={{ width: "18px", height: "18px", color: "#d9ae4c", flexShrink: 0 }} />
+                    <ChevronLeft style={{ width: "18px", height: "18px", color: "#4b8067", flexShrink: 0 }} />
                   </>
                 );
 
@@ -853,15 +850,15 @@ export default function Home() {
               })}
             </nav>
           </div>
-          <div className="border-t border-[#f3dfb0] bg-white px-4 py-4">
+          <div className="border-t border-[#d7e4dd] bg-white px-4 py-4">
             <button
               onClick={() => { window.open(whatsappLink, "_blank", "noopener,noreferrer"); setMobileMenuOpen(false); }}
-              style={{ width: "100%", background: "#d9ae4c", color: "#000", fontWeight: 900, borderRadius: "999px", height: "48px", fontSize: "1rem", border: "none", cursor: "pointer" }}
+              style={{ width: "100%", background: "#4b8067", color: "#000", fontWeight: 900, borderRadius: "999px", height: "48px", fontSize: "1rem", border: "none", cursor: "pointer" }}
             >
               שלחו הודעה עכשיו
             </button>
             <div style={{ borderTop: "1px solid #eee", paddingTop: "14px", marginTop: "12px", textAlign: "center" }}>
-              <p style={{ fontSize: "11px", color: "#999" }}>Team Shay — נדל״ן ירושלים</p>
+              <p style={{ fontSize: "11px", color: "#999" }}>Shay Group — נדל״ן ירושלים</p>
             </div>
           </div>
         </div>
@@ -901,23 +898,23 @@ export default function Home() {
 
           <div className="relative z-20 mx-auto flex min-h-[78vh] max-w-5xl flex-col items-center justify-center text-center text-white">
             <div className="rounded-full border border-white/20 bg-white/10 px-5 py-2 text-base font-extrabold shadow-[0_10px_30px_rgba(0,0,0,0.15)] backdrop-blur-md">
-              {(settings?.siteName || "Team Shay") + " תחת רשת Landsman"}
+              {BRAND_NAME}
             </div>
             <h1 className="mt-8 text-4xl font-black leading-[1.08] md:text-6xl lg:text-[4.7rem]">
               {settings?.heroHeadline || fallbackSettings.heroHeadline}
             </h1>
             <p className="mt-6 min-h-[2.5rem] text-[1.45rem] font-extrabold text-white md:text-[1.75rem]">
               {typedText}
-              <span className="mr-1 inline-block h-7 w-[2px] animate-pulse bg-[#d9ae4c] align-middle" />
+              <span className="mr-1 inline-block h-7 w-[2px] animate-pulse bg-[#4b8067] align-middle" />
             </p>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               {trustBadges.map((badge) => (
                 <div
                   key={badge}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#d4af37]/40 bg-white/10 px-5 py-3 text-base font-extrabold text-white shadow-[0_12px_28px_rgba(0,0,0,0.12)] backdrop-blur-md"
+                  className="inline-flex items-center gap-2 rounded-full border border-[#4b8067]/40 bg-white/10 px-5 py-3 text-base font-extrabold text-white shadow-[0_12px_28px_rgba(0,0,0,0.12)] backdrop-blur-md"
                 >
-                  <Check className="size-4 text-[#d9ae4c]" />
+                  <Check className="size-4 text-[#4b8067]" />
                   {badge}
                 </div>
               ))}
@@ -930,16 +927,16 @@ export default function Home() {
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <Button
                 onClick={scrollToForm}
-                className="h-14 rounded-full bg-[#d9ae4c] px-8 text-base font-black text-black shadow-[0_12px_30px_rgba(217,174,76,0.3)] hover:bg-[#c99a31]"
+                className="h-14 rounded-full bg-[#4b8067] px-8 text-base font-black text-black shadow-[0_12px_30px_rgba(75,128,103,0.3)] hover:bg-[#3a6b55]"
               >
                 שלחו הודעה עכשיו
               </Button>
               <Button
                 variant="outline"
                 onClick={scrollToForm}
-                className="h-14 rounded-full border-[#d9ae4c] bg-white/5 px-8 text-base font-black text-white hover:bg-white/10"
+                className="h-14 rounded-full border-[#4b8067] bg-white/5 px-8 text-base font-black text-white hover:bg-white/10"
               >
-                <MessageCircle className="size-4 text-[#d9ae4c]" />
+                <MessageCircle className="size-4 text-[#4b8067]" />
                 להערכת שווי נכס
               </Button>
             </div>
@@ -956,7 +953,7 @@ export default function Home() {
         <section id="about" className="px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_0.92fr]">
             <div className="order-2 lg:order-1">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]">אודות צוות שי</p>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#4b8067]">אודות קבוצת שי</p>
               <h2 className="mt-4 text-[2.15rem] font-extrabold leading-tight md:text-[3.45rem]">{settings?.aboutTitle || fallbackSettings.aboutTitle}</h2>
               <p className="mt-6 text-lg leading-8 text-slate-600">{settings?.aboutSubtitle || fallbackSettings.aboutSubtitle}</p>
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -965,7 +962,7 @@ export default function Home() {
                     key={text}
                     className="flex flex-col items-center rounded-[24px] border border-slate-200 bg-white p-5 text-center shadow-[0_14px_30px_rgba(15,23,42,0.05)]"
                   >
-                    <span className="flex size-12 items-center justify-center rounded-full bg-white text-[#d9ae4c] shadow-[0_10px_24px_rgba(217,174,76,0.18)]">
+                    <span className="flex size-12 items-center justify-center rounded-full bg-white text-[#4b8067] shadow-[0_10px_24px_rgba(75,128,103,0.18)]">
                       <Icon className="size-5" />
                     </span>
                     <p className="mt-4 text-base font-semibold leading-7 text-slate-700">{text}</p>
@@ -976,7 +973,7 @@ export default function Home() {
 
             <div className="order-1 lg:order-2">
               <div className="relative mx-auto max-w-[30rem]">
-                <div className="absolute -inset-5 rounded-[42px] bg-[radial-gradient(circle_at_top,rgba(217,174,76,0.22),rgba(255,255,255,0))] blur-2xl" />
+                <div className="absolute -inset-5 rounded-[42px] bg-[radial-gradient(circle_at_top,rgba(75,128,103,0.22),rgba(255,255,255,0))] blur-2xl" />
                 <div className="relative overflow-hidden rounded-[36px] border border-slate-200 bg-white p-4 shadow-[0_28px_70px_rgba(15,23,42,0.12)]">
                   <img
                     src={settings?.shayAboutImageUrl || SHAY_ABOUT_IMAGE}
@@ -994,7 +991,7 @@ export default function Home() {
         <section id="team" className="bg-white px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: '24px'}}>הצוות</p>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#4b8067]" style={{fontSize: '24px'}}>הצוות</p>
               <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">הכירו את הסוכנים שלנו</h2>
             </div>
 
@@ -1004,16 +1001,11 @@ export default function Home() {
                   key={agent.id}
                   className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_16px_36px_rgba(15,23,42,0.06)] transition duration-300 hover:scale-[1.02] hover:shadow-[0_24px_56px_rgba(15,23,42,0.14)]"
                 >
-                  <div className="h-48 overflow-hidden bg-white">
+                  <div className="aspect-[4/4.4] overflow-hidden bg-[#eef3ef]">
                     <img
                       src={agent.image}
                       alt={agent.name}
-                      className={`h-full w-full transition duration-500 ${agent.imageFit === "contain" ? "object-contain p-1" : "object-cover"}`}
-                      style={{
-                        objectPosition: agent.imagePosition,
-                        transform: agent.imageTransform,
-                        transformOrigin: agent.imageTransform ? "center top" : undefined,
-                      }}
+                      className={`h-full w-full object-center transition duration-500 ${agent.imageFit === "contain" ? "object-contain p-4" : "object-cover"}`}
                       loading="lazy"
                     />
                   </div>
@@ -1024,14 +1016,14 @@ export default function Home() {
                       {agent.email ? (
                         <a
                           href={`mailto:${agent.email}`}
-                          className="text-sm font-bold leading-5 text-slate-600 transition hover:text-[#d9ae4c]"
+                          className="text-sm font-bold leading-5 text-slate-600 transition hover:text-[#4b8067]"
                         >
                           {agent.email}
                         </a>
                       ) : null}
                       <a
                         href={`tel:${agent.phone.replace(/\D/g, "") || officePhoneLink}`}
-                        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#d9ae4c] px-4 py-2 text-sm font-black text-white shadow-[0_10px_24px_rgba(217,174,76,0.28)]"
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#4b8067] px-4 py-2 text-sm font-black text-white shadow-[0_10px_24px_rgba(75,128,103,0.28)]"
                       >
                         <Phone className="size-4" />
                         {agent.phone}
@@ -1047,7 +1039,7 @@ export default function Home() {
         <section id="method" className="px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: '24px'}}>השיטה</p>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#4b8067]" style={{fontSize: '24px'}}>השיטה</p>
               <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]" style={{fontSize: '70px'}}>מה יוצא לכם מזה?</h2>
             </div>
 
@@ -1055,14 +1047,14 @@ export default function Home() {
               {valueSteps.map((step, index) => (
                 <div key={step.step} className="relative">
                   <article className="relative h-full rounded-[28px] border border-slate-200 bg-white px-6 pb-7 pt-10 text-center shadow-[0_18px_36px_rgba(15,23,42,0.06)]">
-                    <div className="absolute right-1/2 top-0 flex size-14 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-[#d9ae4c] text-lg font-black text-white shadow-[0_12px_24px_rgba(217,174,76,0.28)]">
+                    <div className="absolute right-1/2 top-0 flex size-14 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-[#4b8067] text-lg font-black text-white shadow-[0_12px_24px_rgba(75,128,103,0.28)]">
                       {step.step}
                     </div>
                     <h3 className="text-[1.6rem] font-extrabold text-slate-950">{step.title}</h3>
                     <p className="mt-4 text-base font-semibold leading-7 text-slate-600">{step.subtitle}</p>
                   </article>
                   {index < valueSteps.length - 1 ? (
-                    <div className="mt-5 flex items-center justify-center text-[#d9ae4c] xl:absolute xl:left-[-1.35rem] xl:top-1/2 xl:mt-0 xl:-translate-y-1/2">
+                    <div className="mt-5 flex items-center justify-center text-[#4b8067] xl:absolute xl:left-[-1.35rem] xl:top-1/2 xl:mt-0 xl:-translate-y-1/2">
                       <span className="hidden items-center gap-2 xl:inline-flex">
                         <ArrowLeft className="size-6" />
                       </span>
@@ -1078,10 +1070,10 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="marketing-methods" className="border-y border-[#D4AF37]/20 bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
+        <section id="marketing-methods" className="border-y border-[#4b8067]/20 bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-5 text-center md:items-center">
-              <p className="inline-flex items-center justify-center gap-2 self-center rounded-full border border-[#D4AF37]/40 bg-white px-5 py-2 text-sm font-black text-[#D4AF37] shadow-sm">
+              <p className="inline-flex items-center justify-center gap-2 self-center rounded-full border border-[#4b8067]/40 bg-white px-5 py-2 text-sm font-black text-[#4b8067] shadow-sm">
                 <Play className="size-4 fill-current" />
                 {marketingSection.eyebrow}
               </p>
@@ -1093,7 +1085,7 @@ export default function Home() {
               </p>
               <div className="flex max-w-5xl flex-wrap justify-center gap-3">
                 {marketingSection.highlights.map((item) => (
-                  <div key={item} className="rounded-full border border-[#D4AF37]/25 bg-white px-4 py-2 text-sm font-black text-[#D4AF37] shadow-sm">
+                  <div key={item} className="rounded-full border border-[#4b8067]/25 bg-white px-4 py-2 text-sm font-black text-[#4b8067] shadow-sm">
                     {item}
                   </div>
                 ))}
@@ -1117,7 +1109,7 @@ export default function Home() {
                               setSelectedMarketingIndex(index);
                               setMarketingPreviewOpen(true);
                             }}
-                            className="group relative h-[460px] w-full overflow-hidden rounded-[30px] border border-[#D4AF37]/35 bg-[#1A1A1A] text-right shadow-[0_22px_50px_rgba(15,23,42,0.12)] transition duration-500 hover:-translate-y-1 hover:border-[#D4AF37] hover:shadow-[0_24px_58px_rgba(212,175,55,0.20)]"
+                            className="group relative h-[460px] w-full overflow-hidden rounded-[30px] border border-[#4b8067]/35 bg-[#1A1A1A] text-right shadow-[0_22px_50px_rgba(15,23,42,0.12)] transition duration-500 hover:-translate-y-1 hover:border-[#4b8067] hover:shadow-[0_24px_58px_rgba(75,128,103,0.20)]"
                           >
                             {item.type === "video" ? (
                               <video src={item.mediaUrl} poster={item.posterUrl ?? undefined} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" muted playsInline />
@@ -1126,10 +1118,10 @@ export default function Home() {
                             )}
                             <span className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/22 to-transparent" />
                             <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                              <p className="text-sm font-black text-[#D4AF37]">{item.type === "video" ? "וידאו" : "תמונה"}</p>
-                              <h3 className="mt-2 text-2xl font-black leading-tight text-[#D4AF37]">{item.title}</h3>
+                              <p className="text-sm font-black text-[#4b8067]">{item.type === "video" ? "וידאו" : "תמונה"}</p>
+                              <h3 className="mt-2 text-2xl font-black leading-tight text-[#4b8067]">{item.title}</h3>
                               <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-white/82">{item.description}</p>
-                              <span className="mt-5 inline-flex rounded-full border border-white/45 bg-white/10 px-5 py-2 text-sm font-black text-white opacity-0 backdrop-blur-sm transition duration-300 group-hover:border-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-black group-hover:opacity-100">
+                              <span className="mt-5 inline-flex rounded-full border border-white/45 bg-white/10 px-5 py-2 text-sm font-black text-white opacity-0 backdrop-blur-sm transition duration-300 group-hover:border-[#4b8067] group-hover:bg-[#4b8067] group-hover:text-black group-hover:opacity-100">
                                 צפייה מלאה
                               </span>
                             </div>
@@ -1145,7 +1137,7 @@ export default function Home() {
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="size-12 rounded-full border-[#D4AF37] bg-[#D4AF37] text-black shadow-[0_12px_26px_rgba(212,175,55,0.24)] hover:bg-[#B8960C] hover:text-black"
+                        className="size-12 rounded-full border-[#4b8067] bg-[#4b8067] text-black shadow-[0_12px_26px_rgba(75,128,103,0.24)] hover:bg-[#2f6653] hover:text-black"
                         onClick={() => scrollMarketingCarousel("next")}
                         aria-label="פעולת שיווק הבאה"
                       >
@@ -1155,7 +1147,7 @@ export default function Home() {
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="size-12 rounded-full border-[#D4AF37] bg-[#D4AF37] text-black shadow-[0_12px_26px_rgba(212,175,55,0.24)] hover:bg-[#B8960C] hover:text-black"
+                        className="size-12 rounded-full border-[#4b8067] bg-[#4b8067] text-black shadow-[0_12px_26px_rgba(75,128,103,0.24)] hover:bg-[#2f6653] hover:text-black"
                         onClick={() => scrollMarketingCarousel("prev")}
                         aria-label="פעולת שיווק קודמת"
                       >
@@ -1170,7 +1162,7 @@ export default function Home() {
                         key={`marketing-dot-${item.id || index}`}
                         type="button"
                         className={`h-2.5 rounded-full transition-all ${
-                          selectedMarketingSlide === index ? "w-8 bg-[#D4AF37]" : "w-2.5 bg-slate-300"
+                          selectedMarketingSlide === index ? "w-8 bg-[#4b8067]" : "w-2.5 bg-slate-300"
                         }`}
                         onClick={() => marketingCarouselApi?.scrollTo(index)}
                         aria-label={`מעבר לפעולת שיווק ${index + 1}`}
@@ -1192,13 +1184,13 @@ export default function Home() {
                 <div className="w-full max-w-6xl overflow-hidden rounded-[30px] bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
                   <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
                     <div className="text-right">
-                      <p className="text-xs font-black uppercase tracking-[0.08em] text-[#B8960C]">Preview</p>
+                      <p className="text-xs font-black uppercase tracking-[0.08em] text-[#2f6653]">Preview</p>
                       <h3 className="text-xl font-black text-slate-950">{selectedMarketingItem.title}</h3>
                     </div>
                     <button
                       type="button"
                       onClick={() => setMarketingPreviewOpen(false)}
-                      className="flex size-11 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:border-[#D4AF37] hover:text-[#B8960C]"
+                      className="flex size-11 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition hover:border-[#4b8067] hover:text-[#2f6653]"
                       aria-label="סגירת תצוגה מקדימה"
                     >
                       <X className="size-5" />
@@ -1232,10 +1224,10 @@ export default function Home() {
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-lg font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c] md:text-2xl">מחפשים נכס ? הגעתם למקום הנכון</p>
+                <p className="text-lg font-extrabold uppercase tracking-[0.03em] text-[#4b8067] md:text-2xl">מחפשים נכס ? הגעתם למקום הנכון</p>
                 <h2 className="mt-4 text-4xl font-extrabold leading-tight text-[#1A1A1A] md:text-[3.35rem]">הנכסים המובחרים שלנו</h2>
               </div>
-              <Link href="/properties" className="inline-flex items-center gap-2 text-base font-black text-[#d9ae4c]">
+              <Link href="/properties" className="inline-flex items-center gap-2 text-base font-black text-[#4b8067]">
                 לכל הנכסים
                 <ChevronLeft className="size-4" />
               </Link>
@@ -1263,7 +1255,7 @@ export default function Home() {
                       <CarouselItem key={property.id} className="basis-[84%] pl-3 sm:basis-[58%] md:pl-5 lg:basis-1/3">
                         <Link
                           href={`/properties/${property.id}`}
-                          className="group relative block h-[520px] overflow-hidden rounded-[30px] border border-[#D4AF37]/30 bg-[#1A1A1A] text-white shadow-[0_20px_48px_rgba(15,23,42,0.14)] transition duration-500 hover:-translate-y-1.5 hover:border-[#D4AF37] hover:shadow-[0_26px_64px_rgba(212,175,55,0.24)]"
+                          className="group relative block h-[520px] overflow-hidden rounded-[30px] border border-[#4b8067]/30 bg-[#1A1A1A] text-white shadow-[0_20px_48px_rgba(15,23,42,0.14)] transition duration-500 hover:-translate-y-1.5 hover:border-[#4b8067] hover:shadow-[0_26px_64px_rgba(75,128,103,0.24)]"
                           aria-label={`פתיחת דף הנכס ${property.title}`}
                         >
                           <div className="absolute inset-0 overflow-hidden">
@@ -1285,16 +1277,16 @@ export default function Home() {
                           </div>
 
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="translate-y-4 border border-white/75 bg-black/24 px-10 py-4 text-base font-black text-white opacity-0 shadow-[0_16px_38px_rgba(0,0,0,0.28)] backdrop-blur-[2px] transition duration-300 group-hover:translate-y-0 group-hover:border-[#D4AF37] group-hover:bg-[#D4AF37] group-hover:text-black group-hover:opacity-100">
+                            <span className="translate-y-4 border border-white/75 bg-black/24 px-10 py-4 text-base font-black text-white opacity-0 shadow-[0_16px_38px_rgba(0,0,0,0.28)] backdrop-blur-[2px] transition duration-300 group-hover:translate-y-0 group-hover:border-[#4b8067] group-hover:bg-[#4b8067] group-hover:text-black group-hover:opacity-100">
                               פרטים נוספים
                             </span>
                           </div>
 
                           <div className="absolute inset-x-0 bottom-0 p-7 text-center">
-                            <span className="mb-3 inline-flex rounded-full bg-[#D4AF37] px-4 py-1.5 text-xs font-black text-black shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
+                            <span className="mb-3 inline-flex rounded-full bg-[#4b8067] px-4 py-1.5 text-xs font-black text-black shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
                               {property.status}
                             </span>
-                            <p className="text-3xl font-black text-[#D4AF37] drop-shadow-[0_3px_16px_rgba(0,0,0,0.45)]">
+                            <p className="text-3xl font-black text-[#4b8067] drop-shadow-[0_3px_16px_rgba(0,0,0,0.45)]">
                               ₪{property.price.toLocaleString("he-IL")}
                             </p>
                           </div>
@@ -1310,7 +1302,7 @@ export default function Home() {
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="size-12 rounded-full border-[#D4AF37] bg-[#D4AF37] text-black shadow-[0_12px_26px_rgba(212,175,55,0.24)] hover:bg-[#B8960C] hover:text-black"
+                          className="size-12 rounded-full border-[#4b8067] bg-[#4b8067] text-black shadow-[0_12px_26px_rgba(75,128,103,0.24)] hover:bg-[#2f6653] hover:text-black"
                           onClick={() => scrollPropertyCarousel("next")}
                           aria-label="Next property"
                         >
@@ -1320,7 +1312,7 @@ export default function Home() {
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="size-12 rounded-full border-[#D4AF37] bg-[#D4AF37] text-black shadow-[0_12px_26px_rgba(212,175,55,0.24)] hover:bg-[#B8960C] hover:text-black"
+                          className="size-12 rounded-full border-[#4b8067] bg-[#4b8067] text-black shadow-[0_12px_26px_rgba(75,128,103,0.24)] hover:bg-[#2f6653] hover:text-black"
                           onClick={() => scrollPropertyCarousel("prev")}
                           aria-label="Previous property"
                         >
@@ -1334,7 +1326,7 @@ export default function Home() {
                             key={`property-dot-${property.id}`}
                             type="button"
                             className={`h-2.5 rounded-full transition-all ${
-                              selectedPropertySlide === index ? "w-8 bg-[#d9ae4c]" : "w-2.5 bg-slate-300"
+                              selectedPropertySlide === index ? "w-8 bg-[#4b8067]" : "w-2.5 bg-slate-300"
                             }`}
                             onClick={() => selectPropertySlide(index)}
                             aria-label={`Go to property ${index + 1}`}
@@ -1357,10 +1349,10 @@ export default function Home() {
         <section className="overflow-hidden bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
-              <p className="text-base font-black uppercase tracking-[0.08em] text-[#D4AF37]">הצלחות מהשטח</p>
+              <p className="text-base font-black uppercase tracking-[0.08em] text-[#4b8067]">הצלחות מהשטח</p>
               <h2 className="mt-4 text-4xl font-black text-[#1A1A1A] md:text-[3.35rem]">נמכר לאחרונה — עסקאות שסגרנו</h2>
               <p className="mx-auto mt-4 max-w-3xl text-lg font-semibold leading-8 text-[#6B6B6B]">
-                הירושלמים בוחרים ב-Team Shay. התוצאות מדברות בעד עצמן.
+                הירושלמים בוחרים ב-Shay Group. התוצאות מדברות בעד עצמן.
               </p>
             </div>
 
@@ -1370,19 +1362,19 @@ export default function Home() {
                   {soldPropertiesTrack.map((property, index) => (
                     <article
                       key={`${property.id}-${index}`}
-                      className="w-[310px] shrink-0 overflow-hidden rounded-[28px] border border-[#D4AF37]/30 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] transition hover:border-[#D4AF37] [direction:rtl] md:w-[360px]"
+                      className="w-[310px] shrink-0 overflow-hidden rounded-[28px] border border-[#4b8067]/30 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] transition hover:border-[#4b8067] [direction:rtl] md:w-[360px]"
                     >
                       <div className="relative h-52 overflow-hidden">
                         <img src={property.image} alt={property.title} className="h-full w-full object-cover" loading="lazy" />
-                        <span className="absolute right-4 top-4 rounded-full bg-[#D4AF37] px-4 py-2 text-sm font-black text-black shadow-lg">
+                        <span className="absolute right-4 top-4 rounded-full bg-[#4b8067] px-4 py-2 text-sm font-black text-black shadow-lg">
                           נמכר ✓
                         </span>
                       </div>
                       <div className="p-5">
                         <h3 className="text-xl font-black text-[#1A1A1A]">{formatPropertyLocation(property) || property.title}</h3>
-                        <p className="mt-5 text-2xl font-black text-[#D4AF37]">₪{property.price.toLocaleString("he-IL")}</p>
-                        <div className="mt-4 border-t border-[#D4AF37]/20 pt-4 text-sm font-bold">
-                          <span className="text-[#6B6B6B]">נמכר עם צוות שי</span>
+                        <p className="mt-5 text-2xl font-black text-[#4b8067]">₪{property.price.toLocaleString("he-IL")}</p>
+                        <div className="mt-4 border-t border-[#4b8067]/20 pt-4 text-sm font-bold">
+                          <span className="text-[#6B6B6B]">נמכר עם קבוצת שי</span>
                         </div>
                       </div>
                     </article>
@@ -1390,7 +1382,7 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <div className="mt-12 rounded-[28px] border border-dashed border-[#D4AF37]/40 bg-white p-8 text-center text-[#6B6B6B]">
+              <div className="mt-12 rounded-[28px] border border-dashed border-[#4b8067]/40 bg-white p-8 text-center text-[#6B6B6B]">
                 עסקאות חדשות יופיעו כאן מיד כשהן מתעדכנות במערכת.
               </div>
             )}
@@ -1400,7 +1392,7 @@ export default function Home() {
         <section ref={testimonialsSectionRef} id="testimonials" className="bg-white px-4 py-14 text-[#1A1A1A] md:px-6 md:py-20">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#D4AF37]" style={{fontSize: "20px"}}>המלצות</p>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#4b8067]" style={{fontSize: "20px"}}>המלצות</p>
               <h2 className="mt-3 text-[2rem] font-extrabold md:text-[3.25rem]">לקוחות משתפים</h2>
             </div>
 
@@ -1421,7 +1413,7 @@ export default function Home() {
                         type="button"
                         key={`grid-${testimonial.id}`}
                         onClick={() => openTestimonialPreview(testimonial)}
-                        className="group relative flex min-h-[23rem] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25"
+                        className="group relative flex min-h-[23rem] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#4b8067] hover:shadow-[0_28px_70px_rgba(75,128,103,0.22)] focus-visible:border-[#4b8067] focus-visible:ring-4 focus-visible:ring-[#4b8067]/25"
                         style={{ transitionDelay: testimonialsExpanded ? `${Math.min(index, 5) * 150}ms` : "0ms" }}
                       >
                         {testimonial.whatsappImageUrl ? (
@@ -1432,7 +1424,7 @@ export default function Home() {
                               <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-contain" loading="lazy" />
                             )}
                             <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
-                            <span className="absolute bottom-4 right-4 inline-flex translate-y-3 items-center gap-2 rounded-full bg-[#D4AF37] px-5 py-2 text-sm font-black text-[#1A1A1A] opacity-0 shadow-lg transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                            <span className="absolute bottom-4 right-4 inline-flex translate-y-3 items-center gap-2 rounded-full bg-[#4b8067] px-5 py-2 text-sm font-black text-[#1A1A1A] opacity-0 shadow-lg transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
                               {isVideoMediaUrl(testimonial.whatsappImageUrl) ? <Play className="size-4 fill-current" /> : <MessageCircle className="size-4" />}
                               לחצו לצפייה
                             </span>
@@ -1442,9 +1434,9 @@ export default function Home() {
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <p className="text-base font-black text-slate-950">{testimonial.title}</p>
-                              <p className="mt-1 text-xs font-bold tracking-[0.02em] text-[#D4AF37]">{testimonial.source}</p>
+                              <p className="mt-1 text-xs font-bold tracking-[0.02em] text-[#4b8067]">{testimonial.source}</p>
                             </div>
-                            <div className="flex items-center gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
+                            <div className="flex items-center gap-1 text-[#4b8067]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
                               {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
                                 <Star key={`grid-${testimonial.id}-${starIndex}`} className="size-3.5 fill-current" />
                               ))}
@@ -1463,7 +1455,7 @@ export default function Home() {
                     aria-hidden={testimonialsExpanded}
                   >
                     <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center">
-                      <span className="h-[22rem] w-full max-w-[14rem] rounded-[34px] bg-[#D4AF37]/15 blur-3xl" />
+                      <span className="h-[22rem] w-full max-w-[14rem] rounded-[34px] bg-[#4b8067]/15 blur-3xl" />
                     </div>
                     {testimonialCards.map((testimonial, index) => {
                       const stackedStyle = testimonialStackStyles[index] ?? testimonialStackStyles[0];
@@ -1472,7 +1464,7 @@ export default function Home() {
                           type="button"
                           key={`stack-${testimonial.id}`}
                           onClick={() => openTestimonialPreview(testimonial)}
-                          className="group absolute left-1/2 top-0 flex min-h-[23rem] w-full max-w-[14rem] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1500ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-3 hover:border-[#D4AF37] hover:shadow-[0_28px_70px_rgba(212,175,55,0.22)] focus-visible:border-[#D4AF37] focus-visible:ring-4 focus-visible:ring-[#D4AF37]/25"
+                          className="group absolute left-1/2 top-0 flex min-h-[23rem] w-full max-w-[14rem] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1500ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-3 hover:border-[#4b8067] hover:shadow-[0_28px_70px_rgba(75,128,103,0.22)] focus-visible:border-[#4b8067] focus-visible:ring-4 focus-visible:ring-[#4b8067]/25"
                           style={{ ...stackedStyle, transitionDelay: `${index * 120}ms` }}
                         >
                           {testimonial.whatsappImageUrl ? (
@@ -1488,9 +1480,9 @@ export default function Home() {
                             <div className="flex items-start justify-between gap-3">
                               <div>
                                 <p className="text-base font-black text-slate-950">{testimonial.title}</p>
-                                <p className="mt-1 text-xs font-bold tracking-[0.02em] text-[#D4AF37]">{testimonial.source}</p>
+                                <p className="mt-1 text-xs font-bold tracking-[0.02em] text-[#4b8067]">{testimonial.source}</p>
                               </div>
-                              <div className="flex items-center gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
+                              <div className="flex items-center gap-1 text-[#4b8067]" aria-label={`דירוג ${testimonial.stars} מתוך 5`}>
                                 {Array.from({ length: testimonial.stars }).map((_, starIndex) => (
                                   <Star key={`stack-${testimonial.id}-${starIndex}`} className="size-3.5 fill-current" />
                                 ))}
@@ -1526,13 +1518,13 @@ export default function Home() {
             >
               <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
                 <div>
-                  <p className="text-sm font-black text-[#D4AF37]">{testimonialPreview.source}</p>
+                  <p className="text-sm font-black text-[#4b8067]">{testimonialPreview.source}</p>
                   <h3 className="text-2xl font-black text-[#1A1A1A]">{testimonialPreview.title}</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setTestimonialPreview(null)}
-                  className="flex size-11 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition hover:bg-[#D4AF37] hover:text-[#1A1A1A]"
+                  className="flex size-11 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition hover:bg-[#4b8067] hover:text-[#1A1A1A]"
                   aria-label="סגירת המלצה"
                 >
                   <X className="size-5" />
@@ -1548,7 +1540,7 @@ export default function Home() {
                 </div>
               ) : null}
               <div className="space-y-3 p-5">
-                <div className="flex items-center justify-end gap-1 text-[#D4AF37]" aria-label={`דירוג ${testimonialPreview.stars} מתוך 5`}>
+                <div className="flex items-center justify-end gap-1 text-[#4b8067]" aria-label={`דירוג ${testimonialPreview.stars} מתוך 5`}>
                   {Array.from({ length: testimonialPreview.stars }).map((_, starIndex) => (
                     <Star key={`preview-${starIndex}`} className="size-5 fill-current" />
                   ))}
@@ -1562,22 +1554,22 @@ export default function Home() {
         <section id="lead-form" className="bg-white px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-4xl rounded-[36px] border border-slate-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:p-12">
             <div className="text-center">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]"></p>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#4b8067]"></p>
               <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">רוצים לדעת כמה שווה הנכס שלכם?</h2>
-              <p className="mt-4 text-xl font-semibold leading-8 text-slate-600" style={{color: '#e18823'}}>
+              <p className="mt-4 text-xl font-semibold leading-8 text-slate-600" style={{color: '#4b8067'}}>
                 למלא פרטים לוקח 30 שניות
               </p>
             </div>
 
             <div className="mt-8 flex items-center justify-center gap-4">
-              <div className={`flex items-center gap-3 rounded-full px-4 py-2 text-base font-extrabold ${leadStep === 1 ? "bg-[#d9ae4c] text-white" : "bg-white text-[#b98b2f]"}`}>
+              <div className={`flex items-center gap-3 rounded-full px-4 py-2 text-base font-extrabold ${leadStep === 1 ? "bg-[#4b8067] text-white" : "bg-white text-[#2f6653]"}`}>
                 <span className="flex size-7 items-center justify-center rounded-full bg-white/20">1</span>
                 פרטי הנכס
               </div>
               {leadStep === 2 ? (
                 <>
-                  <div className="h-px w-10 bg-[#d9ae4c]/25" />
-                  <div className="flex items-center gap-3 rounded-full bg-[#d9ae4c] px-4 py-2 text-base font-extrabold text-white">
+                  <div className="h-px w-10 bg-[#4b8067]/25" />
+                  <div className="flex items-center gap-3 rounded-full bg-[#4b8067] px-4 py-2 text-base font-extrabold text-white">
                     <span className="flex size-7 items-center justify-center rounded-full bg-white/20">2</span>
                     פרטים אישיים
                   </div>
@@ -1594,7 +1586,7 @@ export default function Home() {
                     value={formData.neighborhood}
                     onChange={handleFormChange}
                     placeholder="למשל: קטמונים, גילה, ארנונה"
-                    className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                    className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                   />
                 </label>
 
@@ -1605,7 +1597,7 @@ export default function Home() {
                       name="rooms"
                       value={formData.rooms}
                       onChange={handleFormChange}
-                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     >
                       <option value="">בחרו</option>
                       <option value="2">2</option>
@@ -1622,13 +1614,13 @@ export default function Home() {
                       value={formData.sqm}
                       onChange={handleFormChange}
                       placeholder="למשל: 120"
-                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
                 </div>
 
                 <div className="flex justify-center">
-                  <Button type="button" onClick={handleNextStep} className="h-14 rounded-full bg-[#d9ae4c] px-10 text-base font-extrabold text-black hover:bg-[#c99a31]">
+                  <Button type="button" onClick={handleNextStep} className="h-14 rounded-full bg-[#4b8067] px-10 text-base font-extrabold text-black hover:bg-[#3a6b55]">
                     להערכת שווי שוק במתנה
                   </Button>
                 </div>
@@ -1643,7 +1635,7 @@ export default function Home() {
                       value={formData.fullName}
                       onChange={handleFormChange}
                       placeholder="איך קוראים לכם?"
-                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
                   <label className="grid gap-2">
@@ -1653,16 +1645,16 @@ export default function Home() {
                       value={formData.phone}
                       onChange={handleFormChange}
                       placeholder="050-000-0000"
-                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
                 </div>
 
                 <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                  <Button type="button" variant="outline" onClick={() => setLeadStep(1)} className="h-14 rounded-full border-[#d9ae4c] px-8 text-base font-extrabold text-[#d9ae4c] hover:bg-white">
+                  <Button type="button" variant="outline" onClick={() => setLeadStep(1)} className="h-14 rounded-full border-[#4b8067] px-8 text-base font-extrabold text-[#4b8067] hover:bg-white">
                     חזרה לשלב הקודם
                   </Button>
-                  <Button type="submit" disabled={submitLeadMutation.isPending} className="h-14 rounded-full bg-[#d9ae4c] px-10 text-base font-extrabold text-black hover:bg-[#c99a31]">
+                  <Button type="submit" disabled={submitLeadMutation.isPending} className="h-14 rounded-full bg-[#4b8067] px-10 text-base font-extrabold text-black hover:bg-[#3a6b55]">
                     {submitLeadMutation.isPending ? "שומרים פרטים..." : "שלחו פרטים ונחזור אליכם בהקדם"}
                   </Button>
                 </div>
@@ -1671,20 +1663,6 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="px-4 pb-20 md:px-6">
-          <div className="mx-auto max-w-7xl rounded-[36px] bg-[#010101] p-8 text-white shadow-[0_24px_60px_rgba(15,23,42,0.22)] md:p-10">
-            <div className="grid items-center gap-10 lg:grid-cols-[auto_1fr]">
-              <div className="flex justify-center lg:justify-start">
-                <img src={settings?.landsmanLogoUrl || LANDSMAN_LOGO} alt="Landsman ירושלים" className="h-16 w-auto object-contain md:h-20" loading="lazy" />
-              </div>
-              <div>
-                <p className="text-base font-extrabold uppercase tracking-[0.03em] text-white">רשת Landsman</p>
-                <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">{settings?.landsmanTitle || fallbackSettings.landsmanTitle}</h2>
-                <p className="mt-5 max-w-4xl text-lg leading-8 text-white/85">{settings?.landsmanBody || fallbackSettings.landsmanBody}</p>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       <footer className="bg-[#010101] px-[5%] py-14 text-white" dir="rtl">
@@ -1709,7 +1687,7 @@ export default function Home() {
 
           <div className="flex flex-col items-end text-right md:absolute md:left-1/2 md:top-0 md:w-fit md:-translate-x-1/2 md:items-center md:text-center">
             <div className="rounded-[28px] bg-transparent px-4 py-2 md:px-6 md:py-3">
-              <img src={TEAM_LOGO} alt={settings?.siteName || "Team Shay"} className="team-shay-logo h-24 w-auto object-contain brightness-0 invert md:h-32" loading="lazy" />
+              <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-24 w-auto object-contain brightness-0 invert md:h-32" loading="lazy" />
             </div>
             <p className="mt-5 text-lg font-black text-white md:text-center" style={{ fontSize: "30px" }}>{footerSloganDisplay}</p>
           </div>
@@ -1721,6 +1699,7 @@ export default function Home() {
               <a href="#about" className="self-end text-right md:self-start">אודות</a>
               <a href="#method" className="self-end text-right md:self-start">שיטה</a>
               <Link href="/properties" className="self-end text-right md:self-start">נכסים</Link>
+              <Link href="/projects" className="self-end text-right md:self-start">פרויקטים</Link>
               <Link href="/agent-login" className="self-end text-right md:self-start">התחברות סוכנים</Link>
             </div>
           </div>

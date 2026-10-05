@@ -1,4 +1,5 @@
 import { COOKIE_NAME } from "@shared/const";
+import crypto from "node:crypto";
 import { z } from "zod";
 import { createAgentSessionToken } from "./_core/agentSession";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -20,6 +21,7 @@ import {
   getAgentPropertyById,
   getHomepagePayload,
   getMarketingSection,
+  getProjects,
   getPropertyById,
   getSiteSettings,
   listAgentProperties,
@@ -27,10 +29,12 @@ import {
   listAllTestimonials,
   listLeadSubmissions,
   listPublishedProperties,
+  listPublishedProjects,
   passwordFromAgentEmail,
   listStaffAccounts,
   updateAgentProperty,
   updateMarketingSection as saveMarketingSection,
+  updateProjects,
   updatePropertyById,
   updateSiteSettings,
   updateStaffAccount,
@@ -151,7 +155,6 @@ const siteSettingsInputSchema = z.object({
   siteName: z.string().min(2).optional(),
   headerLogoUrl: storedOrUploadedImageSchema,
   footerLogoUrl: storedOrUploadedImageSchema,
-  landsmanLogoUrl: storedOrUploadedImageSchema,
   heroBackgroundUrl: storedOrUploadedImageSchema,
   shayAboutImageUrl: storedOrUploadedImageSchema,
   heroHeadline: z.string().min(2).optional(),
@@ -160,8 +163,6 @@ const siteSettingsInputSchema = z.object({
   officePhone: z.string().min(6).optional(),
   aboutTitle: z.string().min(2).optional(),
   aboutSubtitle: z.string().min(2).optional(),
-  landsmanTitle: z.string().min(2).optional(),
-  landsmanBody: z.string().min(2).optional(),
   footerSlogan: z.string().min(2).optional(),
 });
 
@@ -180,6 +181,18 @@ const marketingSectionInputSchema = z.object({
   subtitle: z.string().min(1),
   highlights: z.array(z.string()).min(1).max(10),
   items: z.array(marketingSectionItemInputSchema).min(1).max(10),
+});
+
+const projectInputSchema = z.object({
+  id: z.string().trim().min(1).optional(),
+  title: z.string().trim().min(2),
+  neighborhood: z.string().trim().min(2),
+  city: z.string().trim().min(2).default("ירושלים"),
+  description: z.string().trim().min(2),
+  status: z.enum(["בקרוב", "בשיווק", "הושלם"]).default("בשיווק"),
+  coverImageUrl: storedOrUploadedImageSchema,
+  isPublished: z.boolean().default(false),
+  sortOrder: z.number().int().min(0).default(0),
 });
 
 const leadInputSchema = z.object({
@@ -429,7 +442,7 @@ function buildMarketingPrompt(input: z.infer<typeof marketingInputSchema>, agent
     .filter(Boolean)
     .join("\n");
 
-  return `אתה קופירייטר נדל"ן ישראלי בכיר של Team Shay, לנדסמן ירושלים.
+  return `אתה קופירייטר נדל"ן ישראלי בכיר של Shay Group בירושלים.
 כתוב ארבעה נוסחים נפרדים בעברית, מותאמים במדויק לפלטפורמה. אין להמציא פרטים שלא נמסרו, אין לציין מה חסר בנכס, ואין להשתמש בסימנים מוזרים כמו ###, --- מעבר לכותרות החובה, או טבלאות.
 המטרה: Hook חד, כתיבה מכירתית ברמה גבוהה, אבל אמינה ומדויקת. כל פלטפורמה חייבת להישמע אחרת.
 
@@ -443,7 +456,7 @@ ${details}
 אסור להשתמש בסימנים מיוחדים בכלל: בלי נקודות, פסיקים, מקפים, תבליטים, כוכביות, גרשיים, אימוג'ים או סימני מטבע.
 מותר להשתמש רק באותיות, ספרות, רווחים ושבירת שורה.
 מבנה חובה: שורת פתיחה חזקה ומדויקת, פרטי הנכס בשורות קצרות ללא תבליטים, ושורת סיום עם מספר הטלפון שסופק.
-אם לא סופק טלפון, סיים בקריאה ישירה ליצירת קשר עם Team Shay.
+אם לא סופק טלפון, סיים בקריאה ישירה ליצירת קשר עם Shay Group.
 
 ─── פייסבוק ───
 Hook שיווקי בשורה הראשונה. טון חם ואישי, פסקאות קצרות, ורק 2–3 אימוג'ים מתוך 🏠✨💛.
@@ -477,7 +490,7 @@ function buildMarketingFacts(input: z.infer<typeof marketingInputSchema>) {
     input.storage && "מחסן",
     input.renovated && "משופץ",
     input.price && `מחיר: ${formatMarketingPrice(input.price)}`,
-    input.exclusive && "בלעדיות Team Shay",
+    input.exclusive && "בלעדיות Shay Group",
   ].filter(Boolean) as string[];
 }
 
@@ -485,10 +498,10 @@ function buildFallbackMarketingOutput(input: z.infer<typeof marketingInputSchema
   const facts = buildMarketingFacts(input);
   const location = [input.street, input.neighborhood].filter(Boolean).join(", ") || "ירושלים";
   const price = input.price ? formatMarketingPrice(input.price) : "";
-  const phoneLine = agentPhone ? `לפרטים ותיאום: ${agentPhone}` : "לפרטים ותיאום: Team Shay";
+  const phoneLine = agentPhone ? `לפרטים ותיאום: ${agentPhone}` : "לפרטים ותיאום: Shay Group";
   const hook = `${location} — נכס שמייצר עניין כבר מהשורה הראשונה`;
   const strongestFacts = facts.slice(0, 6);
-  const compactFacts = strongestFacts.length ? strongestFacts.join(" | ") : "פרטים מלאים אצל צוות Team Shay";
+  const compactFacts = strongestFacts.length ? strongestFacts.join(" | ") : "פרטים מלאים אצל צוות Shay Group";
 
   return {
     yad2: [
@@ -512,7 +525,7 @@ function buildFallbackMarketingOutput(input: z.infer<typeof marketingInputSchema
       compactFacts ? `*פרטים:* ${compactFacts}` : "",
       price ? `*מחיר:* ${price}` : "",
       input.notes ? input.notes.slice(0, 90) : "",
-      agentPhone ? `רוצים לראות? דברו איתי: ${agentPhone}` : "רוצים לראות? שלחו הודעה לצוות שי",
+      agentPhone ? `רוצים לראות? דברו איתי: ${agentPhone}` : "רוצים לראות? שלחו הודעה לקבוצת שי",
     ].filter(Boolean).slice(0, 5).join("\n"),
     instagram: [
       `לחיות את ירושלים בקצב הנכון.`,
@@ -667,7 +680,7 @@ function buildCmaPrompt(
   cityName: string,
   fallbackSummary: CmaAiSummary,
 ) {
-  return `אתה אנליסט נדל"ן ירושלמי בכיר של צוות שי | לנדסמן ירושלים.
+  return `אתה אנליסט נדל"ן ירושלמי בכיר של קבוצת שי.
 המטרה: להפיק סיכום CMA קצר, מדויק, אמין ומכירתי לבעל נכס.
 
 חובה:
@@ -1678,6 +1691,7 @@ export const appRouter = router({
           .optional(),
       )
       .query(async ({ input }) => listPublishedProperties(input)),
+    projects: publicProcedure.query(async () => listPublishedProjects()),
     propertyById: publicProcedure
       .input(z.object({ propertyId: z.number().int().positive() }))
       .query(async ({ input }) => {
@@ -1997,13 +2011,14 @@ export const appRouter = router({
     }),
     dashboard: agentProcedure.query(async () => {
       await ensureCmsSeedData();
-      const [settings, testimonialsRows, staff, propertiesRows, leads, marketingSection] = await Promise.all([
+      const [settings, testimonialsRows, staff, propertiesRows, leads, marketingSection, projects] = await Promise.all([
         getSiteSettings(),
         listAllTestimonials(),
         listStaffAccounts(),
         listAllProperties(),
         listLeadSubmissions(),
         getMarketingSection(),
+        getProjects(),
       ]);
 
       return {
@@ -2013,6 +2028,7 @@ export const appRouter = router({
         staff,
         properties: propertiesRows,
         leads,
+        projects,
       };
     }),
     updateSiteSettings: agentProcedure.input(siteSettingsInputSchema).mutation(async ({ input }) => {
@@ -2020,7 +2036,6 @@ export const appRouter = router({
         ...input,
         headerLogoUrl: await resolveStoredImage("team-shay/site-settings/header-logo", input.headerLogoUrl, "header-logo"),
         footerLogoUrl: await resolveStoredImage("team-shay/site-settings/footer-logo", input.footerLogoUrl, "footer-logo"),
-        landsmanLogoUrl: await resolveStoredImage("team-shay/site-settings/landsman-logo", input.landsmanLogoUrl, "landsman-logo"),
         heroBackgroundUrl: await resolveStoredImage("team-shay/site-settings/hero-background", input.heroBackgroundUrl, "hero-background"),
         shayAboutImageUrl: await resolveStoredImage("team-shay/site-settings/shay-about", input.shayAboutImageUrl, "shay-about"),
       };
@@ -2043,6 +2058,22 @@ export const appRouter = router({
       const marketingSection = await saveMarketingSection({ ...input, items: resolvedItems });
       return { success: true, marketingSection } as const;
     }),
+    updateProjects: adminProcedure
+      .input(z.object({ projects: z.array(projectInputSchema).max(30) }))
+      .mutation(async ({ input }) => {
+        const projects = await Promise.all(
+          input.projects.map(async (project, index) => ({
+            ...project,
+            id: project.id || crypto.randomUUID(),
+            coverImageUrl: await resolveStoredImage(
+              `team-shay/projects/${project.id || index + 1}`,
+              project.coverImageUrl,
+              `project-${index + 1}`,
+            ),
+          })),
+        );
+        return { success: true, projects: await updateProjects(projects) } as const;
+      }),
     listStaff: agentProcedure.query(async () => listStaffAccounts()),
     createStaff: agentProcedure.input(staffInputSchema).mutation(async ({ input }) => {
       const normalizedEmail = input.email.toLowerCase();

@@ -14,7 +14,7 @@ describe("siteData content and media mapping", () => {
   it("uses the latest uploaded media assets for hero, branding and about section", () => {
     expect(JERUSALEM_HERO).toContain("Gemini_Generated_Image_aq472haq472haq47");
     expect(SHAY_ABOUT_IMAGE).toContain("tryiton__gray_suit_white_shirt_black_tie_office_plants_198335");
-    expect(TEAM_LOGO.startsWith("https://")).toBe(true);
+    expect(TEAM_LOGO).toBe("/brand/shay-group-logo-transparent.png");
   });
 
   it("keeps the requested hero badges while testimonials are sourced from the database instead of frontend fixtures", () => {

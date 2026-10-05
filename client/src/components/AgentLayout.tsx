@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { TEAM_LOGO } from "@/lib/siteData";
+import { BRAND_NAME, TEAM_LOGO } from "@/lib/siteData";
 
 interface Props { children: React.ReactNode }
 
@@ -50,12 +50,11 @@ export default function AgentLayout({ children }: Props) {
       <div className="flex items-center justify-between gap-2 pb-5 border-b border-white/10">
         <img
           src={TEAM_LOGO}
-          alt="Team Shay"
+          alt={BRAND_NAME}
           className="team-shay-logo h-20 w-auto object-contain"
-          style={{ filter: "brightness(10)" }}
         />
         <Link href="/" onClick={onNav}>
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#d9ae4c] hover:text-[#f0c84e] transition whitespace-nowrap">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#4b8067] hover:text-white transition whitespace-nowrap">
             <ChevronLeft className="size-3" />
             לאתר
           </span>
@@ -63,7 +62,7 @@ export default function AgentLayout({ children }: Props) {
       </div>
 
       {/* Agent card */}
-      <div className="mt-4 rounded-2xl bg-gradient-to-br from-[#d9ae4c] to-[#b98b2f] p-4 shadow-lg shadow-black/40">
+      <div className="mt-4 rounded-2xl bg-gradient-to-br from-[#4b8067] to-[#2f6653] p-4 shadow-lg shadow-black/40">
         <p className="text-[10px] font-black uppercase tracking-widest text-white/60">אזור סוכנים</p>
         <p className="mt-0.5 text-[17px] font-black text-white">{agent?.name ?? "סוכן"}</p>
         {agent?.roleTitle && (
@@ -86,7 +85,7 @@ export default function AgentLayout({ children }: Props) {
               <span className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-right text-[14px] font-bold transition-all ${
                 active ? "bg-white/10 text-white" : "text-white/50 hover:bg-white/5 hover:text-white"
               }`}>
-                <Icon className={`size-4 shrink-0 ${active ? "text-[#d9ae4c]" : "text-white/30"}`} />
+                <Icon className={`size-4 shrink-0 ${active ? "text-[#4b8067]" : "text-white/30"}`} />
                 {item.label}
               </span>
             </Link>
@@ -119,15 +118,14 @@ export default function AgentLayout({ children }: Props) {
           aria-label="פתח תפריט"
           className="flex flex-col gap-[5px] p-2"
         >
-          <span className="block h-0.5 w-5 rounded-full bg-[#d9ae4c]" />
-          <span className="block h-0.5 w-5 rounded-full bg-[#d9ae4c]" />
-          <span className="block h-0.5 w-5 rounded-full bg-[#d9ae4c]" />
+          <span className="block h-0.5 w-5 rounded-full bg-[#4b8067]" />
+          <span className="block h-0.5 w-5 rounded-full bg-[#4b8067]" />
+          <span className="block h-0.5 w-5 rounded-full bg-[#4b8067]" />
         </button>
         <img
           src={TEAM_LOGO}
-          alt="Team Shay"
+          alt={BRAND_NAME}
           className="team-shay-logo h-14 w-auto object-contain"
-          style={{ filter: "brightness(10)" }}
         />
         <span className="w-10" aria-hidden="true" />
       </div>
@@ -142,7 +140,7 @@ export default function AgentLayout({ children }: Props) {
 
       {/* ── Mobile drawer ───────────────────────────────── */}
       <div
-        className={`agent-mobile-drawer lg:hidden fixed top-0 right-0 z-[60] h-full w-[270px] bg-[#0d0d0d] px-5 py-6 shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out border-l border-[#d9ae4c]/20 print:hidden ${
+        className={`agent-mobile-drawer lg:hidden fixed top-0 right-0 z-[60] h-full w-[270px] bg-[#0d0d0d] px-5 py-6 shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out border-l border-[#4b8067]/20 print:hidden ${
           mobileOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -158,7 +156,7 @@ export default function AgentLayout({ children }: Props) {
       </div>
 
       {/* ── Desktop sidebar ──────────────────────────────── */}
-      <aside className="agent-shell-sidebar hidden lg:flex lg:fixed lg:right-0 lg:top-0 lg:z-30 lg:h-screen lg:w-[265px] lg:flex-col lg:overflow-y-auto bg-[#0d0d0d] px-5 py-6 border-l border-[#d9ae4c]/15 print:hidden">
+      <aside className="agent-shell-sidebar hidden lg:flex lg:fixed lg:right-0 lg:top-0 lg:z-30 lg:h-screen lg:w-[265px] lg:flex-col lg:overflow-y-auto bg-[#0d0d0d] px-5 py-6 border-l border-[#4b8067]/15 print:hidden">
         <SidebarInner />
       </aside>
 

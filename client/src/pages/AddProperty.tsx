@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ChevronLeft, Eye, ImagePlus, Layers3, UploadCloud } from "lucide-react";
-import { neighborhoods, roomOptions, statusOptions, TEAM_LOGO } from "@/lib/siteData";
+import { BRAND_NAME, neighborhoods, roomOptions, statusOptions, TEAM_LOGO } from "@/lib/siteData";
 import { trpc } from "@/lib/trpc";
 
 type PropertyFormState = {
@@ -413,20 +413,20 @@ export default function AddProperty() {
   }, [featuredImageIndex, previewImages]);
 
   return (
-    <div className="min-h-screen bg-[#fff8e6] text-black" dir="rtl">
+    <div className="min-h-screen bg-[#fbfaf5] text-black" dir="rtl">
       <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-10">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <img src={TEAM_LOGO} alt="Team Shay" className="team-shay-logo h-14 w-auto object-contain" />
+            <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-14 w-auto object-contain" style={{ filter: "brightness(0) saturate(100%) invert(31%) sepia(17%) saturate(1364%) hue-rotate(109deg) brightness(91%) contrast(90%)" }} />
             <div>
-              <p className="text-sm font-black uppercase tracking-[0.08em] text-[#d9ae4c]">Agent CMS</p>
+              <p className="text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">Agent CMS</p>
               <h1 className="mt-2 text-3xl font-black text-black md:text-4xl">
                 {isEditMode ? "עריכת נכס קיים" : "הוספת נכס חדש"}
               </h1>
             </div>
           </div>
 
-          <Link href="/agent-dashboard" className="inline-flex items-center gap-2 text-sm font-bold text-[#d9ae4c]">
+          <Link href="/agent-dashboard" className="inline-flex items-center gap-2 text-sm font-bold text-[#4b8067]">
             <ChevronLeft className="size-4" />
             חזרה לדשבורד
           </Link>
@@ -543,7 +543,7 @@ export default function AddProperty() {
                       name="rooms"
                       value={form.rooms}
                       onChange={handleChange}
-                      className="h-13 rounded-2xl border border-slate-200 bg-white px-4 text-base text-black outline-none focus:border-[#d9ae4c]"
+                      className="h-13 rounded-2xl border border-slate-200 bg-white px-4 text-base text-black outline-none focus:border-[#4b8067]"
                     >
                       <option value="">בחרו</option>
                       {roomOptions.map((rooms) => (
@@ -574,7 +574,7 @@ export default function AddProperty() {
                       name="status"
                       value={form.status}
                       onChange={handleChange}
-                      className="h-13 rounded-2xl border border-slate-200 bg-white px-4 text-base text-black outline-none focus:border-[#d9ae4c]"
+                      className="h-13 rounded-2xl border border-slate-200 bg-white px-4 text-base text-black outline-none focus:border-[#4b8067]"
                     >
                       {statusOptions.map((status) => (
                         <option key={status} value={status}>
@@ -607,10 +607,10 @@ export default function AddProperty() {
                   />
                 </label>
 
-                <div className="grid gap-4 rounded-[28px] border border-dashed border-[#d9ae4c]/35 bg-[#fff8e6] p-5">
+                <div className="grid gap-4 rounded-[28px] border border-dashed border-[#4b8067]/35 bg-[#fbfaf5] p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <span className="flex items-center gap-2 text-base font-black text-[#b98b2f]">
+                      <span className="flex items-center gap-2 text-base font-black text-[#2f6653]">
                         <UploadCloud className="size-5" />
                         {isEditMode ? "בחירת תמונות חדשות לגלריה" : "בחירת תמונות לגלריה"}
                       </span>
@@ -655,7 +655,7 @@ export default function AddProperty() {
                   <Button
                     type="submit"
                     disabled={isSubmitting || !agent}
-                    className="rounded-full bg-[#d9ae4c] px-6 text-white hover:bg-[#c99a31]"
+                    className="rounded-full bg-[#4b8067] px-6 text-white hover:bg-[#3a6b55]"
                   >
                     {isSubmitting
                       ? "שומרים..."
@@ -674,13 +674,13 @@ export default function AddProperty() {
 
           <aside className="space-y-6">
             <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.05)]">
-              <div className="flex items-center gap-2 text-[#d9ae4c]">
+              <div className="flex items-center gap-2 text-[#4b8067]">
                 <Eye className="size-5" />
                 <h2 className="text-xl font-black">תצוגה מקדימה</h2>
               </div>
-              <p className="mt-3 text-sm leading-7 text-slate-600">כך הנכס יוצג במערכות Team Shay לאחר השמירה.</p>
-              <div className="mt-5 rounded-[28px] bg-[#fff8e6] p-5">
-                <p className="text-xs font-black uppercase tracking-[0.08em] text-[#d9ae4c]">כרטיס נכס</p>
+              <p className="mt-3 text-sm leading-7 text-slate-600">כך הנכס יוצג במערכות Shay Group לאחר השמירה.</p>
+              <div className="mt-5 rounded-[28px] bg-[#fbfaf5] p-5">
+                <p className="text-xs font-black uppercase tracking-[0.08em] text-[#4b8067]">כרטיס נכס</p>
                 <h3 className="mt-3 text-2xl font-black text-black">{form.title || "כותרת הנכס תופיע כאן"}</h3>
                 <p className="mt-3 text-sm text-slate-500">{form.address || "כתובת"}</p>
                 <div className="mt-4 flex flex-wrap gap-2 text-sm font-bold">
@@ -689,7 +689,7 @@ export default function AddProperty() {
                   <span className="rounded-full bg-white px-3 py-1 text-slate-700">{form.sqm || "מ״ר"}</span>
                   {form.floor ? <span className="rounded-full bg-white px-3 py-1 text-slate-700">קומה {form.floor}</span> : null}
                 </div>
-                <p className="mt-4 text-xl font-black text-[#d9ae4c]">{formattedPrice ? `₪${formattedPrice}` : "מחיר"}</p>
+                <p className="mt-4 text-xl font-black text-[#4b8067]">{formattedPrice ? `₪${formattedPrice}` : "מחיר"}</p>
                 <p className="mt-4 text-sm leading-7 text-slate-600">
                   {form.description || "כאן יוצג תיאור הנכס לאחר מילוי הטופס."}
                 </p>
@@ -697,11 +697,11 @@ export default function AddProperty() {
             </div>
 
             <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.05)]">
-              <div className="flex items-center gap-2 text-[#d9ae4c]">
+              <div className="flex items-center gap-2 text-[#4b8067]">
                 <ImagePlus className="size-5" />
                 <h3 className="text-xl font-black text-black">גלריית תמונות</h3>
               </div>
-              <div className="mt-3 rounded-[20px] bg-[#fff8e6] px-4 py-3 text-sm font-semibold text-slate-600">
+              <div className="mt-3 rounded-[20px] bg-[#fbfaf5] px-4 py-3 text-sm font-semibold text-slate-600">
                 לחצו על אחת התמונות כדי להגדיר אותה כתמונה הראשית.
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3">
@@ -713,7 +713,7 @@ export default function AddProperty() {
                       onClick={() => setFeaturedImageIndex(index)}
                       className={`relative overflow-hidden rounded-2xl border-2 text-right transition ${
                         featuredImageIndex === index
-                          ? "border-[#d9ae4c] shadow-[0_10px_24px_rgba(217,174,76,0.22)]"
+                          ? "border-[#4b8067] shadow-[0_10px_24px_rgba(75,128,103,0.22)]"
                           : "border-transparent"
                       }`}
                     >
@@ -724,7 +724,7 @@ export default function AddProperty() {
                       />
                       <span className={`absolute right-2 top-2 rounded-full px-3 py-1 text-xs font-black ${
                         featuredImageIndex === index
-                          ? "bg-[#d9ae4c] text-white"
+                          ? "bg-[#4b8067] text-white"
                           : "bg-white/90 text-slate-700"
                       }`}>
                         {featuredImageIndex === index ? "תמונה ראשית" : "הגדר כראשית"}
@@ -732,7 +732,7 @@ export default function AddProperty() {
                     </button>
                   ))
                 ) : (
-                  <div className="col-span-2 rounded-[24px] bg-[#fff8e6] p-5 text-sm leading-7 text-slate-500">
+                  <div className="col-span-2 rounded-[24px] bg-[#fbfaf5] p-5 text-sm leading-7 text-slate-500">
                     עדיין לא נבחרו תמונות. לאחר בחירת קבצים תופיע כאן תצוגה מקדימה של הגלריה.
                   </div>
                 )}
@@ -740,7 +740,7 @@ export default function AddProperty() {
             </div>
 
             <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_20px_50px_rgba(15,23,42,0.05)]">
-              <div className="flex items-center gap-2 text-[#d9ae4c]">
+              <div className="flex items-center gap-2 text-[#4b8067]">
                 <Layers3 className="size-5" />
                 <h3 className="text-xl font-black text-black">מצב פרסום</h3>
               </div>

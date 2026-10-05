@@ -14,6 +14,7 @@ import MarketingAgent from "./pages/MarketingAgent";
 import NotFound from "./pages/NotFound";
 import PropertyDetails from "./pages/PropertyDetails";
 import Properties from "./pages/Properties";
+import Projects from "./pages/Projects";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/properties/:propertyId" component={PropertyDetails} />
       <Route path="/properties" component={Properties} />
+      <Route path="/projects" component={Projects} />
       <Route path="/agent-login" component={AgentLogin} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/agent-dashboard" component={AgentDashboard} />

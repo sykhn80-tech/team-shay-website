@@ -37,18 +37,18 @@ export default function CrmTasks() {
     <CrmLayout title="ניהול משימות" subtitle="כל המשימות שלך במקום אחד">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <CrmSearchSelect value={filter} onChange={(value) => setFilter((value ?? "open") as typeof filter)} isClearable={false} options={[{ value: "open", label: "פתוחות" }, { value: "done", label: "הושלמו" }, { value: "all", label: "הכל" }]} />
-        <Button onClick={() => setShowForm((current) => !current)} className="rounded-full bg-[#D4AF37] text-black"><Plus className="size-4" />משימה חדשה</Button>
+        <Button onClick={() => setShowForm((current) => !current)} className="rounded-full bg-[#4b8067] text-black"><Plus className="size-4" />משימה חדשה</Button>
       </div>
 
       {showForm ? (
-        <section className="mb-5 rounded-2xl border border-[#D4AF37]/40 bg-white p-5">
+        <section className="mb-5 rounded-2xl border border-[#4b8067]/40 bg-white p-5">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="תיאור המשימה" />
             <input type="datetime-local" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
             <CrmSearchSelect value={leadId} onChange={(value) => setLeadId(value == null ? null : Number(value))} placeholder="שיוך לליד" options={(leadsQuery.data ?? []).map((lead) => ({ value: lead.id, label: leadLabel(lead) }))} />
             <CrmSearchSelect value={priority} onChange={(value) => setPriority((value ?? "medium") as typeof priority)} isClearable={false} options={[{ value: "low", label: "נמוכה" }, { value: "medium", label: "בינונית" }, { value: "high", label: "גבוהה" }]} />
           </div>
-          <Button onClick={() => title.trim() && createMutation.mutate({ title: title.trim(), description: null, dueDate: dueDate ? new Date(dueDate).toISOString() : null, priority, status: "open", leadId, propertyId: null })} className="mt-4 bg-[#D4AF37] text-black">שמור משימה</Button>
+          <Button onClick={() => title.trim() && createMutation.mutate({ title: title.trim(), description: null, dueDate: dueDate ? new Date(dueDate).toISOString() : null, priority, status: "open", leadId, propertyId: null })} className="mt-4 bg-[#4b8067] text-black">שמור משימה</Button>
         </section>
       ) : null}
 
@@ -59,7 +59,7 @@ export default function CrmTasks() {
             <div key={task.id} className="flex flex-wrap items-center gap-4 border-b border-slate-100 px-5 py-4 last:border-0">
               <button type="button" onClick={() => updateMutation.mutate({ id: task.id, data: { status: task.status === "done" ? "open" : "done" } })} className={`flex size-6 items-center justify-center rounded-md border ${task.status === "done" ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300"}`}>{task.status === "done" ? <Check className="size-4" /> : null}</button>
               <button type="button" className="min-w-56 flex-1 text-right font-black text-slate-800">{task.title}</button>
-              {task.leadId ? <span className="rounded-full bg-[#fff4d8] px-3 py-1 text-xs font-black text-[#9a7319]">{leadLabel(leads.get(task.leadId))}</span> : null}
+              {task.leadId ? <span className="rounded-full bg-[#eef3ef] px-3 py-1 text-xs font-black text-[#9a7319]">{leadLabel(leads.get(task.leadId))}</span> : null}
               <span className={`rounded-full px-3 py-1 text-xs font-black ${badge.style}`}>{badge.label}</span>
               <span className="text-xs text-slate-400">{task.dueDate ? new Date(task.dueDate).toLocaleString("he-IL") : "ללא תאריך"}</span>
               <button type="button" onClick={() => setShowForm(true)} className="text-slate-400 hover:text-[#9a7319]"><Pencil className="size-4" /></button>

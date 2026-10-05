@@ -44,12 +44,12 @@ export default function CrmMatches() {
 
       {selectedSeller ? (
         <>
-          <section className="mt-5 rounded-2xl border border-[#D4AF37]/40 bg-white p-5 shadow-sm">
+          <section className="mt-5 rounded-2xl border border-[#4b8067]/40 bg-white p-5 shadow-sm">
             <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-black text-purple-700">מוכר</span>
             <h2 className="mt-3 text-3xl font-black">{selectedSeller.ownerName || selectedSeller.name}</h2>
             <p className="mt-2 font-bold text-slate-500">{leadLocation(selectedSeller) || "ללא כתובת"}</p>
             <p className="mt-3 text-2xl font-black text-[#9a7319]">₪{Number(selectedSeller.askingPrice ?? selectedSeller.marketingPrice ?? selectedSeller.currentPropertyPrice ?? 0).toLocaleString("he-IL")}</p>
-            <p className="mt-3 flex items-center gap-2 font-black"><Sparkles className="size-4 text-[#D4AF37]" />{matches.length} קונים מתאימים</p>
+            <p className="mt-3 flex items-center gap-2 font-black"><Sparkles className="size-4 text-[#4b8067]" />{matches.length} קונים מתאימים</p>
           </section>
           <section className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <table className="w-full text-right text-sm">
