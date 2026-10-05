@@ -724,23 +724,23 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white text-slate-950" dir="rtl">
       <div className="fixed inset-x-0 top-4 z-50 px-3 md:px-6">
-        <header className="mx-auto max-w-7xl rounded-full border border-[#1b1b1b] bg-[#010101] px-4 py-1.5 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-md md:px-6">
+        <header className="brand-gold mx-auto max-w-7xl rounded-full px-4 py-2 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-md md:px-6">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
             <Button
               onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}
-              className="hidden rounded-full bg-[#4b8067] px-6 text-base font-black text-black shadow-[0_10px_28px_rgba(75,128,103,0.32)] hover:bg-[#3a6b55] md:inline-flex"
+              className="hidden rounded-full bg-black/85 px-6 text-base font-black text-white shadow-[0_10px_28px_rgba(0,0,0,0.24)] hover:bg-black md:inline-flex"
             >
               ליצירת קשר
             </Button>
 
-            <nav className="hidden items-center justify-center gap-8 text-[1.12rem] font-extrabold text-white lg:flex xl:gap-10 xl:text-[1.24rem]">
+            <nav className="hidden items-center justify-center gap-8 text-[1.12rem] font-extrabold text-[#17130b] lg:flex xl:gap-10 xl:text-[1.24rem]">
               {navItems.map((item) =>
                 item.isRoute ? (
-                    <Link key={item.label} href={item.href} className="transition hover:text-[#4b8067]">
+                    <Link key={item.label} href={item.href} className="transition hover:text-[#2f6653]">
                     {item.label}
                   </Link>
                 ) : (
-                  <a key={item.label} href={item.href} className="transition hover:text-[#4b8067]">
+                  <a key={item.label} href={item.href} className="transition hover:text-[#2f6653]">
                     {item.label}
                   </a>
                 ),
@@ -751,15 +751,15 @@ export default function Home() {
               {/* Hamburger — 3 lines, not a circle */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="flex flex-col gap-[5px] p-2.5 text-white lg:hidden"
+                className="flex flex-col gap-[5px] p-2.5 text-[#17130b] lg:hidden"
                 aria-label="פתח תפריט"
               >
-                <span className="block h-[2px] w-6 rounded-full bg-white" />
-                <span className="block h-[2px] w-6 rounded-full bg-white" />
-                <span className="block h-[2px] w-6 rounded-full bg-white" />
+                <span className="block h-[2px] w-6 rounded-full bg-[#17130b]" />
+                <span className="block h-[2px] w-6 rounded-full bg-[#17130b]" />
+                <span className="block h-[2px] w-6 rounded-full bg-[#17130b]" />
               </button>
               <div className="flex items-center justify-center">
-                <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-16 w-auto brightness-0 invert md:h-20" />
+                <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-20 w-auto brightness-0 md:h-24" />
               </div>
             </div>
           </div>
@@ -777,17 +777,17 @@ export default function Home() {
 
         <div
           className={`fixed top-0 right-0 z-[70] flex h-full w-80 flex-col overflow-hidden shadow-2xl transition-transform duration-300 ease-in-out lg:hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
-          style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #4b8067" }}
+          style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #d9ae4c" }}
           dir="rtl"
         >
-          <div className="flex items-center justify-between px-5 py-5" style={{ backgroundColor: "#0d0d0d" }}>
-            <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-14 w-auto brightness-0 invert" />
-            <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#4b8067" }} className="p-2 rounded-lg transition" aria-label="סגור">
+          <div className="brand-gold flex items-center justify-between px-5 py-5">
+            <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-16 w-auto brightness-0" />
+            <button onClick={() => setMobileMenuOpen(false)} style={{ color: "#17130b" }} className="p-2 rounded-lg transition" aria-label="סגור">
               <X className="size-5" />
             </button>
           </div>
           <div style={{ flex: 1, background: "#fafafa", padding: "20px 16px", overflowY: "auto" }}>
-            <p style={{ color: "#4b8067", fontSize: "0.75rem", fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>
+            <p style={{ color: "#b98229", fontSize: "0.75rem", fontWeight: 900, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>
               ניווט מהיר
             </p>
             <nav style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -810,7 +810,7 @@ export default function Home() {
 
                 const handleEnter = (e: React.MouseEvent<HTMLElement>) => {
                   (e.currentTarget as HTMLElement).style.background = "#fbfaf5";
-                  (e.currentTarget as HTMLElement).style.borderColor = "#4b8067";
+                  (e.currentTarget as HTMLElement).style.borderColor = "#d9ae4c";
                 };
                 const handleLeave = (e: React.MouseEvent<HTMLElement>) => {
                   (e.currentTarget as HTMLElement).style.background = "#ffffff";
@@ -820,7 +820,7 @@ export default function Home() {
                 const inner = (
                   <>
                     <span>{item.label}</span>
-                    <ChevronLeft style={{ width: "18px", height: "18px", color: "#4b8067", flexShrink: 0 }} />
+                    <ChevronLeft style={{ width: "18px", height: "18px", color: "#b98229", flexShrink: 0 }} />
                   </>
                 );
 
@@ -850,10 +850,11 @@ export default function Home() {
               })}
             </nav>
           </div>
-          <div className="border-t border-[#d7e4dd] bg-white px-4 py-4">
+          <div className="border-t border-[#f0dfa9] bg-white px-4 py-4">
             <button
               onClick={() => { window.open(whatsappLink, "_blank", "noopener,noreferrer"); setMobileMenuOpen(false); }}
-              style={{ width: "100%", background: "#4b8067", color: "#000", fontWeight: 900, borderRadius: "999px", height: "48px", fontSize: "1rem", border: "none", cursor: "pointer" }}
+              className="brand-gold"
+              style={{ width: "100%", fontWeight: 900, borderRadius: "999px", height: "48px", fontSize: "1rem", cursor: "pointer" }}
             >
               שלחו הודעה עכשיו
             </button>
@@ -912,9 +913,9 @@ export default function Home() {
               {trustBadges.map((badge) => (
                 <div
                   key={badge}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#4b8067]/40 bg-white/10 px-5 py-3 text-base font-extrabold text-white shadow-[0_12px_28px_rgba(0,0,0,0.12)] backdrop-blur-md"
+                  className="brand-glass-green inline-flex items-center gap-2 rounded-full px-5 py-3 text-base font-extrabold text-white"
                 >
-                  <Check className="size-4 text-[#4b8067]" />
+                  <Check className="size-4 text-[#d9ae4c]" />
                   {badge}
                 </div>
               ))}
@@ -927,16 +928,16 @@ export default function Home() {
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <Button
                 onClick={scrollToForm}
-                className="h-14 rounded-full bg-[#4b8067] px-8 text-base font-black text-black shadow-[0_12px_30px_rgba(75,128,103,0.3)] hover:bg-[#3a6b55]"
+                className="brand-gold h-14 rounded-full px-8 text-base font-black"
               >
                 שלחו הודעה עכשיו
               </Button>
               <Button
                 variant="outline"
                 onClick={scrollToForm}
-                className="h-14 rounded-full border-[#4b8067] bg-white/5 px-8 text-base font-black text-white hover:bg-white/10"
+                className="h-14 rounded-full border-[#d9ae4c] bg-white/5 px-8 text-base font-black text-white hover:bg-white/10"
               >
-                <MessageCircle className="size-4 text-[#4b8067]" />
+                <MessageCircle className="size-4 text-[#d9ae4c]" />
                 להערכת שווי נכס
               </Button>
             </div>
@@ -1023,7 +1024,7 @@ export default function Home() {
                       ) : null}
                       <a
                         href={`tel:${agent.phone.replace(/\D/g, "") || officePhoneLink}`}
-                        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#4b8067] px-4 py-2 text-sm font-black text-white shadow-[0_10px_24px_rgba(75,128,103,0.28)]"
+                        className="brand-glass-green inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-black text-white"
                       >
                         <Phone className="size-4" />
                         {agent.phone}
@@ -1047,7 +1048,7 @@ export default function Home() {
               {valueSteps.map((step, index) => (
                 <div key={step.step} className="relative">
                   <article className="relative h-full rounded-[28px] border border-slate-200 bg-white px-6 pb-7 pt-10 text-center shadow-[0_18px_36px_rgba(15,23,42,0.06)]">
-                    <div className="absolute right-1/2 top-0 flex size-14 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white bg-[#4b8067] text-lg font-black text-white shadow-[0_12px_24px_rgba(75,128,103,0.28)]">
+                    <div className="brand-glass-green absolute right-1/2 top-0 flex size-14 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-white text-lg font-black text-white">
                       {step.step}
                     </div>
                     <h3 className="text-[1.6rem] font-extrabold text-slate-950">{step.title}</h3>
@@ -1137,7 +1138,7 @@ export default function Home() {
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="size-12 rounded-full border-[#4b8067] bg-[#4b8067] text-black shadow-[0_12px_26px_rgba(75,128,103,0.24)] hover:bg-[#2f6653] hover:text-black"
+                        className="brand-glass-green size-12 rounded-full text-white"
                         onClick={() => scrollMarketingCarousel("next")}
                         aria-label="פעולת שיווק הבאה"
                       >
@@ -1147,7 +1148,7 @@ export default function Home() {
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="size-12 rounded-full border-[#4b8067] bg-[#4b8067] text-black shadow-[0_12px_26px_rgba(75,128,103,0.24)] hover:bg-[#2f6653] hover:text-black"
+                        className="brand-glass-green size-12 rounded-full text-white"
                         onClick={() => scrollMarketingCarousel("prev")}
                         aria-label="פעולת שיווק קודמת"
                       >
@@ -1220,14 +1221,14 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="properties" className="bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
+        <section id="properties" className="brand-glass-green border-y border-white/20 px-4 py-20 text-white md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-lg font-extrabold uppercase tracking-[0.03em] text-[#4b8067] md:text-2xl">מחפשים נכס ? הגעתם למקום הנכון</p>
-                <h2 className="mt-4 text-4xl font-extrabold leading-tight text-[#1A1A1A] md:text-[3.35rem]">הנכסים המובחרים שלנו</h2>
+                <p className="text-lg font-extrabold uppercase tracking-[0.03em] text-white/80 md:text-2xl">מחפשים נכס ? הגעתם למקום הנכון</p>
+                <h2 className="mt-4 text-4xl font-extrabold leading-tight text-white md:text-[3.35rem]">הנכסים המובחרים שלנו</h2>
               </div>
-              <Link href="/properties" className="inline-flex items-center gap-2 text-base font-black text-[#4b8067]">
+              <Link href="/properties" className="inline-flex items-center gap-2 text-base font-black text-white transition hover:text-[#f6dda0]">
                 לכל הנכסים
                 <ChevronLeft className="size-4" />
               </Link>
@@ -1255,7 +1256,7 @@ export default function Home() {
                       <CarouselItem key={property.id} className="basis-[84%] pl-3 sm:basis-[58%] md:pl-5 lg:basis-1/3">
                         <Link
                           href={`/properties/${property.id}`}
-                          className="group relative block h-[520px] overflow-hidden rounded-[30px] border border-[#4b8067]/30 bg-[#1A1A1A] text-white shadow-[0_20px_48px_rgba(15,23,42,0.14)] transition duration-500 hover:-translate-y-1.5 hover:border-[#4b8067] hover:shadow-[0_26px_64px_rgba(75,128,103,0.24)]"
+                          className="group relative block h-[520px] overflow-hidden rounded-[30px] border border-white/35 bg-[#1A1A1A] text-white shadow-[0_20px_48px_rgba(15,23,42,0.14)] transition duration-500 hover:-translate-y-1.5 hover:border-[#d9ae4c] hover:shadow-[0_26px_64px_rgba(15,23,42,0.28)]"
                           aria-label={`פתיחת דף הנכס ${property.title}`}
                         >
                           <div className="absolute inset-0 overflow-hidden">
@@ -1277,16 +1278,16 @@ export default function Home() {
                           </div>
 
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="translate-y-4 border border-white/75 bg-black/24 px-10 py-4 text-base font-black text-white opacity-0 shadow-[0_16px_38px_rgba(0,0,0,0.28)] backdrop-blur-[2px] transition duration-300 group-hover:translate-y-0 group-hover:border-[#4b8067] group-hover:bg-[#4b8067] group-hover:text-black group-hover:opacity-100">
+                            <span className="translate-y-4 border border-white/75 bg-black/24 px-10 py-4 text-base font-black text-white opacity-0 shadow-[0_16px_38px_rgba(0,0,0,0.28)] backdrop-blur-[2px] transition duration-300 group-hover:translate-y-0 group-hover:border-[#d9ae4c] group-hover:bg-[#d9ae4c] group-hover:text-black group-hover:opacity-100">
                               פרטים נוספים
                             </span>
                           </div>
 
                           <div className="absolute inset-x-0 bottom-0 p-7 text-center">
-                            <span className="mb-3 inline-flex rounded-full bg-[#4b8067] px-4 py-1.5 text-xs font-black text-black shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
+                            <span className="brand-gold mb-3 inline-flex rounded-full px-4 py-1.5 text-xs font-black">
                               {property.status}
                             </span>
-                            <p className="text-3xl font-black text-[#4b8067] drop-shadow-[0_3px_16px_rgba(0,0,0,0.45)]">
+                            <p className="text-3xl font-black text-[#f6dda0] drop-shadow-[0_3px_16px_rgba(0,0,0,0.45)]">
                               ₪{property.price.toLocaleString("he-IL")}
                             </p>
                           </div>
@@ -1302,7 +1303,7 @@ export default function Home() {
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="size-12 rounded-full border-[#4b8067] bg-[#4b8067] text-black shadow-[0_12px_26px_rgba(75,128,103,0.24)] hover:bg-[#2f6653] hover:text-black"
+                          className="brand-gold size-12 rounded-full"
                           onClick={() => scrollPropertyCarousel("next")}
                           aria-label="Next property"
                         >
@@ -1312,7 +1313,7 @@ export default function Home() {
                           type="button"
                           variant="outline"
                           size="icon"
-                          className="size-12 rounded-full border-[#4b8067] bg-[#4b8067] text-black shadow-[0_12px_26px_rgba(75,128,103,0.24)] hover:bg-[#2f6653] hover:text-black"
+                          className="brand-gold size-12 rounded-full"
                           onClick={() => scrollPropertyCarousel("prev")}
                           aria-label="Previous property"
                         >
@@ -1326,7 +1327,7 @@ export default function Home() {
                             key={`property-dot-${property.id}`}
                             type="button"
                             className={`h-2.5 rounded-full transition-all ${
-                              selectedPropertySlide === index ? "w-8 bg-[#4b8067]" : "w-2.5 bg-slate-300"
+                              selectedPropertySlide === index ? "w-8 bg-[#d9ae4c]" : "w-2.5 bg-white/50"
                             }`}
                             onClick={() => selectPropertySlide(index)}
                             aria-label={`Go to property ${index + 1}`}
@@ -1338,7 +1339,7 @@ export default function Home() {
                   ) : null}
                 </Carousel>
               ) : (
-                <div className="rounded-[28px] border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
+                <div className="rounded-[28px] border border-dashed border-white/45 bg-white/10 p-8 text-center text-white">
                   עדיין לא פורסמו נכסים להצגה בדף הבית.
                 </div>
               )}
@@ -1366,13 +1367,13 @@ export default function Home() {
                     >
                       <div className="relative h-52 overflow-hidden">
                         <img src={property.image} alt={property.title} className="h-full w-full object-cover" loading="lazy" />
-                        <span className="absolute right-4 top-4 rounded-full bg-[#4b8067] px-4 py-2 text-sm font-black text-black shadow-lg">
+                        <span className="brand-gold absolute right-4 top-4 rounded-full px-4 py-2 text-sm font-black">
                           נמכר ✓
                         </span>
                       </div>
                       <div className="p-5">
                         <h3 className="text-xl font-black text-[#1A1A1A]">{formatPropertyLocation(property) || property.title}</h3>
-                        <p className="mt-5 text-2xl font-black text-[#4b8067]">₪{property.price.toLocaleString("he-IL")}</p>
+                        <p className="mt-5 text-2xl font-black text-[#b98229]">₪{property.price.toLocaleString("he-IL")}</p>
                         <div className="mt-4 border-t border-[#4b8067]/20 pt-4 text-sm font-bold">
                           <span className="text-[#6B6B6B]">נמכר עם קבוצת שי</span>
                         </div>
@@ -1556,20 +1557,20 @@ export default function Home() {
             <div className="text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#4b8067]"></p>
               <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">רוצים לדעת כמה שווה הנכס שלכם?</h2>
-              <p className="mt-4 text-xl font-semibold leading-8 text-slate-600" style={{color: '#4b8067'}}>
+              <p className="mt-4 text-xl font-semibold leading-8 text-slate-600" style={{color: '#b98229'}}>
                 למלא פרטים לוקח 30 שניות
               </p>
             </div>
 
             <div className="mt-8 flex items-center justify-center gap-4">
-              <div className={`flex items-center gap-3 rounded-full px-4 py-2 text-base font-extrabold ${leadStep === 1 ? "bg-[#4b8067] text-white" : "bg-white text-[#2f6653]"}`}>
+              <div className={`flex items-center gap-3 rounded-full px-4 py-2 text-base font-extrabold ${leadStep === 1 ? "brand-gold" : "bg-white text-[#2f6653]"}`}>
                 <span className="flex size-7 items-center justify-center rounded-full bg-white/20">1</span>
                 פרטי הנכס
               </div>
               {leadStep === 2 ? (
                 <>
-                  <div className="h-px w-10 bg-[#4b8067]/25" />
-                  <div className="flex items-center gap-3 rounded-full bg-[#4b8067] px-4 py-2 text-base font-extrabold text-white">
+                  <div className="h-px w-10 bg-[#d9ae4c]/40" />
+                  <div className="brand-gold flex items-center gap-3 rounded-full px-4 py-2 text-base font-extrabold">
                     <span className="flex size-7 items-center justify-center rounded-full bg-white/20">2</span>
                     פרטים אישיים
                   </div>
@@ -1620,7 +1621,7 @@ export default function Home() {
                 </div>
 
                 <div className="flex justify-center">
-                  <Button type="button" onClick={handleNextStep} className="h-14 rounded-full bg-[#4b8067] px-10 text-base font-extrabold text-black hover:bg-[#3a6b55]">
+                  <Button type="button" onClick={handleNextStep} className="brand-gold h-14 rounded-full px-10 text-base font-extrabold">
                     להערכת שווי שוק במתנה
                   </Button>
                 </div>
@@ -1651,10 +1652,10 @@ export default function Home() {
                 </div>
 
                 <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                  <Button type="button" variant="outline" onClick={() => setLeadStep(1)} className="h-14 rounded-full border-[#4b8067] px-8 text-base font-extrabold text-[#4b8067] hover:bg-white">
+                  <Button type="button" variant="outline" onClick={() => setLeadStep(1)} className="h-14 rounded-full border-[#d9ae4c] px-8 text-base font-extrabold text-[#b98229] hover:bg-[#fff8e6]">
                     חזרה לשלב הקודם
                   </Button>
-                  <Button type="submit" disabled={submitLeadMutation.isPending} className="h-14 rounded-full bg-[#4b8067] px-10 text-base font-extrabold text-black hover:bg-[#3a6b55]">
+                  <Button type="submit" disabled={submitLeadMutation.isPending} className="brand-gold h-14 rounded-full px-10 text-base font-extrabold">
                     {submitLeadMutation.isPending ? "שומרים פרטים..." : "שלחו פרטים ונחזור אליכם בהקדם"}
                   </Button>
                 </div>

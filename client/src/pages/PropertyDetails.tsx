@@ -116,14 +116,14 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
     return (
       <div className="min-h-screen bg-[#fbfaf5] px-4 py-10 text-slate-950" dir="rtl">
         <div className="mx-auto max-w-4xl rounded-[36px] bg-white p-8 text-center shadow-[0_28px_70px_rgba(15,23,42,0.08)]">
-          <img src={headerLogoUrl} alt={BRAND_NAME} className="team-shay-logo mx-auto h-16 w-auto object-contain" style={{ filter: "brightness(0) saturate(100%) invert(31%) sepia(17%) saturate(1364%) hue-rotate(109deg) brightness(91%) contrast(90%)" }} />
+          <img src={headerLogoUrl} alt={BRAND_NAME} className="team-shay-logo mx-auto h-20 w-auto object-contain" style={{ filter: "brightness(0) saturate(100%) invert(31%) sepia(17%) saturate(1364%) hue-rotate(109deg) brightness(91%) contrast(90%)" }} />
           <h1 className="mt-6 text-3xl font-black">הנכס המבוקש לא נמצא</h1>
           <p className="mt-4 text-base leading-8 text-slate-600">
             ייתכן שהנכס הוסר מהאתר, אינו מפורסם כרגע או שהקישור שהוזן אינו תקין.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link href="/properties">
-              <Button className="rounded-full bg-[#4b8067] px-6 text-white hover:bg-[#3a6b55]">
+              <Button className="brand-glass-green rounded-full px-6 text-white">
                 חזרה לכל הנכסים
               </Button>
             </Link>
@@ -149,11 +149,11 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
             </div>
 
             <div className="flex flex-col gap-4 lg:items-start">
-              <img src={headerLogoUrl} alt={BRAND_NAME} className="team-shay-logo h-20 w-auto object-contain md:h-28" style={{ filter: "brightness(0) saturate(100%) invert(31%) sepia(17%) saturate(1364%) hue-rotate(109deg) brightness(91%) contrast(90%)" }} />
+              <img src={headerLogoUrl} alt={BRAND_NAME} className="team-shay-logo h-24 w-auto object-contain md:h-32" style={{ filter: "brightness(0) saturate(100%) invert(31%) sepia(17%) saturate(1364%) hue-rotate(109deg) brightness(91%) contrast(90%)" }} />
               <div className="flex flex-col gap-3 sm:flex-row lg:me-4 xl:me-8">
                 <Button
                   onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}
-                  className="h-12 rounded-full bg-[#4b8067] px-7 text-base font-black text-white hover:bg-[#3a6b55]"
+                  className="brand-glass-green h-12 rounded-full px-7 text-base font-black text-white"
                 >
                   <Phone className="size-4" />
                   יצירת קשר לגבי הנכס
@@ -203,8 +203,8 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
             <aside className="space-y-6" dir="rtl">
               <div className="rounded-[32px] bg-[#fbfaf5] p-6">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-4xl font-black text-slate-950 md:text-5xl">{formatPrice(property.price)}</p>
-                  <span className="rounded-full bg-[#4b8067] px-4 py-2 text-base font-black text-white">
+                  <p className="text-4xl font-black text-[#b98229] md:text-5xl">{formatPrice(property.price)}</p>
+                  <span className="brand-gold rounded-full px-4 py-2 text-base font-black">
                     {property.status}
                   </span>
                 </div>
