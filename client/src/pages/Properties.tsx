@@ -159,7 +159,7 @@ export default function Properties() {
               </Link>
               <Button
                 onClick={() => window.open(homeQuery.data?.settings?.whatsappLink || WHATSAPP_LINK, "_blank", "noopener,noreferrer")}
-                className="brand-glass-green rounded-full px-6 text-white"
+                className="rounded-full bg-[#4b8067] px-6 text-black hover:bg-[#e5c45e]"
               >
                 דברו איתנו
               </Button>
@@ -244,10 +244,10 @@ export default function Properties() {
                   </div>
                 </div>
 
-                <div className="brand-glass-green mt-6 rounded-[24px] p-5 text-white">
-                  <p className="text-sm font-black uppercase tracking-[0.06em] text-white/70">תוצאה נוכחית</p>
+                <div className="mt-6 rounded-[24px] bg-[#4b8067] p-5 text-[#1A1A1A]">
+                  <p className="text-sm font-black uppercase tracking-[0.06em] text-black/60">תוצאה נוכחית</p>
                   <p className="mt-3 text-4xl font-black">{filteredProperties.length}</p>
-                  <p className="mt-2 text-sm leading-7 text-white/85">נכסים תואמים לטווח המחיר ולאזור שבחרתם.</p>
+                  <p className="mt-2 text-sm leading-7 text-black/70">נכסים תואמים לטווח המחיר ולאזור שבחרתם.</p>
                 </div>
               </aside>
 
@@ -274,11 +274,11 @@ export default function Properties() {
                     >
                       <div className="relative overflow-hidden">
                         <img src={property.image} alt={property.title} className="h-56 w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />
-                        <span className="brand-gold absolute right-4 top-4 rounded-full px-3 py-1.5 text-xs font-black">{property.status}</span>
+                        <span className="absolute right-4 top-4 rounded-full bg-[#4b8067] px-3 py-1.5 text-xs font-black text-black shadow-lg">{property.status}</span>
                       </div>
                       <div className="flex flex-1 flex-col p-5">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="text-2xl font-black text-[#b98229]">{formatPrice(property.price)}</p>
+                          <p className="text-2xl font-black text-slate-950">{formatPrice(property.price)}</p>
                         </div>
 
                         <h3 className="mt-3 text-xl font-black text-slate-950">{property.title}</h3>
@@ -298,7 +298,7 @@ export default function Properties() {
 
                         <div className="mt-auto pt-5">
                           <Link href={`/properties/${property.id}`} className="block">
-                            <Button className="brand-glass-green w-full rounded-full text-white">
+                            <Button className="w-full rounded-full bg-[#4b8067] text-[#1A1A1A] hover:bg-[#2f6653] hover:text-black">
                               לפרטים נוספים
                             </Button>
                           </Link>

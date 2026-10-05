@@ -123,7 +123,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link href="/properties">
-              <Button className="brand-glass-green rounded-full px-6 text-white">
+              <Button className="rounded-full bg-[#4b8067] px-6 text-white hover:bg-[#3a6b55]">
                 חזרה לכל הנכסים
               </Button>
             </Link>
@@ -153,7 +153,7 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
               <div className="flex flex-col gap-3 sm:flex-row lg:me-4 xl:me-8">
                 <Button
                   onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}
-                  className="brand-glass-green h-12 rounded-full px-7 text-base font-black text-white"
+                  className="h-12 rounded-full bg-[#4b8067] px-7 text-base font-black text-white hover:bg-[#3a6b55]"
                 >
                   <Phone className="size-4" />
                   יצירת קשר לגבי הנכס
@@ -203,8 +203,8 @@ export default function PropertyDetails({ params }: PropertyDetailsProps) {
             <aside className="space-y-6" dir="rtl">
               <div className="rounded-[32px] bg-[#fbfaf5] p-6">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-4xl font-black text-[#b98229] md:text-5xl">{formatPrice(property.price)}</p>
-                  <span className="brand-gold rounded-full px-4 py-2 text-base font-black">
+                  <p className="text-4xl font-black text-slate-950 md:text-5xl">{formatPrice(property.price)}</p>
+                  <span className="rounded-full bg-[#4b8067] px-4 py-2 text-base font-black text-white">
                     {property.status}
                   </span>
                 </div>
