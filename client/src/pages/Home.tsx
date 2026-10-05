@@ -1687,7 +1687,7 @@ export default function Home() {
 
           <div className="flex flex-col items-end text-right md:absolute md:left-1/2 md:top-0 md:w-fit md:-translate-x-1/2 md:items-center md:text-center">
             <div className="rounded-[28px] bg-transparent px-4 py-2 md:px-6 md:py-3">
-              <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-32 w-auto object-contain brightness-0 invert md:h-40" loading="lazy" />
+              <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-36 w-auto object-contain brightness-0 invert md:h-44" loading="lazy" />
             </div>
             <p className="mt-5 text-lg font-black text-white md:text-center" style={{ fontSize: "30px" }}>{footerSloganDisplay}</p>
           </div>
