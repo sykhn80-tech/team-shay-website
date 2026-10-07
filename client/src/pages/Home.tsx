@@ -32,7 +32,6 @@ import { trpc } from "@/lib/trpc";
 import {
   agents as fallbackAgents,
   BRAND_NAME,
-  heroTrustBadges,
   JERUSALEM_HERO,
   OFFICE_PHONE,
   OFFICE_PHONE_LINK,
@@ -46,12 +45,11 @@ import { formatPropertyLocation } from "@/lib/property-display";
 
 const navItems: Array<{ label: string; href: string; isRoute: boolean }> = [
   { label: "דף הבית", href: "#home", isRoute: false },
-  { label: "אודות", href: "#about", isRoute: false },
-  { label: "שיטה", href: "#method", isRoute: false },
-  { label: "שיווק", href: "#marketing-methods", isRoute: false },
+  { label: "הסיפור שלנו", href: "#about", isRoute: false },
+  { label: "השירותים", href: "#services", isRoute: false },
   { label: "נכסים", href: "/properties", isRoute: true },
-  { label: "פרויקטים", href: "/projects", isRoute: true },
-  { label: "התחברות סוכנים", href: "/agent-login", isRoute: true },
+  { label: "הצוות", href: "#team", isRoute: false },
+  { label: "יצירת קשר", href: "#lead-form", isRoute: false },
 ];
 
 const HERO_VIDEO_URL = "/media/hero-animation.mp4";
@@ -66,10 +64,10 @@ const RONEN_IMAGE_URL =
 const YARDEN_IMAGE_URL =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/WhatsAppImage2026-04-13at17.31.35_58f082a2.jpeg";
 const HERO_TYPING_PHRASES = [
-  "מוכרים בלעדיות. קונים בחכמה.",
-  "מתחברים לשוק הנכסים של ירושלים.",
-  "מומחי נדל״ן. תוצאות אמיתיות.",
-  "הצוות שבאמת מכיר את השכונות.",
+  "מוכרים בביטחון.",
+  "קונים בחכמה.",
+  "משקיעים עם תוכנית.",
+  "נשארים איתכם אחרי המפתח.",
 ] as const;
 
 const fallbackSettings = {
@@ -78,14 +76,14 @@ const fallbackSettings = {
   footerLogoUrl: TEAM_LOGO,
   heroBackgroundUrl: JERUSALEM_HERO,
   shayAboutImageUrl: SHAY_ABOUT_IMAGE,
-  heroHeadline: "דואגים למכור לכם את הנכס במחיר המקסימלי ובזמן הקצר ביותר",
+  heroHeadline: "קונים, מוכרים ומשקיעים בירושלים? יש צוות צעיר ורעב שיעשה את זה איתכם מקצה לקצה.",
   heroTypingText: TYPING_TEXT,
   whatsappLink: WHATSAPP_LINK,
   officePhone: OFFICE_PHONE,
-  aboutTitle: "אמון, תוצאות ומקצוענות שמרגישים מהרגע הראשון",
+  aboutTitle: "כולם יודעים שדירה היא ביטחון. אז למה רוב האנשים לא קונים?",
   aboutSubtitle:
-    "Shay Group נבנה במטרה אחת: לתת לכם שקט נפשי. אנחנו לא רק מציגים נכסים, אלא מנהלים אסטרטגיית שיווק חכמה, מדויקת ואישית כדי למקסם את שווי הנכס שלכם, בזמן הנכון ובשקיפות מלאה.",
-  footerSlogan: "״מתווכים בצד שלך״",
+    "כי זה לא רק המחיר. זה חוסר הוודאות: האם זו הדירה הנכונה, האם המחיר הוגן, מי ינהל את המשא ומתן ומה יקרה אחרי החתימה. Shay Group נבנה כדי להפוך את כל השאלות האלה לתוכנית ברורה, עם אנשים שמכירים את ירושלים ואת העסקה שלכם מקרוב.",
+  footerSlogan: "בצד שלך. גם אחרי המפתח.",
 };
 
 const aboutChecklistItems = [
@@ -109,66 +107,68 @@ const aboutChecklistItems = [
 
 const valueSteps = [
   {
-    step: 1,
-    title: "מעטפת שיווקית מלאה",
-    subtitle:
-      "אנחנו בונים לכל נכס מעטפת שיווקית מדויקת שמייצרת עניין וביקוש אמיתי – צילום מקצועי, פרסום חכם וחשיפה רחבה לקהל הנכון.",
+    step: "01",
+    title: "מתחילים בשיחה",
+    subtitle: "מבינים מה אתם רוצים להשיג, לפני שמדברים על דירה. מוכרים, קונים או משקיעים: השיחה הראשונה היא עליכם.",
   },
   {
-    step: 2,
-    title: "One Stop Shop",
-    subtitle:
-      "כל מה שצריך למכירה במקום אחד – משיווק, דרך ייעוץ משכנתאות, קבלנים ועד ליווי משפטי ומקצועי.",
+    step: "02",
+    title: "בונים תוכנית",
+    subtitle: "למוכרים: מחיר ותוכנית שיווק. למשקיעים: תכנון שמראה מה אפשר ומה נכון לכם.",
   },
   {
-    step: 3,
-    title: "שת״פ מלא",
-    subtitle:
-      "אנחנו עובדים בשיתוף פעולה עם סוכנים וקונים רלוונטיים כדי להביא לחשיפה מקסימלית וליצור תחרות אמיתית על הנכס שלכם [ומתחייבים לכך].",
+    step: "03",
+    title: "יוצאים לשטח",
+    subtitle: "משווקים את הדירה שלכם או מאתרים את הנכס שמתאים לתוכנית. אתם מקבלים עדכון על כל התקדמות.",
   },
   {
-    step: 4,
-    title: "תהליך שיטתי שעובד",
-    subtitle:
-      "עובדים לפי שיטה מוכחת שמובילה תוצאות – כל שלב מתוכנן מראש כדי להבטיח מכירה יעילה ומדויקת",
+    step: "04",
+    title: "סוגרים עסקה",
+    subtitle: "משא ומתן, עורך דין ומשכנתא, עם אנשי מקצוע שעובדים איתנו קבוע. אתם חותמים כשהכול ברור.",
   },
   {
-    step: 5,
-    title: "סגירה חכמה ומקסום מחיר",
-    subtitle:
-      "אנחנו יודעים איך לסגור נכון את העסקה – למקסם את המחיר, לשמור על האינטרסים שלכם ולסיים את התהליך בצורה חלקה ובטוחה.",
+    step: "05",
+    title: "נשארים גם אחרי המפתח",
+    subtitle: "משכירים ומנהלים את הנכס בשבילכם, ומלווים אתכם לעסקה הבאה.",
   },
 ];
 
 const marketingMethodItems = [
   {
-    title: "סרטוני הדמיה",
-    description: "וידאו קצר שמכניס קונים לאווירה של הנכס עוד לפני הסיור.",
+    title: "וידאו בשילוב AI",
+    description: "סרטון קצר לכל נכס, שנותן לקונה להרגיש את הדירה עוד לפני שהגיע לראות אותה.",
     type: "video",
     mediaUrl: HERO_VIDEO_URL,
     posterUrl: propertyImages.four,
     icon: Video,
   },
   {
-    title: "עיתון מקומי, פליירים ומכתבי שכנים",
-    description: "נראות מקומית שמחזקת אמון ומגיעה לקהל שמחפש בירושלים באמת.",
+    title: "קמפיין ממומן ברשתות",
+    description: "מודעות למי שמחפש עכשיו דירה בשכונה שלכם, וחזרה למי שכבר צפה בנכס.",
     type: "image",
     mediaUrl: propertyImages.two,
     icon: Newspaper,
   },
   {
-    title: "בתים פתוחים לקונים ומתווכים",
-    description: "אירועי מכירה מתוזמנים שמייצרים דחיפות, ביקושים ושיחות שטח.",
+    title: "בית פתוח לקונים ולמתווכים",
+    description: "מועד אחד שמרכז את כל המתעניינים. קונה שרואה קונים אחרים בסלון מחליט מהר יותר.",
     type: "image",
     mediaUrl: propertyImages.one,
     icon: Building2,
   },
   {
-    title: "פרסום אגרסיבי ברשתות",
-    description: "קמפיינים ממומנים, אורגני, חשיפה ברשתות וחזרה חכמה לקהל שמתעניין.",
+    title: "גלויות, פליירים ומכתבי שכנים",
+    description: "מי שכבר גר ברחוב מכיר מישהו שרוצה לגור בו.",
     type: "image",
     mediaUrl: propertyImages.three,
     icon: Megaphone,
+  },
+  {
+    title: "שיתוף פעולה עם כל משרדי העיר",
+    description: "הנכס נשלח לסוכנים אחרים כבר ביום הראשון. יותר סוכנים, יותר קונים.",
+    type: "image",
+    mediaUrl: propertyImages.four,
+    icon: Handshake,
   },
 ] as const;
 
@@ -345,7 +345,8 @@ const fallbackTestimonials = [
 export default function Home() {
   const [typedText, setTypedText] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [leadStep, setLeadStep] = useState<1 | 2>(1);
+  const [leadStep, setLeadStep] = useState<1 | 2 | 3>(1);
+  const [leadTrack, setLeadTrack] = useState<"seller" | "investor" | "landlord" | "buyer" | null>(null);
   const [propertyCarouselApi, setPropertyCarouselApi] = useState<CarouselApi | null>(null);
   const [marketingCarouselApi, setMarketingCarouselApi] = useState<CarouselApi | null>(null);
   const [selectedPropertySlide, setSelectedPropertySlide] = useState(0);
@@ -368,13 +369,17 @@ export default function Home() {
     sqm: "",
     fullName: "",
     phone: "",
+    equity: "",
+    hasProperty: "",
+    propertyLocation: "",
+    landlordPath: "",
+    buyerArea: "",
   });
 
   const homeQuery = trpc.publicSite.home.useQuery(undefined, {
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    refetchInterval: 3_000,
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
   const submitLeadMutation = trpc.publicSite.submitLead.useMutation();
 
@@ -382,14 +387,25 @@ export default function Home() {
   const whatsappLink = settings?.whatsappLink || WHATSAPP_LINK;
   const officePhone = settings?.officePhone || OFFICE_PHONE;
   const officePhoneLink = officePhone.replace(/\D/g, "") || OFFICE_PHONE_LINK;
-  const trustBadges = heroTrustBadges.slice(0, 3);
-  const marketingSection = homeQuery.data?.marketingSection ?? {
-    eyebrow: "שיטות השיווק שלנו",
-    title: "לא רק מעלים מודעה — בונים חוויית מכירה",
+  const trustBadges = [
+    "20M+ ₪ · היקף עסקאות",
+    "20+ · עסקאות שנסגרו",
+    "3 שירותים, כתובת אחת",
+    "5.0 בגוגל · 32 ביקורות",
+  ];
+  const cmsMarketingItems = homeQuery.data?.marketingSection?.items ?? [];
+  const marketingSection = {
+    eyebrow: "פעולות השיווק שלנו",
+    title: "לא רק מעלים מודעה — בונים חוויית מכירה.",
     subtitle:
-      "כאן נרכז את סרטוני ההדמיה, תמונות מהעיתון, בתים פתוחים, שלטים ופעולות שטח. כל מדיה שתעלה תוכל להיות מוצגת ככרטיס חי, עם צפייה ישירה באתר.",
-    highlights: ["וידאו שנפתח בלחיצה", "גלריות לפני/אחרי", "כרטיסי קמפיין מודגשים", "תיעוד שטח מבתים פתוחים"],
-    items: marketingMethodItems.map((item, index) => ({ ...item, id: `fallback-${index + 1}` })),
+      "זה רק על קצה המזלג. אלה חלק מהפעולות שאנחנו מתחייבים עליהן בכל נכס שאנחנו משווקים, ואת הרשימה המלאה תקבלו בפגישה הראשונה.",
+    highlights: ["וידאו בשילוב AI", "שיווק חכם ברשתות חברתיות", "הפצת גלויות", "בתים פתוחים לקונים ומתווכים"],
+    items: marketingMethodItems.map((item, index) => ({
+      ...item,
+      id: cmsMarketingItems[index]?.id ?? `fallback-${index + 1}`,
+      mediaUrl: cmsMarketingItems[index]?.mediaUrl || item.mediaUrl,
+      posterUrl: cmsMarketingItems[index]?.posterUrl || (item as { posterUrl?: string }).posterUrl,
+    })),
   };
   const marketingItems = useMemo(() => marketingSection.items.slice(0, 10), [marketingSection.items]);
   const selectedMarketingItem = marketingItems[selectedMarketingIndex] ?? marketingItems[0];
@@ -666,26 +682,50 @@ export default function Home() {
     setFormData((previous) => ({ ...previous, [name]: value }));
   };
 
-  const scrollToForm = () => {
+  const scrollToForm = (track?: "seller" | "investor" | "landlord" | "buyer") => {
+    if (track) {
+      setLeadTrack(track);
+      setLeadStep(2);
+    }
     document.getElementById("lead-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
     setMobileMenuOpen(false);
   };
 
+  const selectLeadTrack = (track: "seller" | "investor" | "landlord" | "buyer") => {
+    setLeadTrack(track);
+    setLeadStep(2);
+    setFormData((previous) => ({ ...previous, fullName: "", phone: "" }));
+    window.setTimeout(() => scrollToForm(track), 0);
+  };
+
   const handleNextStep = () => {
-    if (!formData.neighborhood || !formData.rooms || !formData.sqm) {
-      toast.error("כדי להמשיך, מלאו קודם את פרטי הנכס.");
+    if (!leadTrack) {
+      toast.error("בחרו קודם מה מביא אתכם אלינו.");
       return;
     }
 
-    setLeadStep(2);
+    const hasPropertyDetails = leadTrack === "seller"
+      ? formData.neighborhood && formData.rooms
+      : leadTrack === "investor"
+        ? formData.equity
+        : leadTrack === "landlord"
+          ? formData.propertyLocation && formData.landlordPath
+          : formData.buyerArea && formData.rooms;
+
+    if (!hasPropertyDetails) {
+      toast.error("השלימו את הפרטים כדי שנוכל לחזור אליכם מדויקים יותר.");
+      return;
+    }
+
+    setLeadStep(3);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!formData.neighborhood || !formData.rooms || !formData.sqm) {
-      toast.error("אנא השלימו את שלב פרטי הנכס.");
-      setLeadStep(1);
+    if (!leadTrack || leadStep !== 3) {
+      toast.error("אנא השלימו קודם את הפרטים הראשוניים.");
+      setLeadStep(2);
       return;
     }
 
@@ -698,10 +738,15 @@ export default function Home() {
       const result = await submitLeadMutation.mutateAsync({
         fullName: formData.fullName,
         phone: formData.phone,
-        neighborhood: formData.neighborhood,
-        rooms: Number(formData.rooms.replace("+", "")),
-        sqm: Number(formData.sqm),
-        notes: null,
+        neighborhood: formData.neighborhood || formData.propertyLocation || formData.buyerArea || "לא צוין",
+        rooms: Number(formData.rooms.replace("+", "")) || 1,
+        sqm: Number(formData.sqm) || 1,
+        notes: [
+          `מסלול: ${leadTrack === "seller" ? "מוכר דירה" : leadTrack === "investor" ? "רוצה להשקיע" : leadTrack === "landlord" ? "צריך להשכיר נכס" : "מחפש דירה למגורים"}`,
+          formData.equity ? `הון עצמי: ${formData.equity}` : "",
+          formData.hasProperty ? `נכס קיים: ${formData.hasProperty}` : "",
+          formData.landlordPath ? `מסלול השכרה: ${formData.landlordPath}` : "",
+        ].filter(Boolean).join(" | "),
       });
 
       if (result.emailSent) {
@@ -709,17 +754,15 @@ export default function Home() {
       } else {
         toast.warning("הפרטים נשמרו, אבל המייל לא נשלח. צריך להגדיר RESEND_API_KEY ב-Vercel.");
       }
-      setFormData({ neighborhood: "", rooms: "", sqm: "", fullName: "", phone: "" });
       setLeadStep(1);
+      setLeadTrack(null);
+      setFormData({ neighborhood: "", rooms: "", sqm: "", fullName: "", phone: "", equity: "", hasProperty: "", propertyLocation: "", landlordPath: "", buyerArea: "" });
     } catch {
       toast.error("לא הצלחנו לשמור את הפרטים כרגע. נסו שוב בעוד רגע.");
     }
   };
 
-  const footerSloganRaw = settings?.footerSlogan || fallbackSettings.footerSlogan;
-  const footerSloganDisplay = footerSloganRaw.startsWith("״") && footerSloganRaw.endsWith("״")
-    ? footerSloganRaw
-    : `״${footerSloganRaw.replace(/^["״]+|["״]+$/g, "")}״`;
+  const footerSloganDisplay = "בצד שלך. גם אחרי המפתח.";
 
   return (
     <div className="min-h-screen bg-white text-slate-950" dir="rtl">
@@ -875,7 +918,7 @@ export default function Home() {
               muted
               loop
               playsInline
-              preload="auto"
+              preload="metadata"
               aria-hidden="true"
               onLoadedMetadata={(event) => {
                 const video = event.currentTarget;
@@ -897,11 +940,11 @@ export default function Home() {
           </div>
 
           <div className="relative z-20 mx-auto flex min-h-[78vh] max-w-5xl flex-col items-center justify-center text-center text-white">
-            <div className="rounded-full border border-white/20 bg-white/10 px-5 py-2 text-base font-extrabold shadow-[0_10px_30px_rgba(0,0,0,0.15)] backdrop-blur-md">
-              Shay Group - Real Estate Company
-            </div>
-            <h1 className="mt-8 text-4xl font-black leading-[1.08] md:text-6xl lg:text-[4.7rem]">
-              {settings?.heroHeadline || fallbackSettings.heroHeadline}
+            <p className="rounded-full border border-white/20 bg-white/10 px-5 py-2 text-base font-extrabold shadow-[0_10px_30px_rgba(0,0,0,0.15)] backdrop-blur-md">
+              עסקאות בהיקף של מעל 20 מיליון ₪ בירושלים והסביבה
+            </p>
+            <h1 className="mt-8 max-w-5xl text-4xl font-black leading-[1.08] md:text-6xl lg:text-[4.7rem]">
+              קונים, מוכרים ומשקיעים בירושלים? יש צוות צעיר ורעב שיעשה את זה איתכם מקצה לקצה.
             </h1>
             <p className="mt-6 min-h-[2.5rem] text-[1.45rem] font-extrabold text-white md:text-[1.75rem]">
               {typedText}
@@ -921,24 +964,22 @@ export default function Home() {
             </div>
 
             <p className="mt-8 max-w-3xl text-xl font-bold leading-8 text-white/90 md:text-[1.35rem]">
-              אנחנו מלווים בעלי נכסים משלב התמחור ועד סגירת העסקה, עם שקיפות מלאה, זמינות גבוהה וחיבור ישיר לשוק הירושלמי הפעיל.
+              מלווים אתכם מהפגישה הראשונה, דרך המשכנתא ועורך הדין, ועד שהדירה מושכרת ומנוהלת. הכול בכתובת אחת.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <Button
-                onClick={scrollToForm}
+                onClick={() => scrollToForm()}
                 className="h-14 rounded-full bg-[#d9ae4c] px-8 text-base font-black text-black shadow-[0_12px_30px_rgba(217,174,76,0.3)] hover:bg-[#b98b2f]"
               >
-                שלחו הודעה עכשיו
+                בדקו מה מתאים לכם ↓
               </Button>
-              <Button
-                variant="outline"
-                onClick={scrollToForm}
-                className="h-14 rounded-full border-[#d9ae4c] bg-white/5 px-8 text-base font-black text-white hover:bg-white/10"
-              >
-                <MessageCircle className="size-4 text-[#d9ae4c]" />
-                להערכת שווי נכס
-              </Button>
+            </div>
+
+            <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-bold text-white/85">
+              <button type="button" onClick={() => selectLeadTrack("seller")} className="underline-offset-4 transition hover:text-[#d9ae4c] hover:underline">מוכרים דירה</button>
+              <button type="button" onClick={() => selectLeadTrack("investor")} className="underline-offset-4 transition hover:text-[#d9ae4c] hover:underline">רוצים להשקיע</button>
+              <button type="button" onClick={() => selectLeadTrack("landlord")} className="underline-offset-4 transition hover:text-[#d9ae4c] hover:underline">צריכים להשכיר נכס</button>
             </div>
 
             {homeQuery.isLoading ? (
@@ -953,9 +994,9 @@ export default function Home() {
         <section id="about" className="px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_0.92fr]">
             <div className="order-2 lg:order-1">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]">אודות קבוצת שי</p>
-              <h2 className="mt-4 text-[2.15rem] font-extrabold leading-tight md:text-[3.45rem]">{settings?.aboutTitle || fallbackSettings.aboutTitle}</h2>
-              <p className="mt-6 text-lg leading-8 text-slate-600">{settings?.aboutSubtitle || fallbackSettings.aboutSubtitle}</p>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]">הסיפור מאחורי Shay Group</p>
+              <h2 className="mt-4 text-[2.15rem] font-extrabold leading-tight md:text-[3.45rem]">כולם יודעים שדירה היא ביטחון. אז למה רוב האנשים לא קונים?</h2>
+              <p className="mt-6 text-lg leading-8 text-slate-600">כי זה לא רק המחיר. זה חוסר הוודאות: האם זו הדירה הנכונה, האם המחיר הוגן, מי ינהל את המשא ומתן ומה יקרה אחרי החתימה. Shay Group נבנה כדי להפוך את כל השאלות האלה לתוכנית ברורה, עם אנשים שמכירים את ירושלים ואת העסקה שלכם מקרוב.</p>
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
                 {aboutChecklistItems.map(({ icon: Icon, text }) => (
                   <article
@@ -988,11 +1029,36 @@ export default function Home() {
           </div>
         </section>
 
+        <section id="services" className="border-y border-[#d9ae4c]/20 bg-[#fffdf7] px-4 py-20 md:px-6 md:py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]">מה אנחנו עושים</p>
+              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">מוכרים, משקיעים או משכירים? אותו צוות. אותו הרעב.</h2>
+            </div>
+            <div className="mt-12 grid gap-5 lg:grid-cols-3">
+              {[
+                { title: "מכירת נכס", text: "מחיר נכון, תוכנית שיווק שעובדת ומשא ומתן שלא משאיר כסף על השולחן.", cta: "כמה שווה הדירה שלי?", track: "seller" as const },
+                { title: "ליווי משקיעים", text: "לא עוד רשימת דירות. תוכנית שמתאימה להון, למטרה ולחיים שלכם.", cta: "לתיאום שיחת אבחון", track: "investor" as const },
+                { title: "השכרה וניהול", text: "מהערכת שכר הדירה ועד דיירים, חוזים וטיפול שוטף. הנכס עובד, אתם פנויים.", cta: "אני רוצה לשמוע עוד", track: "landlord" as const },
+              ].map((service) => (
+                <article key={service.title} className="flex h-full flex-col rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
+                  <h3 className="text-2xl font-black text-slate-950">{service.title}</h3>
+                  <p className="mt-4 flex-1 text-lg font-semibold leading-8 text-slate-600">{service.text}</p>
+                  <button type="button" onClick={() => selectLeadTrack(service.track)} className="mt-7 inline-flex w-fit items-center rounded-full bg-[#d9ae4c] px-6 py-3 text-base font-black text-black transition hover:bg-[#b98b2f]">
+                    {service.cta}
+                  </button>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section id="team" className="bg-white px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: '24px'}}>הצוות</p>
-              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">הכירו את הסוכנים שלנו</h2>
+              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">האנשים שתדברו איתם.</h2>
+              <p className="mt-4 text-lg font-semibold leading-8 text-slate-600">לכל שכונה יש אצלנו מי שמכיר אותה מקרוב. הטלפון שלו כאן.</p>
             </div>
 
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -1039,8 +1105,8 @@ export default function Home() {
         <section id="method" className="px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: '24px'}}>השיטה</p>
-              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]" style={{fontSize: '70px'}}>מה יוצא לכם מזה?</h2>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: '24px'}}>איך זה עובד</p>
+              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">חמישה צעדים, ואף אחד מהם לא עושים לבד.</h2>
             </div>
 
             <div className="mt-14 grid gap-8 xl:grid-cols-5 xl:gap-5">
@@ -1217,6 +1283,11 @@ export default function Home() {
                 </div>
               </div>
             ) : null}
+            <div className="mt-8 text-center">
+              <button type="button" onClick={() => selectLeadTrack("seller")} className="text-base font-black text-[#b98b2f] underline-offset-4 hover:text-[#d9ae4c] hover:underline">
+                רוצים לראות את זה על הדירה שלכם? ←
+              </button>
+            </div>
           </div>
         </section>
 
@@ -1224,11 +1295,11 @@ export default function Home() {
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-lg font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c] md:text-2xl">מחפשים נכס ? הגעתם למקום הנכון</p>
-                <h2 className="mt-4 text-4xl font-extrabold leading-tight text-[#1A1A1A] md:text-[3.35rem]">הנכסים המובחרים שלנו</h2>
+                <p className="text-lg font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c] md:text-2xl">מחפשים נכס? הגעתם למקום הנכון</p>
+                <h2 className="mt-4 text-4xl font-extrabold leading-tight text-[#1A1A1A] md:text-[3.35rem]">הדירה הבאה שלכם אולי כבר כאן.</h2>
               </div>
               <Link href="/properties" className="inline-flex items-center gap-2 text-base font-black text-[#d9ae4c]">
-                לכל הנכסים
+                לכל הנכסים ←
                 <ChevronLeft className="size-4" />
               </Link>
             </div>
@@ -1350,9 +1421,9 @@ export default function Home() {
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
               <p className="text-base font-black uppercase tracking-[0.08em] text-[#d9ae4c]">הצלחות מהשטח</p>
-              <h2 className="mt-4 text-4xl font-black text-[#1A1A1A] md:text-[3.35rem]">נמכר לאחרונה — עסקאות שסגרנו</h2>
+              <h2 className="mt-4 text-4xl font-black text-[#1A1A1A] md:text-[3.35rem]">נמכר, נקנה והושכר.</h2>
               <p className="mx-auto mt-4 max-w-3xl text-lg font-semibold leading-8 text-[#6B6B6B]">
-                הירושלמים בוחרים ב-Shay Group. התוצאות מדברות בעד עצמן.
+                כל כתובת כאן היא חוזה חתום.
               </p>
             </div>
 
@@ -1367,14 +1438,14 @@ export default function Home() {
                       <div className="relative h-52 overflow-hidden">
                         <img src={property.image} alt={property.title} className="h-full w-full object-cover" loading="lazy" />
                         <span className="absolute right-4 top-4 rounded-full bg-[#d9ae4c] px-4 py-2 text-sm font-black text-black shadow-lg">
-                          נמכר ✓
+                          {property.status.trim() === "נמכר" ? "נמכר ✓" : "הושכר ✓"}
                         </span>
                       </div>
                       <div className="p-5">
                         <h3 className="text-xl font-black text-[#1A1A1A]">{formatPropertyLocation(property) || property.title}</h3>
-                        <p className="mt-5 text-2xl font-black text-[#d9ae4c]">₪{property.price.toLocaleString("he-IL")}</p>
+                        <p className="mt-5 text-2xl font-black text-[#d9ae4c]">₪{property.price.toLocaleString("he-IL")}{property.status.trim() === "הושכר" ? " לחודש" : ""}</p>
                         <div className="mt-4 border-t border-[#d9ae4c]/20 pt-4 text-sm font-bold">
-                          <span className="text-[#6B6B6B]">נמכר עם קבוצת שי</span>
+                          <span className="text-[#6B6B6B]">עסקה שנחתמה עם Shay Group</span>
                         </div>
                       </div>
                     </article>
@@ -1393,7 +1464,8 @@ export default function Home() {
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: "20px"}}>המלצות</p>
-              <h2 className="mt-3 text-[2rem] font-extrabold md:text-[3.25rem]">לקוחות משתפים</h2>
+              <h2 className="mt-3 text-[2rem] font-extrabold md:text-[3.25rem]">ככה זה נראה מהצד של הלקוח.</h2>
+              <p className="mt-3 text-base font-black text-slate-600">Google · 5.0 ★★★★★ · מבוסס על 32 ביקורות</p>
             </div>
 
             <div className="mx-auto mt-9 max-w-7xl">
@@ -1551,115 +1623,78 @@ export default function Home() {
           </div>
         ) : null}
 
-        <section id="lead-form" className="bg-white px-4 py-20 md:px-6 md:py-24">
+        <section id="lead-form" className="bg-[#fffdf7] px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-4xl rounded-[36px] border border-slate-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:p-12">
             <div className="text-center">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]"></p>
-              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">רוצים לדעת כמה שווה הנכס שלכם?</h2>
-              <p className="mt-4 text-xl font-semibold leading-8 text-slate-600" style={{color: '#d9ae4c'}}>
-                למלא פרטים לוקח 30 שניות
-              </p>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]">בדיקת התאמה · 30 שניות</p>
+              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">בואו נבין מה אתם צריכים, ונחזיר אליכם את האדם הנכון.</h2>
             </div>
 
-            <div className="mt-8 flex items-center justify-center gap-4">
-              <div className={`flex items-center gap-3 rounded-full px-4 py-2 text-base font-extrabold ${leadStep === 1 ? "bg-[#d9ae4c] text-white" : "bg-white text-[#b98b2f]"}`}>
-                <span className="flex size-7 items-center justify-center rounded-full bg-white/20">1</span>
-                פרטי הנכס
+            {leadStep === 1 ? (
+              <div className="mt-10 grid gap-4 sm:grid-cols-2">
+                <p className="sm:col-span-2 text-center text-xl font-black text-slate-900">מה מביא אתכם אלינו?</p>
+                {[
+                  ["seller", "מוכרים דירה"],
+                  ["investor", "רוצים להשקיע"],
+                  ["landlord", "צריכים להשכיר נכס"],
+                  ["buyer", "מחפשים דירה לגור בה"],
+                ].map(([track, label]) => (
+                  <button key={track} type="button" onClick={() => { setLeadTrack(track as typeof leadTrack); setLeadStep(2); }} className="rounded-2xl border border-slate-200 px-5 py-5 text-lg font-black text-slate-900 transition hover:border-[#d9ae4c] hover:bg-[#fff8e6]">
+                    {label}
+                  </button>
+                ))}
               </div>
-              {leadStep === 2 ? (
-                <>
-                  <div className="h-px w-10 bg-[#d9ae4c]/25" />
-                  <div className="flex items-center gap-3 rounded-full bg-[#d9ae4c] px-4 py-2 text-base font-extrabold text-white">
-                    <span className="flex size-7 items-center justify-center rounded-full bg-white/20">2</span>
-                    פרטים אישיים
-                  </div>
-                </>
-              ) : null}
-            </div>
-
-            <form onSubmit={handleSubmit} className="mt-8 grid gap-5">
-              <div className={leadStep === 1 ? "grid gap-5" : "hidden"}>
-                <label className="grid gap-2">
-                  <span className="text-sm font-bold text-slate-700">שכונה / אזור</span>
-                  <input
-                    name="neighborhood"
-                    value={formData.neighborhood}
-                    onChange={handleFormChange}
-                    placeholder="למשל: קטמונים, גילה, ארנונה"
-                    className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
-                  />
-                </label>
-
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <label className="grid gap-2">
-                    <span className="text-sm font-bold text-slate-700">מספר חדרים</span>
-                    <select
-                      name="rooms"
-                      value={formData.rooms}
-                      onChange={handleFormChange}
-                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
-                    >
-                      <option value="">בחרו</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5">5</option>
-                      <option value="6">6</option>
-                    </select>
-                  </label>
-                  <label className="grid gap-2">
-                    <span className="text-sm font-bold text-slate-700">גודל במ״ר</span>
-                    <input
-                      name="sqm"
-                      value={formData.sqm}
-                      onChange={handleFormChange}
-                      placeholder="למשל: 120"
-                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
-                    />
-                  </label>
-                </div>
-
-                <div className="flex justify-center">
-                  <Button type="button" onClick={handleNextStep} className="h-14 rounded-full bg-[#d9ae4c] px-10 text-base font-extrabold text-black hover:bg-[#b98b2f]">
-                    להערכת שווי שוק במתנה
-                  </Button>
-                </div>
+            ) : leadStep === 2 ? (
+              <div className="mt-10 grid gap-5">
+                {leadTrack === "seller" ? (
+                  <>
+                    <p className="text-xl font-black text-slate-900">מה נמכור עבורכם?</p>
+                    <label className="grid gap-2"><span className="text-sm font-bold text-slate-700">שכונה / אזור</span><input name="neighborhood" value={formData.neighborhood} onChange={handleFormChange} placeholder="למשל: קטמונים, גילה, ארנונה" className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]" /></label>
+                    <label className="grid gap-2"><span className="text-sm font-bold text-slate-700">מספר חדרים</span><select name="rooms" value={formData.rooms} onChange={handleFormChange} className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]"><option value="">בחרו</option>{[2, 3, 4, 5, 6].map((room) => <option key={room} value={room}>{room}</option>)}</select></label>
+                  </>
+                ) : leadTrack === "investor" ? (
+                  <>
+                    <p className="text-xl font-black text-slate-900">מה גובה ההון העצמי שלכם?</p>
+                    <select name="equity" value={formData.equity} onChange={handleFormChange} className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]"><option value="">בחרו טווח</option><option value="50,000–200,000 ₪">50,000–200,000 ₪</option><option value="200,000–400,000 ₪">200,000–400,000 ₪</option><option value="400,000–650,000 ₪">400,000–650,000 ₪</option><option value="650,000 ₪ ומעלה">650,000 ₪ ומעלה</option></select>
+                    <label className="grid gap-2"><span className="text-sm font-bold text-slate-700">יש בבעלותכם נכס?</span><select name="hasProperty" value={formData.hasProperty} onChange={handleFormChange} className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]"><option value="">בחרו</option><option value="כן">כן</option><option value="לא">לא</option></select></label>
+                  </>
+                ) : leadTrack === "landlord" ? (
+                  <>
+                    <p className="text-xl font-black text-slate-900">איך אפשר לעזור עם הנכס?</p>
+                    <input name="propertyLocation" value={formData.propertyLocation} onChange={handleFormChange} placeholder="איפה נמצא הנכס?" className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]" />
+                    <select name="landlordPath" value={formData.landlordPath} onChange={handleFormChange} className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]"><option value="">בחרו</option><option value="הערכת שכר דירה">הערכת שכר דירה</option><option value="השכרה וניהול מלא">השכרה וניהול מלא</option></select>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xl font-black text-slate-900">מה אתם מחפשים?</p>
+                    <input name="buyerArea" value={formData.buyerArea} onChange={handleFormChange} placeholder="באיזה אזור בירושלים?" className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]" />
+                    <select name="rooms" value={formData.rooms} onChange={handleFormChange} className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]"><option value="">כמה חדרים?</option>{[2, 3, 4, 5, 6].map((room) => <option key={room} value={room}>{room}</option>)}</select>
+                  </>
+                )}
+                <Button type="button" onClick={handleNextStep} className="h-14 rounded-full bg-[#d9ae4c] px-10 text-base font-extrabold text-black hover:bg-[#b98b2f]">המשיכו</Button>
               </div>
-
-              <div className={leadStep === 2 ? "grid gap-5" : "hidden"}>
+            ) : (
+              <form onSubmit={handleSubmit} className="mt-10 grid gap-5">
+                <p className="text-xl font-black text-slate-900">לאן נחזור אליכם?</p>
                 <div className="grid gap-5 sm:grid-cols-2">
-                  <label className="grid gap-2">
-                    <span className="text-sm font-bold text-slate-700">שם מלא</span>
-                    <input
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleFormChange}
-                      placeholder="איך קוראים לכם?"
-                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
-                    />
-                  </label>
-                  <label className="grid gap-2">
-                    <span className="text-sm font-bold text-slate-700">טלפון</span>
-                    <input
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleFormChange}
-                      placeholder="050-000-0000"
-                      className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none transition focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
-                    />
-                  </label>
+                  <input required name="fullName" value={formData.fullName} onChange={handleFormChange} placeholder="שם מלא" className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]" />
+                  <input required name="phone" value={formData.phone} onChange={handleFormChange} placeholder="טלפון" className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]" />
                 </div>
-
+                <p className="text-sm font-semibold text-slate-500">חוזרים אליכם בתוך יום עסקים אחד. בלי התחייבות.</p>
                 <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                  <Button type="button" variant="outline" onClick={() => setLeadStep(1)} className="h-14 rounded-full border-[#d9ae4c] px-8 text-base font-extrabold text-[#d9ae4c] hover:bg-white">
-                    חזרה לשלב הקודם
-                  </Button>
-                  <Button type="submit" disabled={submitLeadMutation.isPending} className="h-14 rounded-full bg-[#d9ae4c] px-10 text-base font-extrabold text-black hover:bg-[#b98b2f]">
-                    {submitLeadMutation.isPending ? "שומרים פרטים..." : "שלחו פרטים ונחזור אליכם בהקדם"}
-                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setLeadStep(2)} className="h-14 rounded-full border-[#d9ae4c] px-8 text-base font-extrabold text-[#d9ae4c]">חזרה</Button>
+                  <Button type="submit" disabled={submitLeadMutation.isPending} className="h-14 rounded-full bg-[#d9ae4c] px-10 text-base font-extrabold text-black hover:bg-[#b98b2f]">{submitLeadMutation.isPending ? "שומרים פרטים..." : "שלחו פרטים"}</Button>
                 </div>
-              </div>
-            </form>
+              </form>
+            )}
+          </div>
+        </section>
+
+        <section className="bg-[#fffdf7] px-4 pb-20 md:px-6 md:pb-24">
+          <div className="mx-auto max-w-5xl rounded-[36px] bg-[#010101] px-7 py-14 text-center text-white md:px-12">
+            <h2 className="text-4xl font-black md:text-6xl">מוכרים, קונים או משקיעים? בואו נתחיל בשיחה.</h2>
+            <p className="mx-auto mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/80">30 שניות, שתי שאלות, וחוזרים אליכם בתוך יום עסקים אחד.</p>
+            <Button type="button" onClick={() => scrollToForm()} className="mt-8 h-14 rounded-full bg-[#d9ae4c] px-9 text-base font-black text-black hover:bg-[#b98b2f]">בדקו מה מתאים לכם</Button>
           </div>
         </section>
 
@@ -1674,7 +1709,7 @@ export default function Home() {
                 <span>{officePhone}</span>
                 <Phone className="size-4 shrink-0" />
               </a>
-              <p className="self-end text-right">האומן 25 , תלפיות</p>
+              <p className="self-end text-right">האומן 25, תלפיות, ירושלים</p>
               <button
                 onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}
                 className="flex flex-row-reverse items-center justify-start gap-2 self-end text-right text-white"
@@ -1696,10 +1731,10 @@ export default function Home() {
             <p className="text-base font-extrabold uppercase tracking-[0.03em] text-white md:self-start">ניווט</p>
             <div className="mt-4 flex flex-col items-end gap-3 text-right text-white md:items-start" dir="rtl">
               <a href="#home" className="self-end text-right md:self-start">דף הבית</a>
-              <a href="#about" className="self-end text-right md:self-start">אודות</a>
-              <a href="#method" className="self-end text-right md:self-start">שיטה</a>
+              <a href="#about" className="self-end text-right md:self-start">הסיפור שלנו</a>
+              <a href="#services" className="self-end text-right md:self-start">השירותים</a>
               <Link href="/properties" className="self-end text-right md:self-start">נכסים</Link>
-              <Link href="/projects" className="self-end text-right md:self-start">פרויקטים</Link>
+              <a href="#team" className="self-end text-right md:self-start">הצוות</a>
               <Link href="/agent-login" className="self-end text-right md:self-start">התחברות סוכנים</Link>
             </div>
           </div>

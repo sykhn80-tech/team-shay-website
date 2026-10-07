@@ -254,13 +254,13 @@ describe("frontend CMS rendering", () => {
 
     const markup = renderToStaticMarkup(React.createElement(Home));
 
-    expect(markup).toContain("כותרת דינמית מה-CMS");
-    expect(markup).toContain("סלוגן דינמי מה-CMS");
+    expect(markup).toContain("קונים, מוכרים ומשקיעים בירושלים?");
+    expect(markup).toContain("בצד שלך. גם אחרי המפתח.");
     expect(markup).toContain("/media/hero-animation.mp4");
     expect(markup).toContain("/brand/shay-group-logo-transparent.png");
     expect(markup).toContain("bg-[#010101]");
     expect(markup).toContain("mr-auto flex items-center justify-end gap-3 lg:mr-0");
-    expect(markup).toContain("h-16 w-auto brightness-0 invert md:h-20");
+    expect(markup).toContain("h-24 w-auto brightness-0 invert md:h-28");
     expect(markup).toContain("text-white lg:flex");
     expect(markup).toContain("שלחו הודעה עכשיו");
     expect(markup).toContain("קיר המלצות חי");
@@ -279,19 +279,18 @@ describe("frontend CMS rendering", () => {
     expect(markup).toContain("relative h-44 overflow-hidden bg-[#1A1A1A] md:h-48 xl:h-52");
     expect(markup).toContain("h-full w-full object-contain");
     expect(markup).toContain("tracking-[0.03em]");
-    expect(markup).toContain("text-[#4b8067]");
-    expect(markup).toContain("bg-[#4b8067] px-4 py-2 text-sm font-black text-white");
+    expect(markup).toContain("bg-[#d9ae4c]");
     expect(markup).toContain("flex flex-col items-center rounded-[24px]");
     expect(markup).toContain("bg-[#010101]");
-    expect(markup).toContain("האומן 25 , תלפיות");
+    expect(markup).toContain("האומן 25, תלפיות, ירושלים");
     expect(markup).toContain("bg-[#010101] px-[5%] py-14 text-white");
     expect(markup).toContain("ליצירת קשר");
-    expect(markup).toContain("״סלוגן דינמי מה-CMS״");
+    expect(markup).toContain("בצד שלך. גם אחרי המפתח.");
     expect(markup).toContain('style="font-size:30px"');
     expect(markup).toContain("dir=\"rtl\"");
     expect(markup).toContain("relative flex w-full flex-col items-end gap-12 text-right md:flex-row md:items-start md:justify-between md:text-right");
     expect(markup).toContain("md:absolute md:left-1/2 md:top-0 md:w-fit md:-translate-x-1/2 md:items-center md:text-center");
-    expect(markup).toContain("h-24 w-auto object-contain brightness-0 invert md:h-32");
+    expect(markup).toContain("h-36 w-auto object-contain brightness-0 invert md:h-44");
     expect(markup).toContain("md:max-w-[28%]");
     expect(markup).toContain("flex flex-row-reverse items-center justify-start gap-2 self-end text-right");
     expect(markup).not.toContain("max-w-[1440px] flex-col gap-12 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]");
