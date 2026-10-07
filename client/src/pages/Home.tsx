@@ -15,7 +15,6 @@ import {
   Newspaper,
   Phone,
   Play,
-  ShieldCheck,
   Star,
   Video,
   X,
@@ -38,7 +37,6 @@ import {
   propertyImages,
   SHAY_ABOUT_IMAGE,
   TEAM_LOGO,
-  TYPING_TEXT,
   WHATSAPP_LINK,
 } from "@/lib/siteData";
 import { formatPropertyLocation } from "@/lib/property-display";
@@ -63,13 +61,6 @@ const RONEN_IMAGE_URL =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/tryiton_1760536418265_f4vv644shhrm80csx0jvzt3etm2_d3afa6a6.png";
 const YARDEN_IMAGE_URL =
   "https://d2xsxph8kpxj0f.cloudfront.net/310519663549770333/Skk9h57YxdLJzA5wF6rzPk/WhatsAppImage2026-04-13at17.31.35_58f082a2.jpeg";
-const HERO_TYPING_PHRASES = [
-  "מוכרים בביטחון.",
-  "קונים בחכמה.",
-  "משקיעים עם תוכנית.",
-  "נשארים איתכם אחרי המפתח.",
-] as const;
-
 const fallbackSettings = {
   siteName: BRAND_NAME,
   headerLogoUrl: TEAM_LOGO,
@@ -77,33 +68,12 @@ const fallbackSettings = {
   heroBackgroundUrl: JERUSALEM_HERO,
   shayAboutImageUrl: SHAY_ABOUT_IMAGE,
   heroHeadline: "קונים, מוכרים ומשקיעים בירושלים? יש צוות צעיר ורעב שיעשה את זה איתכם מקצה לקצה.",
-  heroTypingText: TYPING_TEXT,
   whatsappLink: WHATSAPP_LINK,
   officePhone: OFFICE_PHONE,
   aboutTitle: "כולם יודעים שדירה היא ביטחון. אז למה רוב האנשים לא קונים?",
-  aboutSubtitle:
-    "כי זה לא רק המחיר. זה חוסר הוודאות: האם זו הדירה הנכונה, האם המחיר הוגן, מי ינהל את המשא ומתן ומה יקרה אחרי החתימה. Shay Group נבנה כדי להפוך את כל השאלות האלה לתוכנית ברורה, עם אנשים שמכירים את ירושלים ואת העסקה שלכם מקרוב.",
+  aboutSubtitle: "נעים מאוד, אני שי כהן, המייסד של Shay Group.",
   footerSlogan: "בצד שלך. גם אחרי המפתח.",
 };
-
-const aboutChecklistItems = [
-  {
-    icon: Handshake,
-    text: "ליווי אישי בגובה העיניים – מהפגישה הראשונה ועד להעברת המפתח",
-  },
-  {
-    icon: Megaphone,
-    text: "אסטרטגיית שיווק מתקדמת – חשיפה מקסימלית וסינון קונים קפדני.",
-  },
-  {
-    icon: ShieldCheck,
-    text: "אמנות המשא ומתן – נלחמים על כל שקל כדי להבטיח את האינטרס שלכם.",
-  },
-  {
-    icon: Building2,
-    text: "מאגר קונים פעיל ושיתופי פעולה מקצועיים שמרחיבים את החשיפה לנכס שלכם.",
-  },
-];
 
 const valueSteps = [
   {
@@ -114,7 +84,7 @@ const valueSteps = [
   {
     step: "02",
     title: "בונים תוכנית",
-    subtitle: "למוכרים: מחיר ותוכנית שיווק. למשקיעים: תכנון שמראה מה אפשר ומה נכון לכם.",
+    subtitle: "למוכרים: מחיר ותוכנית שיווק. למשקיעים: תכנון פיננסי שמראה מה אפשר ומה נכון לכם.",
   },
   {
     step: "03",
@@ -343,7 +313,6 @@ const fallbackTestimonials = [
 ] as const;
 
 export default function Home() {
-  const [typedText, setTypedText] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [leadStep, setLeadStep] = useState<1 | 2 | 3>(1);
   const [leadTrack, setLeadTrack] = useState<"seller" | "investor" | "landlord" | "buyer" | null>(null);
@@ -390,7 +359,7 @@ export default function Home() {
   const trustBadges = [
     "20M+ ₪ · היקף עסקאות",
     "20+ · עסקאות שנסגרו",
-    "3 שירותים, כתובת אחת",
+    "תיווך, ליווי משקיעים, השכרה וניהול · כתובת אחת",
     "5.0 בגוגל · 32 ביקורות",
   ];
   const cmsMarketingItems = homeQuery.data?.marketingSection?.items ?? [];
@@ -476,11 +445,23 @@ export default function Home() {
 
   const soldProperties = useMemo(() => {
     return homepageProperties
-      .filter((property) => property.status.trim() === "נמכר")
+      .filter((property) => {
+        const location = formatPropertyLocation(property);
+        const isTargetRental = (location.includes("סן מרטין 13") && property.price === 4900)
+          || (location.includes("סן מרטין 25") && property.price === 8500);
+        return property.status.trim() === "נמכר" || isTargetRental;
+      })
       .slice(0, 10)
-      .map((property) => ({
-      ...property,
-    }));
+      .map((property) => {
+        const location = formatPropertyLocation(property).replace(/,\s*03\b/g, "");
+        const isTargetRental = (location.includes("סן מרטין 13") && property.price === 4900)
+          || (location.includes("סן מרטין 25") && property.price === 8500);
+        return {
+          ...property,
+          displayLocation: location,
+          displayStatus: isTargetRental ? "הושכר" : property.status.trim(),
+        };
+      });
   }, [homepageProperties]);
 
   const soldPropertiesTrack = useMemo(() => {
@@ -583,7 +564,7 @@ export default function Home() {
           id: testimonial.id,
           source: testimonial.sourceLabel || "חוות דעת",
           title: normalizeTestimonialTitle(testimonial.sourceName),
-          quote: testimonial.quote,
+          quote: testimonial.quote.replace(/מ?לנדסמן ירושלים/g, "").replace(/\s{2,}/g, " ").trim(),
           stars: testimonial.stars || 5,
           displayOrder: testimonial.displayOrder ?? 1,
           whatsappImageUrl: testimonial.whatsappImageUrl ?? null,
@@ -592,6 +573,9 @@ export default function Home() {
 
     return [...source]
       .sort((left, right) => {
+        const leftIsCarmit = left.title.includes("כרמית") ? 1 : 0;
+        const rightIsCarmit = right.title.includes("כרמית") ? 1 : 0;
+        if (leftIsCarmit !== rightIsCarmit) return rightIsCarmit - leftIsCarmit;
         const leftOrder = left.displayOrder ?? Number.MAX_SAFE_INTEGER;
         const rightOrder = right.displayOrder ?? Number.MAX_SAFE_INTEGER;
         if (leftOrder !== rightOrder) return leftOrder - rightOrder;
@@ -643,39 +627,6 @@ export default function Home() {
       if (revealTimer) window.clearTimeout(revealTimer);
     };
   }, [testimonialsExpanded]);
-
-  useEffect(() => {
-    let phraseIndex = 0;
-    let characterIndex = 0;
-    let deleting = false;
-    let pauseUntil = 0;
-    setTypedText("");
-
-    const timer = window.setInterval(() => {
-      if (Date.now() < pauseUntil) return;
-      const phrase = HERO_TYPING_PHRASES[phraseIndex];
-
-      if (!deleting) {
-        characterIndex += 1;
-        setTypedText(phrase.slice(0, characterIndex));
-        if (characterIndex >= phrase.length) {
-          deleting = true;
-          pauseUntil = Date.now() + 1_550;
-        }
-      } else {
-        characterIndex -= 1;
-        setTypedText(phrase.slice(0, characterIndex));
-        if (characterIndex <= 0) {
-          deleting = false;
-          phraseIndex = (phraseIndex + 1) % HERO_TYPING_PHRASES.length;
-          pauseUntil = Date.now() + 250;
-        }
-      }
-    }, 70);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
 
   const handleFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
@@ -907,8 +858,8 @@ export default function Home() {
         </div>
       </div>
 
-      <main>
-        <section id="home" className="relative isolate min-h-screen overflow-hidden bg-black px-4 pb-16 pt-36 md:px-6 md:pb-24 md:pt-40">
+      <main className="flex flex-col">
+        <section id="home" className="order-1 relative isolate min-h-screen overflow-hidden bg-black px-4 pb-16 pt-36 md:px-6 md:pb-24 md:pt-40">
           <div className="absolute inset-0 z-0">
             <video
               className="absolute left-0 top-0 h-full w-full origin-top scale-[1.18] object-cover"
@@ -941,15 +892,11 @@ export default function Home() {
 
           <div className="relative z-20 mx-auto flex min-h-[78vh] max-w-5xl flex-col items-center justify-center text-center text-white">
             <p className="rounded-full border border-white/20 bg-white/10 px-5 py-2 text-base font-extrabold shadow-[0_10px_30px_rgba(0,0,0,0.15)] backdrop-blur-md">
-              עסקאות בהיקף של מעל 20 מיליון ₪ בירושלים והסביבה
+              Shay Group
             </p>
             <h1 className="mt-8 max-w-5xl text-4xl font-black leading-[1.08] md:text-6xl lg:text-[4.7rem]">
-              קונים, מוכרים ומשקיעים בירושלים? יש צוות צעיר ורעב שיעשה את זה איתכם מקצה לקצה.
+              נדל״ן בירושלים. עם צוות שנשאר גם אחרי המפתח.
             </h1>
-            <p className="mt-6 min-h-[2.5rem] text-[1.45rem] font-extrabold text-white md:text-[1.75rem]">
-              {typedText}
-              <span className="mr-1 inline-block h-7 w-[2px] animate-pulse bg-[#d9ae4c] align-middle" />
-            </p>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               {trustBadges.map((badge) => (
@@ -991,23 +938,33 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="about" className="px-4 py-20 md:px-6 md:py-24">
+        <section id="about" className="order-3 px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_0.92fr]">
             <div className="order-2 lg:order-1">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]">הסיפור מאחורי Shay Group</p>
               <h2 className="mt-4 text-[2.15rem] font-extrabold leading-tight md:text-[3.45rem]">כולם יודעים שדירה היא ביטחון. אז למה רוב האנשים לא קונים?</h2>
-              <p className="mt-6 text-lg leading-8 text-slate-600">כי זה לא רק המחיר. זה חוסר הוודאות: האם זו הדירה הנכונה, האם המחיר הוגן, מי ינהל את המשא ומתן ומה יקרה אחרי החתימה. Shay Group נבנה כדי להפוך את כל השאלות האלה לתוכנית ברורה, עם אנשים שמכירים את ירושלים ואת העסקה שלכם מקרוב.</p>
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                {aboutChecklistItems.map(({ icon: Icon, text }) => (
-                  <article
-                    key={text}
-                    className="flex flex-col items-center rounded-[24px] border border-slate-200 bg-white p-5 text-center shadow-[0_14px_30px_rgba(15,23,42,0.05)]"
-                  >
-                    <span className="flex size-12 items-center justify-center rounded-full bg-white text-[#d9ae4c] shadow-[0_10px_24px_rgba(217,174,76,0.18)]">
-                      <Icon className="size-5" />
-                    </span>
-                    <p className="mt-4 text-base font-semibold leading-7 text-slate-700">{text}</p>
-                  </article>
+              <div className="mt-6 space-y-4 text-lg leading-8 text-slate-600">
+                <p>נעים מאוד, אני שי כהן, המייסד של Shay Group.</p>
+                <p>אחרי כמה שנים בעולם הנדל״ן החלטתי להקים משרד שעובד אחרת. וזה התחיל הרבה לפני הדירה הראשונה שמכרתי.</p>
+                <p>כששירתתי כמפקד לוחם, ראיתי את זה שוב ושוב: חבר'ה מעולים משתחררים עם מענק וחסכונות, טסים, חוזרים, והכסף נגמר. אף אחד לא אמר להם שאפשר גם לטייל וגם להתחיל לבנות משהו לשנים הבאות. אף אחד לא ישב איתם ותכנן.</p>
+                <p>בנדל״ן פגשתי את אותו סיפור בגילאים אחרים. זוגות צעירים, אנשים מבוגרים, אנשים שמתמודדים עם חובות או עם מגבלה. כולם ידעו שדירה היא ביטחון, ורובם לא קנו. הם פחדו, והפחד תמיד הגיע מאותם ארבעה מקומות.</p>
+                <p><strong className="font-black text-slate-900">&quot;אני לא יודע אם אני יכול להרשות לעצמי.&quot;</strong> אז לפני שמחפשים דירה, יושבים אצלנו עם מתכנן פיננסי ובונים תמונה ברורה, עד הפרט האחרון.</p>
+                <p><strong className="font-black text-slate-900">&quot;אין לי כוח לשוכרים ולנזקים.&quot;</strong> אז אנחנו בודקים את השוכר, גובים את שכר הדירה ומטפלים בכל מה שקורה בנכס.</p>
+                <p><strong className="font-black text-slate-900">&quot;מיסים, משכנתא, חוזים. זה גדול עליי.&quot;</strong> אז אנשי המקצוע עובדים איתנו קבוע, ומסבירים הכול בעברית פשוטה.</p>
+                <p><strong className="font-black text-slate-900">&quot;ומה אם המתווך ייעלם ברגע שאחתום?&quot;</strong> אז בנינו משרד שהעבודה שלו ממשיכה גם אחרי המפתח.</p>
+                <p>הקמתי את Shay Group כדי לתת לאנשים את מה שהיה חסר לחיילים שלי: מישהו שיושב איתם, מתכנן איתם ונשאר איתם. אנחנו שבעה אנשים, צעירים ורעבים, עם עסקאות בהיקף של מעל 20 מיליון ₪ מאחורינו. ואנחנו רק מתחילים.</p>
+              </div>
+              <p className="mt-6 text-lg font-black text-slate-900">שי כהן, מייסד Shay Group</p>
+              <div className="mt-8 grid grid-cols-3 gap-3">
+                {[
+                  ["20M+ ₪", "היקף עסקאות"],
+                  ["20+", "עסקאות שנסגרו"],
+                  ["7", "אנשי צוות"],
+                ].map(([value, label]) => (
+                  <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 text-center">
+                    <p className="text-2xl font-black text-[#d9ae4c]">{value}</p>
+                    <p className="mt-1 text-sm font-bold text-slate-600">{label}</p>
+                  </div>
                 ))}
               </div>
             </div>
@@ -1029,31 +986,37 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="services" className="border-y border-[#d9ae4c]/20 bg-[#fffdf7] px-4 py-20 md:px-6 md:py-24">
+        <section id="services" className="order-5 border-y border-[#d9ae4c]/20 bg-[#fffdf7] px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]">מה אנחנו עושים</p>
               <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">מוכרים, משקיעים או משכירים? אותו צוות. אותו הרעב.</h2>
             </div>
             <div className="mt-12 grid gap-5 lg:grid-cols-3">
-              {[
-                { title: "מכירת נכס", text: "מחיר נכון, תוכנית שיווק שעובדת ומשא ומתן שלא משאיר כסף על השולחן.", cta: "כמה שווה הדירה שלי?", track: "seller" as const },
-                { title: "ליווי משקיעים", text: "לא עוד רשימת דירות. תוכנית שמתאימה להון, למטרה ולחיים שלכם.", cta: "לתיאום שיחת אבחון", track: "investor" as const },
-                { title: "השכרה וניהול", text: "מהערכת שכר הדירה ועד דיירים, חוזים וטיפול שוטף. הנכס עובד, אתם פנויים.", cta: "אני רוצה לשמוע עוד", track: "landlord" as const },
-              ].map((service) => (
-                <article key={service.title} className="flex h-full flex-col rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
-                  <h3 className="text-2xl font-black text-slate-950">{service.title}</h3>
-                  <p className="mt-4 flex-1 text-lg font-semibold leading-8 text-slate-600">{service.text}</p>
-                  <button type="button" onClick={() => selectLeadTrack(service.track)} className="mt-7 inline-flex w-fit items-center rounded-full bg-[#d9ae4c] px-6 py-3 text-base font-black text-black transition hover:bg-[#b98b2f]">
-                    {service.cta}
-                  </button>
-                </article>
-              ))}
+              <article className="flex h-full flex-col rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
+                <h3 className="text-2xl font-black text-slate-950">דירה נמכרת טוב כשהיא משווקת טוב.</h3>
+                <p className="mt-4 flex-1 text-lg font-semibold leading-8 text-slate-600">צילום מקצועי, וידאו, קמפיין ממומן ובית פתוח. גללו עוד קצת ותראו חלק מפעולות השיווק שאנחנו מתחייבים עליהן בכל נכס. מחפשים לקנות? על כל דירה שאנחנו משווקים אתם מדברים ישר עם הסוכן שמכיר אותה.</p>
+                <a href="#marketing-methods" className="mt-6 font-black text-[#b98b2f]">לפעולות השיווק שלנו ↓</a>
+                <button type="button" onClick={() => selectLeadTrack("seller")} className="mt-7 inline-flex w-fit items-center rounded-full bg-[#d9ae4c] px-6 py-3 text-base font-black text-black transition hover:bg-[#b98b2f]">כמה שווה הדירה שלי?</button>
+              </article>
+              <article className="flex h-full flex-col rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
+                <h3 className="text-2xl font-black text-slate-950">אתם מביאים את ההחלטה. אנחנו מביאים את כל השאר.</h3>
+                <p className="mt-4 flex-1 text-lg font-semibold leading-8 text-slate-600">תכנון פיננסי, איתור הנכס, משא ומתן מול הקבלן או בעל הנכס, עורך דין ויועץ משכנתאות. במקום חמישה טלפונים לחמישה אנשים, שיחה אחת. דירה חדשה מקבלן, או מקום בקבוצת משקיעים שמשיגה תנאים שיחיד לא מקבל.</p>
+                <button type="button" onClick={() => selectLeadTrack("investor")} className="mt-7 inline-flex w-fit items-center rounded-full bg-[#d9ae4c] px-6 py-3 text-base font-black text-black transition hover:bg-[#b98b2f]">לתיאום שיחת אבחון</button>
+              </article>
+              <article className="flex h-full flex-col rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
+                <h3 className="text-2xl font-black text-slate-950">שוכר טוב הוא לא עניין של מזל. הוא עניין של בדיקה.</h3>
+                <p className="mt-4 text-lg font-semibold leading-8 text-slate-600">לכל בעל דירה, גם אם לא קניתם דרכנו. שני מסלולים:</p>
+                <p className="mt-3 text-lg font-semibold leading-8 text-slate-600"><strong className="font-black text-slate-900">השכרה.</strong> מצלמים, מפרסמים, מראים את הדירה ומביאים לכם שוכר עד חתימה על החוזה.</p>
+                <p className="mt-3 flex-1 text-lg font-semibold leading-8 text-slate-600"><strong className="font-black text-slate-900">ניהול מלא עם תעודת אחריות.</strong> כל מה שבמסלול ההשכרה, ועוד: בדיקת BDI לשוכר, גביית שכר הדירה כל חודש וטיפול בכל תקלה. אתם לא מדברים עם השוכר. אנחנו כן.</p>
+                <button type="button" onClick={() => selectLeadTrack("landlord")} className="mt-7 inline-flex w-fit items-center rounded-full bg-[#d9ae4c] px-6 py-3 text-base font-black text-black transition hover:bg-[#b98b2f]">אני רוצה לשמוע עוד</button>
+              </article>
             </div>
+            <p className="mt-8 text-center text-lg font-black text-slate-700">מי שמוכר איתנו חוזר לקנות. מי שקונה נשאר להשכיר. ככה זה כשלא נעלמים.</p>
           </div>
         </section>
 
-        <section id="team" className="bg-white px-4 py-20 md:px-6 md:py-24">
+        <section id="team" className="order-9 bg-white px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: '24px'}}>הצוות</p>
@@ -1102,7 +1065,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="method" className="px-4 py-20 md:px-6 md:py-24">
+        <section id="method" className="order-7 px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: '24px'}}>איך זה עובד</p>
@@ -1136,7 +1099,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="marketing-methods" className="border-y border-[#d9ae4c]/20 bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
+        <section id="marketing-methods" className="order-6 border-y border-[#d9ae4c]/20 bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-5 text-center md:items-center">
               <p className="inline-flex items-center justify-center gap-2 self-center rounded-full border border-[#d9ae4c]/40 bg-white px-5 py-2 text-sm font-black text-[#d9ae4c] shadow-sm">
@@ -1291,7 +1254,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="properties" className="bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
+        <section id="properties" className="order-10 bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
@@ -1417,7 +1380,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="overflow-hidden bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
+        <section className="order-8 overflow-hidden bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
               <p className="text-base font-black uppercase tracking-[0.08em] text-[#d9ae4c]">הצלחות מהשטח</p>
@@ -1438,12 +1401,12 @@ export default function Home() {
                       <div className="relative h-52 overflow-hidden">
                         <img src={property.image} alt={property.title} className="h-full w-full object-cover" loading="lazy" />
                         <span className="absolute right-4 top-4 rounded-full bg-[#d9ae4c] px-4 py-2 text-sm font-black text-black shadow-lg">
-                          {property.status.trim() === "נמכר" ? "נמכר ✓" : "הושכר ✓"}
+                          {property.displayStatus === "הושכר" ? "הושכר ✓" : "נמכר ✓"}
                         </span>
                       </div>
                       <div className="p-5">
-                        <h3 className="text-xl font-black text-[#1A1A1A]">{formatPropertyLocation(property) || property.title}</h3>
-                        <p className="mt-5 text-2xl font-black text-[#d9ae4c]">₪{property.price.toLocaleString("he-IL")}{property.status.trim() === "הושכר" ? " לחודש" : ""}</p>
+                        <h3 className="text-xl font-black text-[#1A1A1A]">{property.displayLocation || property.title}</h3>
+                        <p className="mt-5 text-2xl font-black text-[#d9ae4c]">₪{property.price.toLocaleString("he-IL")}{property.displayStatus === "הושכר" ? " לחודש" : ""}</p>
                         <div className="mt-4 border-t border-[#d9ae4c]/20 pt-4 text-sm font-bold">
                           <span className="text-[#6B6B6B]">עסקה שנחתמה עם Shay Group</span>
                         </div>
@@ -1460,7 +1423,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section ref={testimonialsSectionRef} id="testimonials" className="bg-white px-4 py-14 text-[#1A1A1A] md:px-6 md:py-20">
+        <section ref={testimonialsSectionRef} id="testimonials" className="order-4 bg-white px-4 py-14 text-[#1A1A1A] md:px-6 md:py-20">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: "20px"}}>המלצות</p>
@@ -1623,7 +1586,7 @@ export default function Home() {
           </div>
         ) : null}
 
-        <section id="lead-form" className="bg-[#fffdf7] px-4 py-20 md:px-6 md:py-24">
+        <section id="lead-form" className="order-2 bg-[#fffdf7] px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-4xl rounded-[36px] border border-slate-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:p-12">
             <div className="text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]">בדיקת התאמה · 30 שניות</p>
@@ -1690,7 +1653,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="bg-[#fffdf7] px-4 pb-20 md:px-6 md:pb-24">
+        <section className="order-11 bg-[#fffdf7] px-4 pb-20 md:px-6 md:pb-24">
           <div className="mx-auto max-w-5xl rounded-[36px] bg-[#010101] px-7 py-14 text-center text-white md:px-12">
             <h2 className="text-4xl font-black md:text-6xl">מוכרים, קונים או משקיעים? בואו נתחיל בשיחה.</h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/80">30 שניות, שתי שאלות, וחוזרים אליכם בתוך יום עסקים אחד.</p>
@@ -1710,13 +1673,6 @@ export default function Home() {
                 <Phone className="size-4 shrink-0" />
               </a>
               <p className="self-end text-right">האומן 25, תלפיות, ירושלים</p>
-              <button
-                onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}
-                className="flex flex-row-reverse items-center justify-start gap-2 self-end text-right text-white"
-              >
-                <span>שלחו הודעה עכשיו</span>
-                <MessageCircle className="size-4 shrink-0" />
-              </button>
             </div>
           </div>
 
@@ -1739,6 +1695,7 @@ export default function Home() {
             </div>
           </div>
         </div>
+        <p className="mx-auto mt-10 max-w-3xl text-center text-xs leading-6 text-white/60">אין לראות באמור באתר ייעוץ השקעות או תחליף לייעוץ אישי המתחשב בנתוניו של כל אדם.</p>
       </footer>
 
       <button
