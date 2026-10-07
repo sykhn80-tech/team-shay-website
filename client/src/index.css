@@ -89,6 +89,27 @@ All global tokens should support a modern, clean, conversion-first interface.
   --sidebar-ring: #4b8067;
 }
 
+/* Shay Group homepage palette: warm Jerusalem-stone neutrals. */
+.home-page .bg-white {
+  background-color: #fffdf8;
+}
+
+.home-page .border-slate-200,
+.home-page .border-slate-100 {
+  border-color: #e8dcc6;
+}
+
+.home-page .text-slate-950,
+.home-page .text-slate-900 {
+  color: #2a211b;
+}
+
+.home-page .text-slate-700,
+.home-page .text-slate-600,
+.home-page .text-slate-500 {
+  color: #5a4e44;
+}
+
 .dark {
   --background: #07131b;
   --foreground: #f8fbff;

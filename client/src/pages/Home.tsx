@@ -5,9 +5,10 @@ import {
   ArrowLeft,
   ArrowRight,
   Building2,
-  Check,
   ChevronLeft,
   Handshake,
+  Home as HomeIcon,
+  KeyRound,
   Loader2,
   Megaphone,
   Menu,
@@ -16,6 +17,8 @@ import {
   Phone,
   Play,
   Star,
+  Search,
+  TrendingUp,
   Video,
   X,
 } from "lucide-react";
@@ -357,10 +360,10 @@ export default function Home() {
   const officePhone = settings?.officePhone || OFFICE_PHONE;
   const officePhoneLink = officePhone.replace(/\D/g, "") || OFFICE_PHONE_LINK;
   const trustBadges = [
-    "20M+ ₪ · היקף עסקאות",
-    "20+ · עסקאות שנסגרו",
-    "תיווך, ליווי משקיעים, השכרה וניהול · כתובת אחת",
-    "5.0 בגוגל · 32 ביקורות",
+    { value: "5.0", label: "בגוגל, 32 ביקורות" },
+    { value: "20M+ ₪", label: "היקף עסקאות" },
+    { value: "20+", label: "עסקאות שנסגרו" },
+    { value: "3", label: "שירותים בכתובת אחת" },
   ];
   const cmsMarketingItems = homeQuery.data?.marketingSection?.items ?? [];
   const marketingSection = {
@@ -716,9 +719,9 @@ export default function Home() {
   const footerSloganDisplay = "בצד שלך. גם אחרי המפתח.";
 
   return (
-    <div className="min-h-screen bg-white text-slate-950" dir="rtl">
+    <div className="home-page min-h-screen bg-[#FBF7EF] text-[#2A211B]" dir="rtl">
       <div className="fixed inset-x-0 top-4 z-50 px-3 md:px-6">
-        <header className="mx-auto max-w-7xl rounded-full border border-[#1b1b1b] bg-[#010101] px-4 py-2 shadow-[0_12px_34px_rgba(0,0,0,0.28)] backdrop-blur-md md:px-6">
+        <header className="mx-auto max-w-7xl rounded-full border border-[#4a382b] bg-[#1C1612] px-4 py-2 shadow-[0_12px_34px_rgba(28,22,18,0.28)] backdrop-blur-md md:px-6">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
             <Button
               onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}
@@ -727,14 +730,14 @@ export default function Home() {
               ליצירת קשר
             </Button>
 
-            <nav className="hidden items-center justify-center gap-8 text-[1.12rem] font-extrabold text-white lg:flex xl:gap-10 xl:text-[1.24rem]">
+            <nav className="hidden items-center justify-center gap-8 text-[1.12rem] font-extrabold text-[#FFFDF8] lg:flex xl:gap-10 xl:text-[1.24rem]">
               {navItems.map((item) =>
                 item.isRoute ? (
-                    <Link key={item.label} href={item.href} className="transition hover:text-[#d9ae4c]">
+                    <Link key={item.label} href={item.href} className="transition hover:text-[#D9AE4C]">
                     {item.label}
                   </Link>
                 ) : (
-                  <a key={item.label} href={item.href} className="transition hover:text-[#d9ae4c]">
+                  <a key={item.label} href={item.href} className="transition hover:text-[#D9AE4C]">
                     {item.label}
                   </a>
                 ),
@@ -745,12 +748,12 @@ export default function Home() {
               {/* Hamburger — 3 lines, not a circle */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="flex flex-col gap-[5px] p-2.5 text-white lg:hidden"
+                className="flex flex-col gap-[5px] p-2.5 text-[#FFFDF8] lg:hidden"
                 aria-label="פתח תפריט"
               >
-                <span className="block h-[2px] w-6 rounded-full bg-white" />
-                <span className="block h-[2px] w-6 rounded-full bg-white" />
-                <span className="block h-[2px] w-6 rounded-full bg-white" />
+                <span className="block h-[2px] w-6 rounded-full bg-[#FFFDF8]" />
+                <span className="block h-[2px] w-6 rounded-full bg-[#FFFDF8]" />
+                <span className="block h-[2px] w-6 rounded-full bg-[#FFFDF8]" />
               </button>
               <div className="flex items-center justify-center">
                 <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-24 w-auto brightness-0 invert md:h-28" />
@@ -844,7 +847,7 @@ export default function Home() {
               })}
             </nav>
           </div>
-          <div className="border-t border-[#d7e4dd] bg-white px-4 py-4">
+          <div className="border-t border-[#E8DCC6] bg-[#FFFDF8] px-4 py-4">
             <button
               onClick={() => { window.open(whatsappLink, "_blank", "noopener,noreferrer"); setMobileMenuOpen(false); }}
               style={{ width: "100%", background: "#d9ae4c", color: "#000", fontWeight: 900, borderRadius: "999px", height: "48px", fontSize: "1rem", border: "none", cursor: "pointer" }}
@@ -859,7 +862,7 @@ export default function Home() {
       </div>
 
       <main className="flex flex-col">
-        <section id="home" className="order-1 relative isolate min-h-screen overflow-hidden bg-black px-4 pb-16 pt-36 md:px-6 md:pb-24 md:pt-40">
+        <section id="home" className="order-1 relative isolate min-h-screen overflow-hidden bg-[#1C1612] px-4 pb-16 pt-36 md:px-6 md:pb-24 md:pt-40">
           <div className="absolute inset-0 z-0">
             <video
               className="absolute left-0 top-0 h-full w-full origin-top scale-[1.18] object-cover"
@@ -887,46 +890,43 @@ export default function Home() {
                 }
               }}
             />
-            <div className="absolute left-0 top-0 z-10 h-full w-full bg-[rgba(0,0,0,0.6)]" />
+            <div className="absolute left-0 top-0 z-10 h-full w-full bg-[rgba(28,22,18,0.66)]" />
           </div>
 
           <div className="relative z-20 mx-auto flex min-h-[78vh] max-w-5xl flex-col items-center justify-center text-center text-white">
-            <p className="rounded-full border border-white/20 bg-white/10 px-5 py-2 text-base font-extrabold shadow-[0_10px_30px_rgba(0,0,0,0.15)] backdrop-blur-md">
-              Shay Group
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-[#D9AE4C] md:text-base">
+              Shay Group - Real Estate Company
             </p>
             <h1 className="mt-8 max-w-5xl text-4xl font-black leading-[1.08] md:text-6xl lg:text-[4.7rem]">
               נדל״ן בירושלים. עם צוות שנשאר גם אחרי המפתח.
             </h1>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              {trustBadges.map((badge) => (
-                <div
-                  key={badge}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-3 text-base font-extrabold text-white shadow-[0_12px_28px_rgba(0,0,0,0.12)] backdrop-blur-md"
-                >
-                  <Check className="size-4 text-[#d9ae4c]" />
-                  {badge}
-                </div>
-              ))}
-            </div>
-
-            <p className="mt-8 max-w-3xl text-xl font-bold leading-8 text-white/90 md:text-[1.35rem]">
+            <p className="mt-8 max-w-[680px] text-xl font-bold leading-8 text-[#FFFDF8]/90 md:text-[1.35rem]">
               מלווים אתכם מהפגישה הראשונה, דרך המשכנתא ועורך הדין, ועד שהדירה מושכרת ומנוהלת. הכול בכתובת אחת.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <Button
                 onClick={() => scrollToForm()}
-                className="h-14 rounded-full bg-[#d9ae4c] px-8 text-base font-black text-black shadow-[0_12px_30px_rgba(217,174,76,0.3)] hover:bg-[#b98b2f]"
+                className="h-14 rounded-full bg-[#D9AE4C] px-8 text-base font-black text-[#2A211B] shadow-[0_12px_30px_rgba(217,174,76,0.3)] hover:bg-[#B98B2F]"
               >
                 בדקו מה מתאים לכם ↓
               </Button>
             </div>
 
-            <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-bold text-white/85">
-              <button type="button" onClick={() => selectLeadTrack("seller")} className="underline-offset-4 transition hover:text-[#d9ae4c] hover:underline">מוכרים דירה</button>
-              <button type="button" onClick={() => selectLeadTrack("investor")} className="underline-offset-4 transition hover:text-[#d9ae4c] hover:underline">רוצים להשקיע</button>
-              <button type="button" onClick={() => selectLeadTrack("landlord")} className="underline-offset-4 transition hover:text-[#d9ae4c] hover:underline">צריכים להשכיר נכס</button>
+            <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-bold text-[#FFFDF8]/85">
+              <button type="button" onClick={() => selectLeadTrack("seller")} className="underline-offset-4 transition hover:text-[#D9AE4C] hover:underline">מוכרים דירה</button>
+              <button type="button" onClick={() => selectLeadTrack("investor")} className="underline-offset-4 transition hover:text-[#D9AE4C] hover:underline">רוצים להשקיע</button>
+              <button type="button" onClick={() => selectLeadTrack("landlord")} className="underline-offset-4 transition hover:text-[#D9AE4C] hover:underline">צריכים להשכיר נכס</button>
+            </div>
+
+            <div className="mt-10 grid w-full max-w-4xl grid-cols-2 divide-x divide-x-reverse divide-[#E8DCC6]/30 md:grid-cols-4">
+              {trustBadges.map((badge) => (
+                <div key={badge.label} className="flex min-h-20 flex-col items-center justify-center px-3 text-center first:border-none">
+                  <span className="text-2xl font-black text-[#D9AE4C] md:text-3xl">{badge.value}</span>
+                  <span className="mt-1 text-xs font-bold text-[#FFFDF8]/80 md:text-sm">{badge.label}</span>
+                </div>
+              ))}
             </div>
 
             {homeQuery.isLoading ? (
@@ -938,32 +938,32 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="about" className="order-3 px-4 py-20 md:px-6 md:py-24">
+        <section id="about" className="order-3 bg-[#FBF7EF] px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_0.92fr]">
             <div className="order-2 lg:order-1">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]">הסיפור מאחורי Shay Group</p>
-              <h2 className="mt-4 text-[2.15rem] font-extrabold leading-tight md:text-[3.45rem]">כולם יודעים שדירה היא ביטחון. אז למה רוב האנשים לא קונים?</h2>
-              <div className="mt-6 space-y-4 text-lg leading-8 text-slate-600">
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#B5653A]">הסיפור מאחורי Shay Group</p>
+              <h2 className="mt-4 max-w-[680px] text-[2.15rem] font-extrabold leading-tight text-[#2A211B] md:text-[3.45rem]">כולם יודעים שדירה היא ביטחון. אז למה רוב האנשים לא קונים?</h2>
+              <div className="mt-6 max-w-[680px] space-y-4 text-lg leading-8 text-[#5A4E44]">
                 <p>נעים מאוד, אני שי כהן, המייסד של Shay Group.</p>
                 <p>אחרי כמה שנים בעולם הנדל״ן החלטתי להקים משרד שעובד אחרת. וזה התחיל הרבה לפני הדירה הראשונה שמכרתי.</p>
                 <p>כששירתתי כמפקד לוחם, ראיתי את זה שוב ושוב: חבר'ה מעולים משתחררים עם מענק וחסכונות, טסים, חוזרים, והכסף נגמר. אף אחד לא אמר להם שאפשר גם לטייל וגם להתחיל לבנות משהו לשנים הבאות. אף אחד לא ישב איתם ותכנן.</p>
                 <p>בנדל״ן פגשתי את אותו סיפור בגילאים אחרים. זוגות צעירים, אנשים מבוגרים, אנשים שמתמודדים עם חובות או עם מגבלה. כולם ידעו שדירה היא ביטחון, ורובם לא קנו. הם פחדו, והפחד תמיד הגיע מאותם ארבעה מקומות.</p>
-                <p><strong className="font-black text-slate-900">&quot;אני לא יודע אם אני יכול להרשות לעצמי.&quot;</strong> אז לפני שמחפשים דירה, יושבים אצלנו עם מתכנן פיננסי ובונים תמונה ברורה, עד הפרט האחרון.</p>
-                <p><strong className="font-black text-slate-900">&quot;אין לי כוח לשוכרים ולנזקים.&quot;</strong> אז אנחנו בודקים את השוכר, גובים את שכר הדירה ומטפלים בכל מה שקורה בנכס.</p>
-                <p><strong className="font-black text-slate-900">&quot;מיסים, משכנתא, חוזים. זה גדול עליי.&quot;</strong> אז אנשי המקצוע עובדים איתנו קבוע, ומסבירים הכול בעברית פשוטה.</p>
-                <p><strong className="font-black text-slate-900">&quot;ומה אם המתווך ייעלם ברגע שאחתום?&quot;</strong> אז בנינו משרד שהעבודה שלו ממשיכה גם אחרי המפתח.</p>
+                <p><strong className="font-black text-[#2A211B]">&quot;אני לא יודע אם אני יכול להרשות לעצמי.&quot;</strong> אז לפני שמחפשים דירה, יושבים אצלנו עם מתכנן פיננסי ובונים תמונה ברורה, עד הפרט האחרון.</p>
+                <p><strong className="font-black text-[#2A211B]">&quot;אין לי כוח לשוכרים ולנזקים.&quot;</strong> אז אנחנו בודקים את השוכר, גובים את שכר הדירה ומטפלים בכל מה שקורה בנכס.</p>
+                <p><strong className="font-black text-[#2A211B]">&quot;מיסים, משכנתא, חוזים. זה גדול עליי.&quot;</strong> אז אנשי המקצוע עובדים איתנו קבוע, ומסבירים הכול בעברית פשוטה.</p>
+                <p><strong className="font-black text-[#2A211B]">&quot;ומה אם המתווך ייעלם ברגע שאחתום?&quot;</strong> אז בנינו משרד שהעבודה שלו ממשיכה גם אחרי המפתח.</p>
                 <p>הקמתי את Shay Group כדי לתת לאנשים את מה שהיה חסר לחיילים שלי: מישהו שיושב איתם, מתכנן איתם ונשאר איתם. אנחנו שבעה אנשים, צעירים ורעבים, עם עסקאות בהיקף של מעל 20 מיליון ₪ מאחורינו. ואנחנו רק מתחילים.</p>
               </div>
-              <p className="mt-6 text-lg font-black text-slate-900">שי כהן, מייסד Shay Group</p>
+              <p className="mt-6 text-lg font-black text-[#2A211B]">שי כהן, מייסד Shay Group</p>
               <div className="mt-8 grid grid-cols-3 gap-3">
                 {[
                   ["20M+ ₪", "היקף עסקאות"],
                   ["20+", "עסקאות שנסגרו"],
                   ["7", "אנשי צוות"],
                 ].map(([value, label]) => (
-                  <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4 text-center">
+                  <div key={label} className="rounded-2xl border border-[#E8DCC6] bg-[#FFFDF8] p-4 text-center shadow-[0_12px_26px_rgba(90,78,68,0.08)]">
                     <p className="text-2xl font-black text-[#d9ae4c]">{value}</p>
-                    <p className="mt-1 text-sm font-bold text-slate-600">{label}</p>
+                    <p className="mt-1 text-sm font-bold text-[#5A4E44]">{label}</p>
                   </div>
                 ))}
               </div>
@@ -972,7 +972,7 @@ export default function Home() {
             <div className="order-1 lg:order-2">
               <div className="relative mx-auto max-w-[30rem]">
                 <div className="absolute -inset-5 rounded-[42px] bg-[radial-gradient(circle_at_top,rgba(217,174,76,0.22),rgba(255,255,255,0))] blur-2xl" />
-                <div className="relative overflow-hidden rounded-[36px] border border-slate-200 bg-white p-4 shadow-[0_28px_70px_rgba(15,23,42,0.12)]">
+                <div className="relative overflow-hidden rounded-[36px] border border-[#E8DCC6] bg-[#FFFDF8] p-4 shadow-[0_28px_70px_rgba(90,78,68,0.14)]">
                   <img
                     src={settings?.shayAboutImageUrl || SHAY_ABOUT_IMAGE}
                     alt="שי כהן"
@@ -986,37 +986,37 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="services" className="order-5 border-y border-[#d9ae4c]/20 bg-[#fffdf7] px-4 py-20 md:px-6 md:py-24">
+        <section id="services" className="order-5 border-y border-[#E8DCC6] bg-[#F3EADB] px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]">מה אנחנו עושים</p>
-              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">מוכרים, משקיעים או משכירים? אותו צוות. אותו הרעב.</h2>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#B5653A]">מה אנחנו עושים</p>
+              <h2 className="mt-4 text-[2.1rem] font-extrabold text-[#2A211B] md:text-[3.35rem]">מוכרים, משקיעים או משכירים? אותו צוות. אותו הרעב.</h2>
             </div>
             <div className="mt-12 grid gap-5 lg:grid-cols-3">
-              <article className="flex h-full flex-col rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
-                <h3 className="text-2xl font-black text-slate-950">דירה נמכרת טוב כשהיא משווקת טוב.</h3>
-                <p className="mt-4 flex-1 text-lg font-semibold leading-8 text-slate-600">צילום מקצועי, וידאו, קמפיין ממומן ובית פתוח. גללו עוד קצת ותראו חלק מפעולות השיווק שאנחנו מתחייבים עליהן בכל נכס. מחפשים לקנות? על כל דירה שאנחנו משווקים אתם מדברים ישר עם הסוכן שמכיר אותה.</p>
-                <a href="#marketing-methods" className="mt-6 font-black text-[#b98b2f]">לפעולות השיווק שלנו ↓</a>
-                <button type="button" onClick={() => selectLeadTrack("seller")} className="mt-7 inline-flex w-fit items-center rounded-full bg-[#d9ae4c] px-6 py-3 text-base font-black text-black transition hover:bg-[#b98b2f]">כמה שווה הדירה שלי?</button>
+              <article className="flex h-full flex-col rounded-[28px] border border-[#E8DCC6] bg-[#FFFDF8] p-7 shadow-[0_16px_36px_rgba(90,78,68,0.10)]">
+                <h3 className="text-2xl font-black text-[#2A211B]">דירה נמכרת טוב כשהיא משווקת טוב.</h3>
+                <p className="mt-4 flex-1 max-w-[680px] text-lg font-semibold leading-8 text-[#5A4E44]">צילום מקצועי, וידאו, קמפיין ממומן ובית פתוח. גללו עוד קצת ותראו חלק מפעולות השיווק שאנחנו מתחייבים עליהן בכל נכס. מחפשים לקנות? על כל דירה שאנחנו משווקים אתם מדברים ישר עם הסוכן שמכיר אותה.</p>
+                <a href="#marketing-methods" className="mt-6 font-black text-[#B5653A]">לפעולות השיווק שלנו ↓</a>
+                <button type="button" onClick={() => selectLeadTrack("seller")} className="mt-7 inline-flex w-fit items-center rounded-full bg-[#D9AE4C] px-6 py-3 text-base font-black text-[#2A211B] transition hover:bg-[#B98B2F]">כמה שווה הדירה שלי?</button>
               </article>
-              <article className="flex h-full flex-col rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
-                <h3 className="text-2xl font-black text-slate-950">אתם מביאים את ההחלטה. אנחנו מביאים את כל השאר.</h3>
-                <p className="mt-4 flex-1 text-lg font-semibold leading-8 text-slate-600">תכנון פיננסי, איתור הנכס, משא ומתן מול הקבלן או בעל הנכס, עורך דין ויועץ משכנתאות. במקום חמישה טלפונים לחמישה אנשים, שיחה אחת. דירה חדשה מקבלן, או מקום בקבוצת משקיעים שמשיגה תנאים שיחיד לא מקבל.</p>
-                <button type="button" onClick={() => selectLeadTrack("investor")} className="mt-7 inline-flex w-fit items-center rounded-full bg-[#d9ae4c] px-6 py-3 text-base font-black text-black transition hover:bg-[#b98b2f]">לתיאום שיחת אבחון</button>
+              <article className="flex h-full flex-col rounded-[28px] border border-[#E8DCC6] bg-[#FFFDF8] p-7 shadow-[0_16px_36px_rgba(90,78,68,0.10)]">
+                <h3 className="text-2xl font-black text-[#2A211B]">אתם מביאים את ההחלטה. אנחנו מביאים את כל השאר.</h3>
+                <p className="mt-4 flex-1 max-w-[680px] text-lg font-semibold leading-8 text-[#5A4E44]">תכנון פיננסי, איתור הנכס, משא ומתן מול הקבלן או בעל הנכס, עורך דין ויועץ משכנתאות. במקום חמישה טלפונים לחמישה אנשים, שיחה אחת. דירה חדשה מקבלן, או מקום בקבוצת משקיעים שמשיגה תנאים שיחיד לא מקבל.</p>
+                <button type="button" onClick={() => selectLeadTrack("investor")} className="mt-7 inline-flex w-fit items-center rounded-full bg-[#D9AE4C] px-6 py-3 text-base font-black text-[#2A211B] transition hover:bg-[#B98B2F]">לתיאום שיחת אבחון</button>
               </article>
-              <article className="flex h-full flex-col rounded-[28px] border border-slate-200 bg-white p-7 shadow-[0_16px_36px_rgba(15,23,42,0.06)]">
-                <h3 className="text-2xl font-black text-slate-950">שוכר טוב הוא לא עניין של מזל. הוא עניין של בדיקה.</h3>
-                <p className="mt-4 text-lg font-semibold leading-8 text-slate-600">לכל בעל דירה, גם אם לא קניתם דרכנו. שני מסלולים:</p>
-                <p className="mt-3 text-lg font-semibold leading-8 text-slate-600"><strong className="font-black text-slate-900">השכרה.</strong> מצלמים, מפרסמים, מראים את הדירה ומביאים לכם שוכר עד חתימה על החוזה.</p>
-                <p className="mt-3 flex-1 text-lg font-semibold leading-8 text-slate-600"><strong className="font-black text-slate-900">ניהול מלא עם תעודת אחריות.</strong> כל מה שבמסלול ההשכרה, ועוד: בדיקת BDI לשוכר, גביית שכר הדירה כל חודש וטיפול בכל תקלה. אתם לא מדברים עם השוכר. אנחנו כן.</p>
-                <button type="button" onClick={() => selectLeadTrack("landlord")} className="mt-7 inline-flex w-fit items-center rounded-full bg-[#d9ae4c] px-6 py-3 text-base font-black text-black transition hover:bg-[#b98b2f]">אני רוצה לשמוע עוד</button>
+              <article className="flex h-full flex-col rounded-[28px] border border-[#E8DCC6] bg-[#FFFDF8] p-7 shadow-[0_16px_36px_rgba(90,78,68,0.10)]">
+                <h3 className="text-2xl font-black text-[#2A211B]">שוכר טוב הוא לא עניין של מזל. הוא עניין של בדיקה.</h3>
+                <p className="mt-4 text-lg font-semibold leading-8 text-[#5A4E44]">לכל בעל דירה, גם אם לא קניתם דרכנו. שני מסלולים:</p>
+                <p className="mt-3 text-lg font-semibold leading-8 text-[#5A4E44]"><strong className="font-black text-[#2A211B]">השכרה.</strong> מצלמים, מפרסמים, מראים את הדירה ומביאים לכם שוכר עד חתימה על החוזה.</p>
+                <p className="mt-3 flex-1 text-lg font-semibold leading-8 text-[#5A4E44]"><strong className="font-black text-[#2A211B]">ניהול מלא עם תעודת אחריות.</strong> כל מה שבמסלול ההשכרה, ועוד: בדיקת BDI לשוכר, גביית שכר הדירה כל חודש וטיפול בכל תקלה. אתם לא מדברים עם השוכר. אנחנו כן.</p>
+                <button type="button" onClick={() => selectLeadTrack("landlord")} className="mt-7 inline-flex w-fit items-center rounded-full bg-[#D9AE4C] px-6 py-3 text-base font-black text-[#2A211B] transition hover:bg-[#B98B2F]">אני רוצה לשמוע עוד</button>
               </article>
             </div>
-            <p className="mt-8 text-center text-lg font-black text-slate-700">מי שמוכר איתנו חוזר לקנות. מי שקונה נשאר להשכיר. ככה זה כשלא נעלמים.</p>
+            <p className="mt-8 text-center text-lg font-black text-[#5A4E44]">מי שמוכר איתנו חוזר לקנות. מי שקונה נשאר להשכיר. ככה זה כשלא נעלמים.</p>
           </div>
         </section>
 
-        <section id="team" className="order-9 bg-white px-4 py-20 md:px-6 md:py-24">
+        <section id="team" className="order-9 bg-[#FBF7EF] px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: '24px'}}>הצוות</p>
@@ -1065,7 +1065,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="method" className="order-7 px-4 py-20 md:px-6 md:py-24">
+        <section id="method" className="order-7 bg-[#F3EADB] px-4 py-20 md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: '24px'}}>איך זה עובד</p>
@@ -1099,7 +1099,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="marketing-methods" className="order-6 border-y border-[#d9ae4c]/20 bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
+        <section id="marketing-methods" className="order-6 border-y border-[#E8DCC6] bg-[#FBF7EF] px-4 py-20 text-[#2A211B] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-5 text-center md:items-center">
               <p className="inline-flex items-center justify-center gap-2 self-center rounded-full border border-[#d9ae4c]/40 bg-white px-5 py-2 text-sm font-black text-[#d9ae4c] shadow-sm">
@@ -1254,7 +1254,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="properties" className="order-10 bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
+        <section id="properties" className="order-10 bg-[#F3EADB] px-4 py-20 text-[#2A211B] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
@@ -1380,7 +1380,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="order-8 overflow-hidden bg-white px-4 py-20 text-[#1A1A1A] md:px-6 md:py-24">
+        <section className="order-8 overflow-hidden bg-[#FBF7EF] px-4 py-20 text-[#2A211B] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
               <p className="text-base font-black uppercase tracking-[0.08em] text-[#d9ae4c]">הצלחות מהשטח</p>
@@ -1423,7 +1423,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section ref={testimonialsSectionRef} id="testimonials" className="order-4 bg-white px-4 py-14 text-[#1A1A1A] md:px-6 md:py-20">
+        <section ref={testimonialsSectionRef} id="testimonials" className="order-4 bg-[#F3EADB] px-4 py-14 text-[#2A211B] md:px-6 md:py-20">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]" style={{fontSize: "20px"}}>המלצות</p>
@@ -1586,29 +1586,37 @@ export default function Home() {
           </div>
         ) : null}
 
-        <section id="lead-form" className="order-2 bg-[#fffdf7] px-4 py-20 md:px-6 md:py-24">
-          <div className="mx-auto max-w-4xl rounded-[36px] border border-slate-200 bg-white p-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)] md:p-12">
+        <section id="lead-form" className="order-2 bg-[#F3EADB] px-4 py-20 md:px-6 md:py-24">
+          <div className="mx-auto max-w-[760px] rounded-[36px] border border-[#E8DCC6] bg-[#FFFDF8] p-8 shadow-[0_24px_60px_rgba(90,78,68,0.12)] md:p-12">
             <div className="text-center">
-              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c]">בדיקת התאמה · 30 שניות</p>
-              <h2 className="mt-4 text-[2.1rem] font-extrabold md:text-[3.35rem]">בואו נבין מה אתם צריכים, ונחזיר אליכם את האדם הנכון.</h2>
+              <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#B5653A]">בדיקת התאמה · 30 שניות</p>
+              <h2 className="mt-4 text-[2.1rem] font-extrabold leading-tight text-[#2A211B] md:text-[3.35rem]">בואו נבין מה אתם צריכים, ונחזיר אליכם את האדם הנכון.</h2>
             </div>
 
             {leadStep === 1 ? (
               <div className="mt-10 grid gap-4 sm:grid-cols-2">
-                <p className="sm:col-span-2 text-center text-xl font-black text-slate-900">מה מביא אתכם אלינו?</p>
+                <div className="sm:col-span-2 text-center">
+                  <p className="text-sm font-black text-[#B5653A]">שלב 1 מתוך 3</p>
+                  <p className="mt-2 text-xl font-black text-[#2A211B]">מה מביא אתכם אלינו?</p>
+                </div>
                 {[
-                  ["seller", "מוכרים דירה"],
-                  ["investor", "רוצים להשקיע"],
-                  ["landlord", "צריכים להשכיר נכס"],
-                  ["buyer", "מחפשים דירה לגור בה"],
-                ].map(([track, label]) => (
-                  <button key={track} type="button" onClick={() => { setLeadTrack(track as typeof leadTrack); setLeadStep(2); }} className="rounded-2xl border border-slate-200 px-5 py-5 text-lg font-black text-slate-900 transition hover:border-[#d9ae4c] hover:bg-[#fff8e6]">
-                    {label}
+                  ["seller", "מוכרים דירה", "הערכת שווי לדירה שלכם", HomeIcon],
+                  ["investor", "רוצים להשקיע", "שיחת אבחון, בלי התחייבות", TrendingUp],
+                  ["landlord", "צריכים להשכיר נכס", "שוכר בלבד או ניהול מלא", KeyRound],
+                  ["buyer", "מחפשים דירה לגור בה", "דירות שמתאימות לכם", Search],
+                ].map(([track, label, description, Icon]) => (
+                  <button key={track as string} type="button" onClick={() => { setLeadTrack(track as typeof leadTrack); setLeadStep(2); }} className="group flex min-h-28 items-center gap-4 rounded-2xl border border-[#E8DCC6] bg-[#FFFDF8] px-5 py-5 text-right transition hover:border-[#D9AE4C] hover:bg-[#FFF8E6] focus-visible:border-[#D9AE4C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]/40">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#F3EADB] text-[#D9AE4C] transition group-hover:bg-[#D9AE4C] group-hover:text-[#2A211B]"><Icon className="size-5" /></span>
+                    <span>
+                      <span className="block text-lg font-black text-[#2A211B]">{label as string}</span>
+                      <span className="mt-1 block text-sm font-semibold leading-5 text-[#5A4E44]">{description as string}</span>
+                    </span>
                   </button>
                 ))}
               </div>
             ) : leadStep === 2 ? (
               <div className="mt-10 grid gap-5">
+                <p className="text-center text-sm font-black text-[#B5653A]">שלב 2 מתוך 3</p>
                 {leadTrack === "seller" ? (
                   <>
                     <p className="text-xl font-black text-slate-900">מה נמכור עבורכם?</p>
@@ -1634,11 +1642,12 @@ export default function Home() {
                     <select name="rooms" value={formData.rooms} onChange={handleFormChange} className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]"><option value="">כמה חדרים?</option>{[2, 3, 4, 5, 6].map((room) => <option key={room} value={room}>{room}</option>)}</select>
                   </>
                 )}
-                <Button type="button" onClick={handleNextStep} className="h-14 rounded-full bg-[#d9ae4c] px-10 text-base font-extrabold text-black hover:bg-[#b98b2f]">המשיכו</Button>
+                <Button type="button" onClick={handleNextStep} className="h-14 rounded-full bg-[#D9AE4C] px-10 text-base font-extrabold text-[#2A211B] hover:bg-[#B98B2F]">המשיכו</Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="mt-10 grid gap-5">
-                <p className="text-xl font-black text-slate-900">לאן נחזור אליכם?</p>
+                <p className="text-center text-sm font-black text-[#B5653A]">שלב 3 מתוך 3</p>
+                <p className="text-xl font-black text-[#2A211B]">לאן נחזור אליכם?</p>
                 <div className="grid gap-5 sm:grid-cols-2">
                   <input required name="fullName" value={formData.fullName} onChange={handleFormChange} placeholder="שם מלא" className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]" />
                   <input required name="phone" value={formData.phone} onChange={handleFormChange} placeholder="טלפון" className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]" />
@@ -1653,8 +1662,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="order-11 bg-[#fffdf7] px-4 pb-20 md:px-6 md:pb-24">
-          <div className="mx-auto max-w-5xl rounded-[36px] bg-[#010101] px-7 py-14 text-center text-white md:px-12">
+        <section className="order-11 bg-[#F3EADB] px-4 pb-20 md:px-6 md:pb-24">
+          <div className="mx-auto max-w-5xl rounded-[36px] bg-[#1C1612] px-7 py-14 text-center text-[#FFFDF8] md:px-12">
             <h2 className="text-4xl font-black md:text-6xl">מוכרים, קונים או משקיעים? בואו נתחיל בשיחה.</h2>
             <p className="mx-auto mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/80">30 שניות, שתי שאלות, וחוזרים אליכם בתוך יום עסקים אחד.</p>
             <Button type="button" onClick={() => scrollToForm()} className="mt-8 h-14 rounded-full bg-[#d9ae4c] px-9 text-base font-black text-black hover:bg-[#b98b2f]">בדקו מה מתאים לכם</Button>
@@ -1663,7 +1672,7 @@ export default function Home() {
 
       </main>
 
-      <footer className="bg-[#010101] px-[5%] py-14 text-white" dir="rtl">
+      <footer className="bg-[#1C1612] px-[5%] py-14 text-[#FFFDF8]" dir="rtl">
         <div className="relative flex w-full flex-col items-end gap-12 text-right md:flex-row md:items-start md:justify-between md:text-right">
           <div className="flex flex-col items-end text-right md:max-w-[28%]">
             <p className="text-base font-extrabold uppercase tracking-[0.03em] text-white">יצירת קשר</p>
