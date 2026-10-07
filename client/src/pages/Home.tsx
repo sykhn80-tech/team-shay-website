@@ -320,9 +320,7 @@ export default function Home() {
   const [leadStep, setLeadStep] = useState<1 | 2 | 3>(1);
   const [leadTrack, setLeadTrack] = useState<"seller" | "investor" | "landlord" | "buyer" | null>(null);
   const [propertyCarouselApi, setPropertyCarouselApi] = useState<CarouselApi | null>(null);
-  const [marketingCarouselApi, setMarketingCarouselApi] = useState<CarouselApi | null>(null);
   const [selectedPropertySlide, setSelectedPropertySlide] = useState(0);
-  const [selectedMarketingSlide, setSelectedMarketingSlide] = useState(0);
   const [isPropertyCarouselPaused, setIsPropertyCarouselPaused] = useState(false);
   const [selectedMarketingIndex, setSelectedMarketingIndex] = useState(0);
   const [marketingPreviewOpen, setMarketingPreviewOpen] = useState(false);
@@ -341,7 +339,7 @@ export default function Home() {
     sqm: "",
     fullName: "",
     phone: "",
-    equity: "",
+    equity: "200000",
     hasProperty: "",
     propertyLocation: "",
     landlordPath: "",
@@ -362,7 +360,7 @@ export default function Home() {
   const trustBadges = [
     { value: "5.0", label: "בגוגל, 32 ביקורות" },
     { value: "20M+ ₪", label: "היקף עסקאות" },
-    { value: "20+", label: "עסקאות שנסגרו" },
+    { value: "עשרות", label: "עסקאות שנסגרו" },
     { value: "3", label: "שירותים בכתובת אחת" },
   ];
   const cmsMarketingItems = homeQuery.data?.marketingSection?.items ?? [];
@@ -494,17 +492,6 @@ export default function Home() {
     propertyCarouselApi.scrollNext();
   }, [propertyCarouselApi]);
 
-  const scrollMarketingCarousel = useCallback((direction: "prev" | "next") => {
-    if (!marketingCarouselApi) return;
-
-    if (direction === "prev") {
-      marketingCarouselApi.scrollPrev();
-      return;
-    }
-
-    marketingCarouselApi.scrollNext();
-  }, [marketingCarouselApi]);
-
   useEffect(() => {
     if (!propertyCarouselApi) return;
 
@@ -521,23 +508,6 @@ export default function Home() {
       propertyCarouselApi.off("reInit", updateSelectedSlide);
     };
   }, [propertyCarouselApi]);
-
-  useEffect(() => {
-    if (!marketingCarouselApi) return;
-
-    const updateSelectedSlide = () => {
-      setSelectedMarketingSlide(marketingCarouselApi.selectedScrollSnap());
-    };
-
-    updateSelectedSlide();
-    marketingCarouselApi.on("select", updateSelectedSlide);
-    marketingCarouselApi.on("reInit", updateSelectedSlide);
-
-    return () => {
-      marketingCarouselApi.off("select", updateSelectedSlide);
-      marketingCarouselApi.off("reInit", updateSelectedSlide);
-    };
-  }, [marketingCarouselApi]);
 
   useEffect(() => {
     if (!propertyCarouselApi || isPropertyCarouselPaused || featuredPropertyTrack.length <= 1) return;
@@ -710,7 +680,7 @@ export default function Home() {
       }
       setLeadStep(1);
       setLeadTrack(null);
-      setFormData({ neighborhood: "", rooms: "", sqm: "", fullName: "", phone: "", equity: "", hasProperty: "", propertyLocation: "", landlordPath: "", buyerArea: "" });
+      setFormData({ neighborhood: "", rooms: "", sqm: "", fullName: "", phone: "", equity: "200000", hasProperty: "", propertyLocation: "", landlordPath: "", buyerArea: "" });
     } catch {
       toast.error("לא הצלחנו לשמור את הפרטים כרגע. נסו שוב בעוד רגע.");
     }
@@ -958,7 +928,7 @@ export default function Home() {
               <div className="mt-8 grid grid-cols-3 gap-3">
                 {[
                   ["20M+ ₪", "היקף עסקאות"],
-                  ["20+", "עסקאות שנסגרו"],
+                  ["עשרות", "עסקאות שנסגרו"],
                   ["7", "אנשי צוות"],
                 ].map(([value, label]) => (
                   <div key={label} className="rounded-2xl border border-[#E8DCC6] bg-[#FFFDF8] p-4 text-center shadow-[0_12px_26px_rgba(90,78,68,0.08)]">
@@ -1030,11 +1000,12 @@ export default function Home() {
                   key={agent.id}
                   className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_16px_36px_rgba(15,23,42,0.06)] transition duration-300 hover:scale-[1.02] hover:shadow-[0_24px_56px_rgba(15,23,42,0.14)]"
                 >
-                  <div className="aspect-[4/4.4] overflow-hidden bg-[#eef3ef]">
+                  <div className="h-48 overflow-hidden bg-[#FFFDF8]">
                     <img
                       src={agent.image}
                       alt={agent.name}
-                      className={`h-full w-full object-center transition duration-500 ${agent.imageFit === "contain" ? "object-contain p-4" : "object-cover"}`}
+                      className="h-full w-full object-cover"
+                      style={{ objectPosition: agent.imagePosition }}
                       loading="lazy"
                     />
                   </div>
@@ -1112,96 +1083,64 @@ export default function Home() {
               <p className="max-w-4xl text-lg font-semibold leading-8 text-slate-600">
                 {marketingSection.subtitle}
               </p>
-              <div className="flex max-w-5xl flex-wrap justify-center gap-3">
-                {marketingSection.highlights.map((item) => (
-                  <div key={item} className="rounded-full border border-[#d9ae4c]/25 bg-white px-4 py-2 text-sm font-black text-[#d9ae4c] shadow-sm">
-                    {item}
+            </div>
+
+            <div className="mt-12 grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-stretch">
+              {marketingItems.length ? (
+                <article className="overflow-hidden rounded-[34px] border border-[#E8DCC6] bg-[#FFFDF8] shadow-[0_24px_70px_rgba(90,78,68,0.10)]">
+                  <div className="relative aspect-[16/9] bg-[#F3EADB]">
+                    {selectedMarketingItem?.type === "video" ? (
+                      <video key={selectedMarketingItem.mediaUrl} src={selectedMarketingItem.mediaUrl} poster={selectedMarketingItem.posterUrl ?? undefined} controls playsInline className="h-full w-full object-cover" />
+                    ) : selectedMarketingItem ? (
+                      <img src={selectedMarketingItem.mediaUrl} alt={selectedMarketingItem.title} className="h-full w-full object-cover" loading="lazy" />
+                    ) : null}
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent p-5">
+                      <span className="inline-flex rounded-full bg-[#D9AE4C] px-4 py-1.5 text-xs font-black text-[#2A211B]">
+                        {String(selectedMarketingIndex + 1).padStart(2, "0")} / {marketingItems.length}
+                      </span>
+                    </div>
+                    <button type="button" onClick={() => setMarketingPreviewOpen(true)} className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full bg-[#FFFDF8]/95 px-4 py-2 text-sm font-black text-[#2A211B] shadow-[0_12px_28px_rgba(28,22,18,0.18)] transition hover:bg-[#D9AE4C]">
+                      <Play className="size-4 fill-current" />
+                      צפייה מלאה
+                    </button>
                   </div>
-                ))}
+                  <div className="grid gap-4 p-6 text-right md:grid-cols-[auto_1fr] md:items-start">
+                    <span className="flex size-12 items-center justify-center rounded-2xl bg-[#D9AE4C] text-[#2A211B] shadow-[0_12px_24px_rgba(217,174,76,0.24)]">
+                      {selectedMarketingItem?.type === "video" ? <Video className="size-6" /> : <Megaphone className="size-6" />}
+                    </span>
+                    <div>
+                      <h3 className="text-2xl font-black text-[#2A211B]">{selectedMarketingItem?.title}</h3>
+                      <p className="mt-2 text-base font-semibold leading-8 text-[#5A4E44]">{selectedMarketingItem?.description}</p>
+                    </div>
+                  </div>
+                </article>
+              ) : null}
+
+              <div className="relative overflow-hidden rounded-[34px] border border-[#E8DCC6] bg-[#FFFDF8]/80 p-4 shadow-[0_18px_46px_rgba(90,78,68,0.06)]">
+                <div className="grid max-h-[620px] gap-3 overflow-y-auto pr-1 [scrollbar-width:thin] sm:grid-cols-2 lg:grid-cols-1">
+                  {marketingItems.map((item, index) => {
+                    const Icon = item.type === "video" ? Video : index === 1 ? Newspaper : index === 2 ? Building2 : Megaphone;
+                    const isActive = index === selectedMarketingIndex;
+                    return (
+                      <button key={item.id || item.title} type="button" onClick={() => setSelectedMarketingIndex(index)} className={`group grid grid-cols-[104px_1fr] items-center gap-3 rounded-[24px] border p-2 text-right transition duration-300 ${isActive ? "border-[#D9AE4C] bg-[#FFF8E6] shadow-[0_14px_32px_rgba(217,174,76,0.18)]" : "border-[#E8DCC6] bg-[#FFFDF8] hover:-translate-y-0.5 hover:border-[#D9AE4C]/70"}`}>
+                        <div className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-[#F3EADB]">
+                          {item.type === "video" ? <><video src={item.mediaUrl} poster={item.posterUrl ?? undefined} className="h-full w-full object-cover" muted playsInline /><span className="absolute inset-0 m-auto flex size-10 items-center justify-center rounded-full bg-black/55 text-white"><Play className="size-4 fill-current" /></span></> : <img src={item.mediaUrl} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" loading="lazy" />}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`flex size-8 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-[#D9AE4C] text-[#2A211B]" : "bg-[#F3EADB] text-[#B5653A]"}`}><Icon className="size-4" /></span>
+                            <h3 className="line-clamp-2 text-sm font-black leading-5 text-[#2A211B]">{item.title}</h3>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 text-[#5A4E44]">{item.description}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            <div className="mt-12">
-              {marketingItems.length ? (
-                <Carousel
-                  setApi={setMarketingCarouselApi}
-                  opts={{ align: "center", direction: "rtl", loop: marketingItems.length > 3 }}
-                  className="relative"
-                >
-                  <CarouselContent className="-ml-5">
-                    {marketingItems.map((item, index) => {
-                      return (
-                        <CarouselItem key={item.id || item.title} className="basis-[78%] pl-5 sm:basis-[48%] lg:basis-[31%] xl:basis-[25%]">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedMarketingIndex(index);
-                              setMarketingPreviewOpen(true);
-                            }}
-                            className="group relative h-[460px] w-full overflow-hidden rounded-[30px] border border-[#d9ae4c]/35 bg-[#1A1A1A] text-right shadow-[0_22px_50px_rgba(15,23,42,0.12)] transition duration-500 hover:-translate-y-1 hover:border-[#d9ae4c] hover:shadow-[0_24px_58px_rgba(217,174,76,0.20)]"
-                          >
-                            {item.type === "video" ? (
-                              <video src={item.mediaUrl} poster={item.posterUrl ?? undefined} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" muted playsInline />
-                            ) : (
-                              <img src={item.mediaUrl} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy" />
-                            )}
-                            <span className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/22 to-transparent" />
-                            <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                              <p className="text-sm font-black text-[#d9ae4c]">{item.type === "video" ? "וידאו" : "תמונה"}</p>
-                              <h3 className="mt-2 text-2xl font-black leading-tight text-[#d9ae4c]">{item.title}</h3>
-                              <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-white/82">{item.description}</p>
-                              <span className="mt-5 inline-flex rounded-full border border-white/45 bg-white/10 px-5 py-2 text-sm font-black text-white opacity-0 backdrop-blur-sm transition duration-300 group-hover:border-[#d9ae4c] group-hover:bg-[#d9ae4c] group-hover:text-black group-hover:opacity-100">
-                                צפייה מלאה
-                              </span>
-                            </div>
-                          </button>
-                        </CarouselItem>
-                      );
-                    })}
-                  </CarouselContent>
-
-                  {marketingItems.length > 1 ? (
-                    <div className="mt-8 flex items-center justify-center gap-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="size-12 rounded-full border-[#d9ae4c] bg-[#d9ae4c] text-black shadow-[0_12px_26px_rgba(217,174,76,0.24)] hover:bg-[#b98b2f] hover:text-black"
-                        onClick={() => scrollMarketingCarousel("next")}
-                        aria-label="פעולת שיווק הבאה"
-                      >
-                        <ArrowRight className="size-5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="size-12 rounded-full border-[#d9ae4c] bg-[#d9ae4c] text-black shadow-[0_12px_26px_rgba(217,174,76,0.24)] hover:bg-[#b98b2f] hover:text-black"
-                        onClick={() => scrollMarketingCarousel("prev")}
-                        aria-label="פעולת שיווק קודמת"
-                      >
-                        <ArrowLeft className="size-5" />
-                      </Button>
-                    </div>
-                  ) : null}
-
-                  <div className="mt-5 flex items-center justify-center gap-2">
-                    {marketingItems.map((item, index) => (
-                      <button
-                        key={`marketing-dot-${item.id || index}`}
-                        type="button"
-                        className={`h-2.5 rounded-full transition-all ${
-                          selectedMarketingSlide === index ? "w-8 bg-[#d9ae4c]" : "w-2.5 bg-slate-300"
-                        }`}
-                        onClick={() => marketingCarouselApi?.scrollTo(index)}
-                        aria-label={`מעבר לפעולת שיווק ${index + 1}`}
-                        aria-current={selectedMarketingSlide === index ? "true" : undefined}
-                      />
-                    ))}
-                  </div>
-                </Carousel>
-              ) : null}
-            </div>
+            <a href="#lead-form" className="mt-8 block text-center text-base font-black text-[#B5653A] underline underline-offset-4 transition hover:text-[#2A211B]">רוצים לראות את זה על הדירה שלכם? ←</a>
 
             {marketingPreviewOpen && selectedMarketingItem ? (
               <div
@@ -1616,6 +1555,13 @@ export default function Home() {
               </div>
             ) : leadStep === 2 ? (
               <div className="mt-10 grid gap-5">
+                <button
+                  type="button"
+                  onClick={() => { setLeadStep(1); setLeadTrack(null); }}
+                  className="justify-self-start text-base font-black text-[#B5653A] underline underline-offset-4 transition hover:text-[#2A211B]"
+                >
+                  → חזרה
+                </button>
                 <p className="text-center text-sm font-black text-[#B5653A]">שלב 2 מתוך 3</p>
                 {leadTrack === "seller" ? (
                   <>
@@ -1626,7 +1572,30 @@ export default function Home() {
                 ) : leadTrack === "investor" ? (
                   <>
                     <p className="text-xl font-black text-slate-900">מה גובה ההון העצמי שלכם?</p>
-                    <select name="equity" value={formData.equity} onChange={handleFormChange} className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]"><option value="">בחרו טווח</option><option value="50,000–200,000 ₪">50,000–200,000 ₪</option><option value="200,000–400,000 ₪">200,000–400,000 ₪</option><option value="400,000–650,000 ₪">400,000–650,000 ₪</option><option value="650,000 ₪ ומעלה">650,000 ₪ ומעלה</option></select>
+                    <div className="rounded-3xl border border-[#E8DCC6] bg-[#FFFDF8] px-5 py-6 text-center">
+                      <output className="block text-3xl font-black text-[#2A211B]" htmlFor="equity-slider">
+                        {Number(formData.equity) >= 650000 ? "650,000 ₪ ומעלה" : `${Number(formData.equity || 200000).toLocaleString("he-IL")} ₪`}
+                      </output>
+                      <input
+                        id="equity-slider"
+                        name="equity"
+                        type="range"
+                        min="50000"
+                        max="650000"
+                        step="50000"
+                        value={formData.equity || "200000"}
+                        onChange={handleFormChange}
+                        dir="rtl"
+                        className="mt-7 h-2 w-full cursor-pointer accent-[#D9AE4C]"
+                        aria-label="הון עצמי פנוי"
+                      />
+                      <div className="mt-3 flex items-center justify-between text-xs font-bold text-[#5A4E44]" dir="ltr">
+                        <span>50K</span>
+                        <span>200K</span>
+                        <span>400K</span>
+                        <span>650K+</span>
+                      </div>
+                    </div>
                     <label className="grid gap-2"><span className="text-sm font-bold text-slate-700">יש בבעלותכם נכס?</span><select name="hasProperty" value={formData.hasProperty} onChange={handleFormChange} className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]"><option value="">בחרו</option><option value="כן">כן</option><option value="לא">לא</option></select></label>
                   </>
                 ) : leadTrack === "landlord" ? (
@@ -1646,6 +1615,13 @@ export default function Home() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="mt-10 grid gap-5">
+                <button
+                  type="button"
+                  onClick={() => setLeadStep(2)}
+                  className="justify-self-start text-base font-black text-[#B5653A] underline underline-offset-4 transition hover:text-[#2A211B]"
+                >
+                  → חזרה
+                </button>
                 <p className="text-center text-sm font-black text-[#B5653A]">שלב 3 מתוך 3</p>
                 <p className="text-xl font-black text-[#2A211B]">לאן נחזור אליכם?</p>
                 <div className="grid gap-5 sm:grid-cols-2">
