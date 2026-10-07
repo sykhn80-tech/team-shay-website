@@ -4,22 +4,17 @@ import { Link } from "wouter";
 import {
   ArrowLeft,
   ArrowRight,
-  Building2,
   ChevronLeft,
-  Handshake,
   Home as HomeIcon,
   KeyRound,
   Loader2,
-  Megaphone,
   Menu,
   MessageCircle,
-  Newspaper,
   Phone,
   Play,
   Star,
   Search,
   TrendingUp,
-  Video,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -104,45 +99,6 @@ const valueSteps = [
     subtitle: "משכירים ומנהלים את הנכס בשבילכם, ומלווים אתכם לעסקה הבאה.",
   },
 ];
-
-const marketingMethodItems = [
-  {
-    title: "וידאו בשילוב AI",
-    description: "סרטון קצר לכל נכס, שנותן לקונה להרגיש את הדירה עוד לפני שהגיע לראות אותה.",
-    type: "video",
-    mediaUrl: HERO_VIDEO_URL,
-    posterUrl: propertyImages.four,
-    icon: Video,
-  },
-  {
-    title: "קמפיין ממומן ברשתות",
-    description: "מודעות למי שמחפש עכשיו דירה בשכונה שלכם, וחזרה למי שכבר צפה בנכס.",
-    type: "image",
-    mediaUrl: propertyImages.two,
-    icon: Newspaper,
-  },
-  {
-    title: "בית פתוח לקונים ולמתווכים",
-    description: "מועד אחד שמרכז את כל המתעניינים. קונה שרואה קונים אחרים בסלון מחליט מהר יותר.",
-    type: "image",
-    mediaUrl: propertyImages.one,
-    icon: Building2,
-  },
-  {
-    title: "גלויות, פליירים ומכתבי שכנים",
-    description: "מי שכבר גר ברחוב מכיר מישהו שרוצה לגור בו.",
-    type: "image",
-    mediaUrl: propertyImages.three,
-    icon: Megaphone,
-  },
-  {
-    title: "שיתוף פעולה עם כל משרדי העיר",
-    description: "הנכס נשלח לסוכנים אחרים כבר ביום הראשון. יותר סוכנים, יותר קונים.",
-    type: "image",
-    mediaUrl: propertyImages.four,
-    icon: Handshake,
-  },
-] as const;
 
 const normalizeAgentName = (value: string) => value.replace(/\s+/g, "");
 const excludedHomepageAgentNames = new Set(["רונןדוידיאן", "רונן", "הודיהמליאח", "הודיה"]);
@@ -315,6 +271,52 @@ const fallbackTestimonials = [
   },
 ] as const;
 
+const celebrationColors = ["#D9AE4C", "#FFFDF8", "#B5653A"];
+const celebrationPieces = Array.from({ length: 30 }, (_, index) => ({
+  left: `${8 + ((index * 29) % 84)}%`,
+  delay: `${(index % 8) * 35}ms`,
+  rotation: `${(index * 47) % 360}deg`,
+  color: celebrationColors[index % celebrationColors.length],
+}));
+
+function AnimatedStat({ value, className }: { value: string; className?: string }) {
+  const elementRef = useRef<HTMLSpanElement | null>(null);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const start = () => {
+      const startedAt = performance.now();
+      const duration = reducedMotion ? 0 : 900;
+      const animate = (now: number) => {
+        const next = duration === 0 ? 1 : Math.min(1, (now - startedAt) / duration);
+        setProgress(next);
+        if (next < 1) requestAnimationFrame(animate);
+      };
+      requestAnimationFrame(animate);
+    };
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        start();
+        observer.disconnect();
+      }
+    }, { threshold: 0.5 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  const numericValue = Number.parseFloat(value.replace(/[^0-9.]/g, "")) || 0;
+  const prefix = value.startsWith("₪") ? "₪" : "";
+  const suffix = value.replace(/[0-9.]/g, "");
+  const renderedNumber = value.includes(".") ? (numericValue * progress).toFixed(1) : Math.round(numericValue * progress).toString();
+
+  return <span ref={elementRef} className={className}>{prefix}{renderedNumber}{suffix}</span>;
+}
+
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [leadStep, setLeadStep] = useState<1 | 2 | 3>(1);
@@ -328,7 +330,10 @@ export default function Home() {
   const [equitySliderDragging, setEquitySliderDragging] = useState(false);
   const [displayedEquity, setDisplayedEquity] = useState(200000);
   const equityAnimationFrame = useRef<number | null>(null);
+  const [sliderSparks, setSliderSparks] = useState<Array<{ id: number; left: string; delay: string; x: number; y: number }>>([]);
+  const sliderSparkTimeout = useRef<number | null>(null);
   const [marketingPreviewOpen, setMarketingPreviewOpen] = useState(false);
+  const [showThankYou, setShowThankYou] = useState(false);
   const testimonialsSectionRef = useRef<HTMLElement | null>(null);
   const [testimonialsExpanded, setTestimonialsExpanded] = useState(false);
   const [testimonialPreview, setTestimonialPreview] = useState<{
@@ -361,6 +366,16 @@ export default function Home() {
     }, 120);
 
     return () => window.clearTimeout(start);
+  }, []);
+
+  useEffect(() => {
+    if (!showThankYou) return;
+    const timeout = window.setTimeout(() => setShowThankYou(false), 2500);
+    return () => window.clearTimeout(timeout);
+  }, [showThankYou]);
+
+  useEffect(() => () => {
+    if (sliderSparkTimeout.current) window.clearTimeout(sliderSparkTimeout.current);
   }, []);
 
   useEffect(() => {
@@ -410,12 +425,9 @@ export default function Home() {
     title: "לא רק מעלים מודעה — בונים חוויית מכירה.",
     subtitle:
       "זה רק על קצה המזלג. אלה חלק מהפעולות שאנחנו מתחייבים עליהן בכל נכס שאנחנו משווקים, ואת הרשימה המלאה תקבלו בפגישה הראשונה.",
-    highlights: ["וידאו בשילוב AI", "שיווק חכם ברשתות חברתיות", "הפצת גלויות", "בתים פתוחים לקונים ומתווכים"],
-    items: marketingMethodItems.map((item, index) => ({
+    items: cmsMarketingItems.map((item, index) => ({
       ...item,
-      id: cmsMarketingItems[index]?.id ?? `fallback-${index + 1}`,
-      mediaUrl: cmsMarketingItems[index]?.mediaUrl || item.mediaUrl,
-      posterUrl: cmsMarketingItems[index]?.posterUrl || (item as { posterUrl?: string }).posterUrl,
+      id: item.id ?? `marketing-${index + 1}`,
     })),
   };
   const marketingItems = useMemo(() => marketingSection.items.slice(0, 10), [marketingSection.items]);
@@ -675,6 +687,25 @@ export default function Home() {
     setFormData((previous) => ({ ...previous, [name]: value }));
   };
 
+  const handleEquitySliderRelease = (event: React.PointerEvent<HTMLInputElement>) => {
+    setEquitySliderDragging(false);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const left = `${Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100))}%`;
+    const amount = Number(formData.equity || 50000);
+    const sparkCount = amount >= 650000 ? 16 : 8;
+    setSliderSparks(Array.from({ length: sparkCount }, (_, index) => ({
+      id: Date.now() + index,
+      left,
+      delay: `${(index % 5) * 25}ms`,
+      x: Math.round(Math.cos((index / sparkCount) * Math.PI * 2) * (amount >= 650000 ? 34 : 22)),
+      y: Math.round(Math.sin((index / sparkCount) * Math.PI * 2) * (amount >= 650000 ? 34 : 22)),
+    })));
+    if (sliderSparkTimeout.current) window.clearTimeout(sliderSparkTimeout.current);
+    sliderSparkTimeout.current = window.setTimeout(() => setSliderSparks([]), 850);
+  };
+
   const scrollToForm = (track?: "seller" | "investor" | "landlord" | "buyer") => {
     if (track) {
       setLeadTrack(track);
@@ -747,6 +778,7 @@ export default function Home() {
       } else {
         toast.warning("הפרטים נשמרו, אבל המייל לא נשלח. צריך להגדיר RESEND_API_KEY ב-Vercel.");
       }
+      setShowThankYou(true);
       setLeadStep(1);
       setLeadTrack(null);
       setFormData({ neighborhood: "", rooms: "", sqm: "", fullName: "", phone: "", equity: "200000", hasProperty: "", propertyLocation: "", landlordPath: "", buyerArea: "" });
@@ -962,7 +994,7 @@ export default function Home() {
             <div className="mt-10 grid w-full max-w-4xl grid-cols-2 divide-x divide-x-reverse divide-[#E8DCC6]/30 md:grid-cols-4">
               {trustBadges.map((badge, index) => (
                 <div key={badge.label} className={`flex min-h-20 flex-col items-center justify-center px-3 text-center first:border-none ${index === trustBadges.length - 1 ? "border-r border-[#E8DCC6]/30" : ""}`}>
-                  <span className="text-2xl font-black text-[#D9AE4C] md:text-3xl">{badge.value}</span>
+                  <AnimatedStat value={badge.value} className="text-2xl font-black text-[#D9AE4C] md:text-3xl" />
                   <span className="mt-1 text-xs font-bold text-[#FFFDF8]/80 md:text-sm">{badge.label}</span>
                 </div>
               ))}
@@ -999,10 +1031,10 @@ export default function Home() {
                 {[
                   ["20M+ ₪", "היקף עסקאות"],
                   ["20+", "עסקאות שנסגרו"],
-                  ["7", "אנשי צוות"],
+                  [String(homepageAgents.length), "אנשי צוות"],
                 ].map(([value, label]) => (
                   <div key={label} className="rounded-2xl border border-[#E8DCC6] bg-[#FFFDF8] p-4 text-center shadow-[0_12px_26px_rgba(90,78,68,0.08)]">
-                    <p className="text-2xl font-black text-[#d9ae4c]">{value}</p>
+                    <p className="text-2xl font-black text-[#d9ae4c]"><AnimatedStat value={value} /></p>
                     <p className="mt-1 text-sm font-bold text-[#5A4E44]">{label}</p>
                   </div>
                 ))}
@@ -1605,7 +1637,19 @@ export default function Home() {
         ) : null}
 
         <section id="lead-form" className="order-2 bg-[#F3EADB] px-4 py-20 md:px-6 md:py-24">
-          <div className="mx-auto max-w-[760px] rounded-[36px] border border-[#E8DCC6] bg-[#FFFDF8] p-8 shadow-[0_24px_60px_rgba(90,78,68,0.12)] md:p-12">
+          <div className="relative mx-auto max-w-[760px] rounded-[36px] border border-[#E8DCC6] bg-[#FFFDF8] p-8 shadow-[0_24px_60px_rgba(90,78,68,0.12)] md:p-12">
+            {showThankYou ? (
+              <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden rounded-[36px]" aria-live="polite">
+                <div className="absolute inset-x-0 top-1/2 text-center text-2xl font-black text-[#2A211B]">תודה, הפרטים התקבלו</div>
+                {celebrationPieces.map((piece, index) => (
+                  <span
+                    key={`celebration-${index}`}
+                    className="celebration-confetti absolute top-1/2 h-3 w-1.5 rounded-sm"
+                    style={{ left: piece.left, backgroundColor: piece.color, animationDelay: piece.delay, transform: `rotate(${piece.rotation})` }}
+                  />
+                ))}
+              </div>
+            ) : null}
             <div className="text-center">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#B5653A]">בדיקת התאמה · 30 שניות</p>
               <h2 className="mt-4 text-[2.1rem] font-extrabold leading-tight text-[#2A211B] md:text-[3.35rem]">עדיין מתלבטים? בדיוק בשביל זה אנחנו כאן.</h2>
@@ -1651,7 +1695,7 @@ export default function Home() {
                 ) : leadTrack === "investor" ? (
                   <>
                     <p className="text-xl font-black text-slate-900">מה גובה ההון העצמי שלכם?</p>
-                    <div className="rounded-3xl border border-[#E8DCC6] bg-[#FFFDF8] px-5 py-6 text-center">
+                    <div className="relative rounded-3xl border border-[#E8DCC6] bg-[#FFFDF8] px-5 py-6 text-center">
                       <output className="block text-3xl font-black text-[#2A211B]" htmlFor="equity-slider">
                         {displayedEquity >= 650000 ? "650,000 ₪ ומעלה" : `${displayedEquity.toLocaleString("he-IL")} ₪`}
                       </output>
@@ -1668,10 +1712,17 @@ export default function Home() {
                         className={`equity-slider mt-7 h-2 w-full cursor-pointer ${equitySliderDragging ? "is-dragging" : ""}`}
                         style={{ "--slider-progress": `${Math.max(0, Math.min(100, ((Number(formData.equity || 50000) - 50000) / 600000) * 100))}%` } as React.CSSProperties}
                         onPointerDown={() => setEquitySliderDragging(true)}
-                        onPointerUp={() => setEquitySliderDragging(false)}
+                        onPointerUp={handleEquitySliderRelease}
                         onPointerCancel={() => setEquitySliderDragging(false)}
                         aria-label="הון עצמי פנוי"
                       />
+                      {sliderSparks.map((spark) => (
+                        <span
+                          key={spark.id}
+                          className="slider-spark pointer-events-none absolute top-1/2 h-1.5 w-1.5 rounded-full bg-[#D9AE4C]"
+                          style={{ left: spark.left, animationDelay: spark.delay, "--spark-x": `${spark.x}px`, "--spark-y": `${spark.y}px` } as React.CSSProperties}
+                        />
+                      ))}
                       <div className="mt-3 flex items-center justify-between text-xs font-bold text-[#5A4E44]" dir="rtl">
                         <span>50K</span>
                         <span>200K</span>

@@ -347,6 +347,34 @@ All global tokens should support a modern, clean, conversion-first interface.
   }
 }
 
+@keyframes celebration-confetti {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 260px, 0) rotate(300deg);
+  }
+}
+
+@keyframes slider-spark {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.6);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--spark-x, 0px), var(--spark-y, -28px), 0) scale(0.2);
+  }
+}
+
 @layer utilities {
   .accessibility-large-text body {
     font-size: 112%;
@@ -377,9 +405,19 @@ All global tokens should support a modern, clean, conversion-first interface.
     will-change: transform;
   }
 
-.sold-properties-marquee {
+  .sold-properties-marquee {
     animation: sold-properties-marquee 36s linear infinite;
     will-change: transform;
+  }
+
+  .celebration-confetti {
+    animation: celebration-confetti 2.5s ease-out forwards;
+  }
+
+  .slider-spark {
+    --spark-x: 0px;
+    --spark-y: -28px;
+    animation: slider-spark 720ms ease-out forwards;
   }
 
   .equity-slider {
@@ -438,6 +476,11 @@ All global tokens should support a modern, clean, conversion-first interface.
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .celebration-confetti,
+    .slider-spark {
+      display: none;
+    }
+
     .equity-slider::-webkit-slider-thumb,
     .equity-slider::-moz-range-thumb {
       transition: none;
