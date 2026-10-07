@@ -377,9 +377,71 @@ All global tokens should support a modern, clean, conversion-first interface.
     will-change: transform;
   }
 
-  .sold-properties-marquee {
+.sold-properties-marquee {
     animation: sold-properties-marquee 36s linear infinite;
     will-change: transform;
+  }
+
+  .equity-slider {
+    --slider-progress: 25%;
+    appearance: none;
+    direction: rtl;
+    border-radius: 999px;
+    background: linear-gradient(to left, #d9ae4c 0 var(--slider-progress), #e8dcc6 var(--slider-progress) 100%);
+    outline: none;
+  }
+
+  .equity-slider::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  .equity-slider::-moz-range-track {
+    height: 8px;
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  .equity-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    margin-top: -9px;
+    border: 3px solid #fffdf8;
+    border-radius: 999px;
+    background: #d9ae4c;
+    box-shadow: 0 0 0 5px rgba(217, 174, 76, 0.2), 0 4px 12px rgba(90, 78, 68, 0.22);
+    transition: transform 160ms ease, box-shadow 160ms ease;
+  }
+
+  .equity-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #fffdf8;
+    border-radius: 999px;
+    background: #d9ae4c;
+    box-shadow: 0 0 0 5px rgba(217, 174, 76, 0.2), 0 4px 12px rgba(90, 78, 68, 0.22);
+    transition: transform 160ms ease, box-shadow 160ms ease;
+  }
+
+  .equity-slider:hover::-webkit-slider-thumb,
+  .equity-slider.is-dragging::-webkit-slider-thumb {
+    transform: scale(1.16);
+    box-shadow: 0 0 0 8px rgba(217, 174, 76, 0.24), 0 5px 14px rgba(90, 78, 68, 0.26);
+  }
+
+  .equity-slider:hover::-moz-range-thumb,
+  .equity-slider.is-dragging::-moz-range-thumb {
+    transform: scale(1.16);
+    box-shadow: 0 0 0 8px rgba(217, 174, 76, 0.24), 0 5px 14px rgba(90, 78, 68, 0.26);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .equity-slider::-webkit-slider-thumb,
+    .equity-slider::-moz-range-thumb {
+      transition: none;
+    }
   }
 }
 

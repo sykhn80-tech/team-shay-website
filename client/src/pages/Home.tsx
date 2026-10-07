@@ -50,7 +50,6 @@ const navItems: Array<{ label: string; href: string; isRoute: boolean }> = [
   { label: "השירותים", href: "#services", isRoute: false },
   { label: "נכסים", href: "/properties", isRoute: true },
   { label: "הצוות", href: "#team", isRoute: false },
-  { label: "יצירת קשר", href: "#lead-form", isRoute: false },
 ];
 
 const HERO_VIDEO_URL = "/media/hero-animation.mp4";
@@ -326,6 +325,9 @@ export default function Home() {
   const [selectedMarketingSlide, setSelectedMarketingSlide] = useState(0);
   const [isPropertyCarouselPaused, setIsPropertyCarouselPaused] = useState(false);
   const [selectedMarketingIndex, setSelectedMarketingIndex] = useState(0);
+  const [equitySliderDragging, setEquitySliderDragging] = useState(false);
+  const [displayedEquity, setDisplayedEquity] = useState(200000);
+  const equityAnimationFrame = useRef<number | null>(null);
   const [marketingPreviewOpen, setMarketingPreviewOpen] = useState(false);
   const testimonialsSectionRef = useRef<HTMLElement | null>(null);
   const [testimonialsExpanded, setTestimonialsExpanded] = useState(false);
@@ -348,6 +350,42 @@ export default function Home() {
     landlordPath: "",
     buyerArea: "",
   });
+
+  useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) return;
+
+    setFormData((previous) => ({ ...previous, equity: "50000" }));
+    const start = window.setTimeout(() => {
+      setFormData((previous) => ({ ...previous, equity: "200000" }));
+    }, 120);
+
+    return () => window.clearTimeout(start);
+  }, []);
+
+  useEffect(() => {
+    const target = Number(formData.equity || 50000);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) {
+      setDisplayedEquity(target);
+      return;
+    }
+
+    if (equityAnimationFrame.current) cancelAnimationFrame(equityAnimationFrame.current);
+    const startValue = displayedEquity;
+    const startTime = performance.now();
+    const duration = 180;
+    const animate = (now: number) => {
+      const progress = Math.min(1, (now - startTime) / duration);
+      setDisplayedEquity(Math.round(startValue + (target - startValue) * progress));
+      if (progress < 1) equityAnimationFrame.current = requestAnimationFrame(animate);
+    };
+    equityAnimationFrame.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (equityAnimationFrame.current) cancelAnimationFrame(equityAnimationFrame.current);
+    };
+  }, [formData.equity]);
 
   const homeQuery = trpc.publicSite.home.useQuery(undefined, {
     staleTime: 60_000,
@@ -720,7 +758,7 @@ export default function Home() {
   const footerSloganDisplay = "בצד שלך. גם אחרי המפתח.";
 
   return (
-    <div className="home-page min-h-screen bg-[#FBF7EF] text-[#2A211B]" dir="rtl">
+    <div className="home-page min-h-screen overflow-x-hidden bg-[#FBF7EF] text-[#2A211B]" dir="rtl">
       <div className="fixed inset-x-0 top-4 z-50 px-3 md:px-6">
         <header className="mx-auto max-w-7xl rounded-full border border-[#4a382b] bg-[#1C1612] px-4 py-2 shadow-[0_12px_34px_rgba(28,22,18,0.28)] backdrop-blur-md md:px-6">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
@@ -922,8 +960,8 @@ export default function Home() {
             </div>
 
             <div className="mt-10 grid w-full max-w-4xl grid-cols-2 divide-x divide-x-reverse divide-[#E8DCC6]/30 md:grid-cols-4">
-              {trustBadges.map((badge) => (
-                <div key={badge.label} className="flex min-h-20 flex-col items-center justify-center px-3 text-center first:border-none">
+              {trustBadges.map((badge, index) => (
+                <div key={badge.label} className={`flex min-h-20 flex-col items-center justify-center px-3 text-center first:border-none ${index === trustBadges.length - 1 ? "border-r border-[#E8DCC6]/30" : ""}`}>
                   <span className="text-2xl font-black text-[#D9AE4C] md:text-3xl">{badge.value}</span>
                   <span className="mt-1 text-xs font-bold text-[#FFFDF8]/80 md:text-sm">{badge.label}</span>
                 </div>
@@ -940,7 +978,7 @@ export default function Home() {
         </section>
 
         <section id="about" className="order-3 bg-[#FBF7EF] px-4 py-20 md:px-6 md:py-24">
-          <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1fr_0.92fr]">
+          <div className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-[1fr_0.92fr]">
             <div className="order-2 lg:order-1">
               <p className="text-base font-extrabold uppercase tracking-[0.03em] text-[#B5653A]">הסיפור מאחורי Shay Group</p>
               <h2 className="mt-4 max-w-[680px] text-[2.15rem] font-extrabold leading-tight text-[#2A211B] md:text-[3.45rem]">כולם יודעים שדירה היא ביטחון. אז למה רוב האנשים לא קונים?</h2>
@@ -955,7 +993,7 @@ export default function Home() {
                 <p><strong className="font-black text-[#2A211B]">&quot;ומה אם המתווך ייעלם ברגע שאחתום?&quot;</strong> אז בנינו משרד שהעבודה שלו ממשיכה גם אחרי המפתח.</p>
                 <p>אז אם גם אתם יודעים שדירה היא ביטחון ועדיין לא עשיתם את הצעד, בואו נשב. שיחה אחת, בלי התחייבות, ותדעו איפה אתם עומדים.</p>
               </div>
-              <a href="#lead-form" className="mt-2 inline-block text-base font-black text-[#B5653A] underline-offset-4 hover:underline">לבדיקת התאמה ↓</a>
+              <a href="#lead-form" className="mt-2 inline-block text-base font-black text-[#B5653A] underline-offset-4 hover:underline">לבדיקת התאמה ↑</a>
               <p className="mt-6 text-lg font-black text-[#2A211B]">שי כהן, מייסד Shay Group</p>
               <div className="mt-8 grid grid-cols-3 gap-3">
                 {[
@@ -1026,20 +1064,27 @@ export default function Home() {
               <p className="mt-4 text-lg font-semibold leading-8 text-slate-600">לכל שכונה יש אצלנו מי שמכיר אותה מקרוב. הטלפון שלו כאן.</p>
             </div>
 
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <div className="mx-auto mt-12 flex max-w-7xl flex-wrap justify-center gap-4">
               {homepageAgents.map((agent) => (
                 <article
                   key={agent.id}
-                  className="group overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_16px_36px_rgba(15,23,42,0.06)] transition duration-300 hover:scale-[1.02] hover:shadow-[0_24px_56px_rgba(15,23,42,0.14)]"
+                  className="group w-full overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_16px_36px_rgba(15,23,42,0.06)] transition duration-300 hover:scale-[1.02] hover:shadow-[0_24px_56px_rgba(15,23,42,0.14)] sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] xl:w-[250px]"
                 >
-                  <div className="h-48 overflow-hidden bg-[#FFFDF8]">
+                  <div className="relative h-48 overflow-hidden bg-[#F3EADB]">
                     <img
                       src={agent.image}
                       alt={agent.name}
                       className="h-full w-full object-cover"
-                      style={{ objectPosition: agent.imagePosition }}
+                      style={{ objectPosition: "center top" }}
                       loading="lazy"
+                      onError={(event) => {
+                        event.currentTarget.classList.add("hidden");
+                        event.currentTarget.nextElementSibling?.classList.remove("hidden");
+                      }}
                     />
+                    <div className="absolute inset-0 hidden flex items-center justify-center bg-[#F3EADB] text-4xl font-black text-[#B5653A]" aria-hidden="true">
+                      {agent.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("")}
+                    </div>
                   </div>
                   <div className="p-3 text-center">
                     <h3 className="text-[1.3rem] font-extrabold text-slate-950">{agent.name}</h3>
@@ -1115,13 +1160,6 @@ export default function Home() {
               <p className="max-w-4xl text-lg font-semibold leading-8 text-slate-600">
                 {marketingSection.subtitle}
               </p>
-              <div className="flex max-w-5xl flex-wrap justify-center gap-3">
-                {marketingSection.highlights.map((item) => (
-                  <div key={item} className="rounded-full border border-[#D9AE4C]/25 bg-[#FFFDF8] px-4 py-2 text-sm font-bold text-[#5A4E44] shadow-sm">
-                    {item}
-                  </div>
-                ))}
-              </div>
             </div>
 
             <div className="mt-12">
@@ -1149,9 +1187,6 @@ export default function Home() {
                               <img src={item.mediaUrl} alt={item.title} className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" loading="lazy" />
                             )}
                             <span className="absolute inset-0 bg-gradient-to-t from-black/82 via-black/22 to-transparent" />
-                            <span className="absolute left-5 top-5 rounded-full bg-[#D9AE4C] px-3 py-1 text-xs font-black text-[#2A211B]">
-                              {String(index + 1).padStart(2, "0")} / {marketingItems.length}
-                            </span>
                             <div className="absolute inset-x-0 bottom-0 p-6 text-white">
                               <p className="text-sm font-black text-[#D9AE4C]">{item.type === "video" ? "וידאו" : "תמונה"}</p>
                               <h3 className="mt-2 text-2xl font-black leading-tight text-[#D9AE4C]">{item.title}</h3>
@@ -1618,7 +1653,7 @@ export default function Home() {
                     <p className="text-xl font-black text-slate-900">מה גובה ההון העצמי שלכם?</p>
                     <div className="rounded-3xl border border-[#E8DCC6] bg-[#FFFDF8] px-5 py-6 text-center">
                       <output className="block text-3xl font-black text-[#2A211B]" htmlFor="equity-slider">
-                        {Number(formData.equity) >= 650000 ? "650,000 ₪ ומעלה" : `${Number(formData.equity || 200000).toLocaleString("he-IL")} ₪`}
+                        {displayedEquity >= 650000 ? "650,000 ₪ ומעלה" : `${displayedEquity.toLocaleString("he-IL")} ₪`}
                       </output>
                       <input
                         id="equity-slider"
@@ -1630,17 +1665,25 @@ export default function Home() {
                         value={formData.equity || "200000"}
                         onChange={handleFormChange}
                         dir="rtl"
-                        className="mt-7 h-2 w-full cursor-pointer accent-[#D9AE4C]"
+                        className={`equity-slider mt-7 h-2 w-full cursor-pointer ${equitySliderDragging ? "is-dragging" : ""}`}
+                        style={{ "--slider-progress": `${Math.max(0, Math.min(100, ((Number(formData.equity || 50000) - 50000) / 600000) * 100))}%` } as React.CSSProperties}
+                        onPointerDown={() => setEquitySliderDragging(true)}
+                        onPointerUp={() => setEquitySliderDragging(false)}
+                        onPointerCancel={() => setEquitySliderDragging(false)}
                         aria-label="הון עצמי פנוי"
                       />
-                      <div className="mt-3 flex items-center justify-between text-xs font-bold text-[#5A4E44]" dir="ltr">
+                      <div className="mt-3 flex items-center justify-between text-xs font-bold text-[#5A4E44]" dir="rtl">
                         <span>50K</span>
                         <span>200K</span>
                         <span>400K</span>
                         <span>650K+</span>
                       </div>
                     </div>
-                    <label className="grid gap-2"><span className="text-sm font-bold text-slate-700">יש בבעלותכם נכס?</span><select name="hasProperty" value={formData.hasProperty} onChange={handleFormChange} className="h-14 rounded-2xl border border-slate-200 px-4 text-base outline-none focus:border-[#d9ae4c]"><option value="">בחרו</option><option value="כן">כן</option><option value="לא">לא</option></select></label>
+                    <div className="grid gap-2"><span className="text-sm font-bold text-slate-700">יש בבעלותכם נכס?</span><div className="grid grid-cols-2 gap-3">
+                      {["כן", "לא, זו תהיה העסקה הראשונה"].map((value) => (
+                        <button key={value} type="button" onClick={() => setFormData((previous) => ({ ...previous, hasProperty: value }))} className={`min-h-14 rounded-2xl border px-4 text-base font-bold transition ${formData.hasProperty === value ? "border-[#D9AE4C] bg-[#FFF8E6] text-[#2A211B]" : "border-slate-200 bg-white text-slate-700 hover:border-[#D9AE4C]"}`}>{value}</button>
+                      ))}
+                    </div></div>
                   </>
                 ) : leadTrack === "landlord" ? (
                   <>
