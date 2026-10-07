@@ -146,6 +146,7 @@ const marketingMethodItems = [
 ] as const;
 
 const normalizeAgentName = (value: string) => value.replace(/\s+/g, "");
+const excludedHomepageAgentNames = new Set(["רונןדוידיאן", "רונן", "הודיהמליאח", "הודיה"]);
 
 type AgentDisplayOverride = {
   email: string;
@@ -385,7 +386,7 @@ export default function Home() {
   const homepageAgents = useMemo(() => {
     const dbAgents = homeQuery.data?.agents ?? [];
     if (dbAgents.length > 0) {
-      return dbAgents.map((agent, index) => ({
+      return dbAgents.filter((agent) => !excludedHomepageAgentNames.has(normalizeAgentName(agent.name))).map((agent, index) => ({
         ...(() => {
           const fallbackByName = fallbackAgentByName.get(normalizeAgentName(agent.name));
           const fallbackAgent = fallbackByName ?? fallbackAgents[index % fallbackAgents.length];
@@ -405,7 +406,7 @@ export default function Home() {
       }));
     }
 
-    return fallbackAgents.map((agent) => {
+    return fallbackAgents.filter((agent) => !excludedHomepageAgentNames.has(normalizeAgentName(agent.name))).map((agent) => {
       const displayOverride = agentDisplayOverrides.get(normalizeAgentName(agent.name));
       return {
         ...agent,
@@ -442,7 +443,7 @@ export default function Home() {
   }, [homeQuery.data?.properties]);
 
   const featuredProperties = useMemo(
-    () => homepageProperties.filter((property) => ["בלעדי", "למכירה"].includes(property.status.trim())).slice(0, 10),
+    () => homepageProperties.filter((property) => ["בלעדי", "למכירה", "חדש"].includes(property.status.trim())).slice(0, 10),
     [homepageProperties],
   );
 
@@ -1241,7 +1242,7 @@ export default function Home() {
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-lg font-extrabold uppercase tracking-[0.03em] text-[#d9ae4c] md:text-2xl">מחפשים נכס? הגעתם למקום הנכון</p>
-                <h2 className="mt-4 text-4xl font-extrabold leading-tight text-[#1A1A1A] md:text-[3.35rem]">הדירה הבאה שלכם אולי כבר כאן.</h2>
+                <h2 className="mt-4 text-4xl font-extrabold leading-tight text-[#1A1A1A] md:text-[3.35rem]">הבית הבא שלכם אולי כבר כאן.</h2>
               </div>
               <Link href="/properties" className="inline-flex items-center gap-2 text-base font-black text-[#d9ae4c]">
                 לכל הנכסים ←
