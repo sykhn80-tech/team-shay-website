@@ -1078,7 +1078,14 @@ async function fetchNeighborhoodDealsPolygonId(point: { x: number; y: number }) 
     throw new Error("לא נמצאו עסקאות השוואה באזור המבוקש.");
   }
 
-  return candidate.polygon_id;
+  return {
+    polygonId: candidate.polygon_id,
+    nearbyStreetNames: new Set(
+      results
+        .map((item) => normalizeHebrewToken(item.streetNameHeb))
+        .filter(Boolean),
+    ),
+  };
 }
 
 async function fetchGovmapNeighborhoodDeals(polygonId: string, limit = 80) {
@@ -1136,6 +1143,7 @@ function pickDealsWithinPricePerSqmSpread<T extends { pricePerSqm: number | null
 function selectComparableDeals(
   deals: NonNullable<GovmapNeighborhoodDealsPayload["data"]>,
   input: z.infer<typeof cmaInputSchema>,
+  nearbyStreetNames: Set<string> = new Set(),
 ) {
   type StreetRelation = "same" | "near" | "neighborhood";
   type ScoredEntry = {
@@ -1234,7 +1242,7 @@ function selectComparableDeals(
         normalizedStreet && normalizedDealStreet
           ? normalizedDealStreet === normalizedStreet
             ? "same"
-            : normalizedDealStreet.includes(normalizedStreet) || normalizedStreet.includes(normalizedDealStreet) || streetTokenOverlap
+            : nearbyStreetNames.has(normalizedDealStreet) || normalizedDealStreet.includes(normalizedStreet) || normalizedStreet.includes(normalizedDealStreet) || streetTokenOverlap
               ? "near"
               : "neighborhood"
           : "neighborhood";
@@ -1318,11 +1326,11 @@ function selectComparableDeals(
   // The exact address anchors the search point; it must never become a hard
   // filter. Keep every house number on the requested street, then widen to
   // nearby streets and finally to the rest of the matching neighborhood.
-  const sameStreetDeals = eligibleDeals.filter((entry) => entry.streetRelation === "same");
-  const nearbyStreetDeals = eligibleDeals.filter((entry) => entry.streetRelation === "near");
-  const neighborhoodDeals = eligibleDeals.filter((entry) => entry.streetRelation === "neighborhood");
+  const sameStreetPool = eligibleDeals.filter((entry) => entry.streetRelation === "same");
+  const nearbyStreetPool = eligibleDeals.filter((entry) => entry.streetRelation === "near");
+  const neighborhoodPool = eligibleDeals.filter((entry) => entry.streetRelation === "neighborhood");
   const scopedDeals = normalizedStreet
-    ? [...sameStreetDeals, ...nearbyStreetDeals, ...neighborhoodDeals]
+    ? [...sameStreetPool, ...nearbyStreetPool, ...neighborhoodPool]
     : eligibleDeals;
 
   const scoredDeals = (scopedDeals.length ? scopedDeals : eligibleDeals).sort(sortByComparableStrength);
@@ -1468,7 +1476,13 @@ function selectComparableDeals(
 
   const qualityScopedDeals = sortedAssessedDeals.filter((entry) => entry.matchScore >= CMA_MATCH_MIN_QUALITY_SCORE);
 
-  const limitedDeals = (qualityScopedDeals.length ? qualityScopedDeals : sortedAssessedDeals).slice(0, 5);
+  const candidateDeals = (qualityScopedDeals.length ? qualityScopedDeals : sortedAssessedDeals) as typeof sortedAssessedDeals;
+  const sameStreetDeals = candidateDeals.filter((entry) => entry.streetRelation === "same");
+  const nearbyStreetDeals = candidateDeals.filter((entry) => entry.streetRelation === "near");
+  const neighborhoodDeals = candidateDeals.filter((entry) => entry.streetRelation === "neighborhood");
+  const limitedDeals = input.street
+    ? [...sameStreetDeals.slice(0, 3), ...nearbyStreetDeals.slice(0, 2), ...sameStreetDeals.slice(3), ...nearbyStreetDeals.slice(2), ...neighborhoodDeals].slice(0, 5)
+    : candidateDeals.slice(0, 5);
 
   const topScore = limitedDeals[0]?.matchScore ?? 0;
 
@@ -2011,7 +2025,7 @@ export const appRouter = router({
             input.street.trim(),
             input.houseNumber.trim(),
           );
-          const polygonId = await fetchNeighborhoodDealsPolygonId(neighborhoodRef.point);
+          const { polygonId, nearbyStreetNames } = await fetchNeighborhoodDealsPolygonId(neighborhoodRef.point);
 
           let pageData: NadlanNeighborhoodPage | null = null;
           if (typeof neighborhoodRef.govmapNeighborhoodId === "number" && Number.isFinite(neighborhoodRef.govmapNeighborhoodId)) {
@@ -2024,7 +2038,7 @@ export const appRouter = router({
           }
 
           const rawDeals = await fetchGovmapNeighborhoodDeals(polygonId, 100);
-          const deals = selectComparableDeals(rawDeals, input);
+          const deals = selectComparableDeals(rawDeals, input, nearbyStreetNames);
           if (deals.length === 0) {
             throw new Error("לא נמצאו עסקאות השוואה מתאימות עבור השכונה והחדרים שבחרת.");
           }
