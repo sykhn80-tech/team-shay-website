@@ -50,6 +50,7 @@ const trpcClient = trpc.createClient({
           const fallbackSessionToken = getStoredAgentSessionToken();
           if (fallbackSessionToken) {
             headers.set("x-team-shay-agent-session", fallbackSessionToken);
+            headers.set("Authorization", `Bearer ${fallbackSessionToken}`);
           }
         }
 

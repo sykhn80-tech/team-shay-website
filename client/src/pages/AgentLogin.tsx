@@ -51,6 +51,7 @@ export default function AgentLogin() {
       const headers = new Headers();
       if (sessionToken) {
         headers.set("x-team-shay-agent-session", sessionToken);
+        headers.set("Authorization", `Bearer ${sessionToken}`);
       }
 
       const response = await window.fetch("/api/trpc/agent.me?batch=1&input=%7B%7D", {

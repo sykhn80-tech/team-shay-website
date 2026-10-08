@@ -33,11 +33,16 @@ export async function createContext(
   const headerToken = Array.isArray(agentSessionHeader)
     ? agentSessionHeader[0]
     : agentSessionHeader;
+  const authorizationHeader = opts.req.headers.authorization;
+  const authorizationToken = authorizationHeader?.startsWith("Bearer ")
+    ? authorizationHeader.slice("Bearer ".length).trim()
+    : undefined;
+  const sessionToken = headerToken || authorizationToken;
 
   let agentId = Number(agentSessionCookie);
 
-  if ((!Number.isFinite(agentId) || agentId <= 0) && headerToken) {
-    const verifiedHeaderSession = await verifyAgentSessionToken(headerToken);
+  if ((!Number.isFinite(agentId) || agentId <= 0) && sessionToken) {
+    const verifiedHeaderSession = await verifyAgentSessionToken(sessionToken);
     agentId = verifiedHeaderSession?.agentId ?? Number.NaN;
   }
 

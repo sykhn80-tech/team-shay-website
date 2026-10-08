@@ -32,12 +32,25 @@ function isSecureRequest(req: Request) {
   return false;
 }
 
+function getSharedSiteCookieDomain(req: Request) {
+  const forwardedHost = req.headers["x-forwarded-host"];
+  const rawHost = Array.isArray(forwardedHost) ? forwardedHost[0] : forwardedHost;
+  const host = (rawHost || req.hostname || "").split(",")[0].trim().split(":")[0].toLowerCase();
+
+  if (host === "teamshay-jerusalem-homes.co.il" || host.endsWith(".teamshay-jerusalem-homes.co.il")) {
+    return ".teamshay-jerusalem-homes.co.il";
+  }
+
+  return undefined;
+}
+
 export function getSessionCookieOptions(
   req: Request,
 ): Pick<CookieOptions, "domain" | "httpOnly" | "path" | "sameSite" | "secure"> {
   const secure = isSecureRequest(req);
 
   return {
+    domain: getSharedSiteCookieDomain(req),
     httpOnly: true,
     path: "/",
     sameSite: secure ? "none" : "lax",
