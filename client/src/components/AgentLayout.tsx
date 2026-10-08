@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
@@ -18,7 +18,15 @@ export default function AgentLayout({ children }: Props) {
   const [location, navigate] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const utils = trpc.useUtils();
-  const { data: agent } = trpc.agent.me.useQuery();
+  const { data: agent, isLoading: isAgentLoading } = trpc.agent.me.useQuery(undefined, {
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!isAgentLoading && !agent) {
+      navigate("/agent-login");
+    }
+  }, [agent, isAgentLoading, navigate]);
 
   const logoutMutation = trpc.agent.logout.useMutation({
     onSuccess: async () => {
@@ -110,6 +118,12 @@ export default function AgentLayout({ children }: Props) {
 
   return (
     <div className="agent-shell min-h-screen bg-[#f5f3ee]" dir="rtl">
+
+      {!isAgentLoading && !agent ? (
+        <div className="flex min-h-screen items-center justify-center bg-[#f5f3ee] text-sm font-bold text-slate-600">
+          מעבירים למסך ההתחברות...
+        </div>
+      ) : null}
 
       {/* ── Mobile top bar ──────────────────────────────── */}
       <div className="agent-mobile-bar lg:hidden sticky top-0 z-40 flex items-center justify-between gap-3 bg-[#0d0d0d] px-4 py-2.5 shadow-lg shadow-black/20 print:hidden">
