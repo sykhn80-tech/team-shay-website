@@ -949,7 +949,7 @@ async function fetchNeighborhoodReference(neighborhood: string, city?: string, s
       .map((result) => {
         const normalizedText = normalizeHebrewToken(result.text);
         const hasStreet = Boolean(normalizedStreetToken && normalizedText.includes(normalizedStreetToken));
-        const textHouseNumbers = normalizedText.match(/\d+(?:\.\d+)?/g) ?? [];
+        const textHouseNumbers = normalizedText.match(/\d+(?:\.\d+)?/g) || ([] as string[]);
         const hasHouseNumber = Boolean(normalizedHouseToken && textHouseNumbers.includes(normalizedHouseToken));
         const hasCity = Boolean(normalizedCityToken && normalizedText.includes(normalizedCityToken));
         let score = 0;
@@ -1315,11 +1315,17 @@ function selectComparableDeals(
     (entry) => entry.isRecent && (entry.deal.dealAmount as number) >= CMA_MIN_DEAL_PRICE,
   );
 
-  const preferredDeals = eligibleDeals.filter(
-    (entry) => entry.strictNeighborhoodMatch || entry.streetRelation !== "neighborhood",
-  );
+  // The exact address anchors the search point; it must never become a hard
+  // filter. Keep every house number on the requested street, then widen to
+  // nearby streets and finally to the rest of the matching neighborhood.
+  const sameStreetDeals = eligibleDeals.filter((entry) => entry.streetRelation === "same");
+  const nearbyStreetDeals = eligibleDeals.filter((entry) => entry.streetRelation === "near");
+  const neighborhoodDeals = eligibleDeals.filter((entry) => entry.streetRelation === "neighborhood");
+  const scopedDeals = normalizedStreet
+    ? [...sameStreetDeals, ...nearbyStreetDeals, ...neighborhoodDeals]
+    : eligibleDeals;
 
-  const scoredDeals = (preferredDeals.length ? preferredDeals : eligibleDeals).sort(sortByComparableStrength);
+  const scoredDeals = (scopedDeals.length ? scopedDeals : eligibleDeals).sort(sortByComparableStrength);
 
   const topRankedForReference = scoredDeals.slice(0, 25);
   const pricePerSqmReferencePool = topRankedForReference
