@@ -469,14 +469,14 @@ function normalizeOverDeal(raw: unknown, index: number): GovmapDeal | null {
   };
 }
 
-async function fetchOverDeals(input: z.infer<typeof cmaInputSchema>) {
+async function fetchOverDeals(input: z.infer<typeof cmaInputSchema>, houseNumberOverride = input.houseNumber.trim()) {
   const params = new URLSearchParams({
     settlement: input.city.trim() || CMA_DEFAULT_CITY_NAME,
     limit: "200",
     sort: "date_desc",
   });
   if (input.street.trim()) params.set("street", input.street.trim());
-  if (input.houseNumber.trim()) params.set("house", input.houseNumber.trim());
+  if (houseNumberOverride) params.set("house", houseNumberOverride);
 
   const response = await fetch(`https://www.over.org.il/api/deals/search?${params.toString()}`, {
     headers: { Accept: "application/json" },
@@ -1308,6 +1308,7 @@ function selectComparableDeals(
     roomDelta: number | null;
     floorDelta: number | null;
     houseNumberDelta: number | null;
+    houseNumberParityMatch: boolean | null;
     sqmDeltaPercent: number | null;
     recencyDays: number;
     streetRelation: StreetRelation;
@@ -1365,6 +1366,10 @@ function selectComparableDeals(
             : normalizedHouseNumber === normalizedDealHouseNumber
               ? 0
               : null
+            : null;
+      const houseNumberParityMatch =
+        targetHouseNumber != null && dealHouseNumber != null
+          ? Math.abs(targetHouseNumber) % 2 === Math.abs(dealHouseNumber) % 2
           : null;
       const sqmPenalty =
         typeof deal.assetArea !== "number"
@@ -1423,6 +1428,7 @@ function selectComparableDeals(
           (roomDelta ?? 0) * 2200 +
           (floorDelta ?? 0) * 900 +
           (houseNumberDelta ?? 0) * 1800 +
+          (houseNumberParityMatch === false ? 700 : 0) +
           sqmPenalty * 6 +
           recencyDays * 0.8,
         isRecent: !Number.isNaN(dealDate.getTime()) && dealDate >= fromDate,
@@ -1436,6 +1442,7 @@ function selectComparableDeals(
         roomDelta,
         floorDelta,
         houseNumberDelta,
+        houseNumberParityMatch,
         sqmDeltaPercent,
         recencyDays,
         streetRelation,
@@ -1454,6 +1461,8 @@ function selectComparableDeals(
     }
 
     if (normalizedHouseNumber) {
+      const parityDiff = Number(left.houseNumberParityMatch === false) - Number(right.houseNumberParityMatch === false);
+      if (parityDiff !== 0) return parityDiff;
       const houseNumberDiff = (left.houseNumberDelta ?? 99) - (right.houseNumberDelta ?? 99);
       if (houseNumberDiff !== 0) return houseNumberDiff;
     }
@@ -1609,6 +1618,8 @@ function selectComparableDeals(
     }
 
     if (normalizedHouseNumber) {
+      const parityDiff = Number(left.houseNumberParityMatch === false) - Number(right.houseNumberParityMatch === false);
+      if (parityDiff !== 0) return parityDiff;
       const houseNumberDiff = (left.houseNumberDelta ?? 99) - (right.houseNumberDelta ?? 99);
       if (houseNumberDiff !== 0) return houseNumberDiff;
     }
@@ -2209,6 +2220,16 @@ export const appRouter = router({
 
           if (!rawDeals.length) {
             rawDeals = await fetchOverDeals(input);
+            if (rawDeals.length < 5 && input.street.trim()) {
+              const sameStreetDeals = await fetchOverDeals(input, "");
+              const existingDealKeys = new Set(rawDeals.map((deal) => `${deal.dealDate}|${deal.dealAmount}|${deal.streetNameHeb}|${deal.houseNum}`));
+              rawDeals = [
+                ...rawDeals,
+                ...sameStreetDeals.filter(
+                  (deal) => !existingDealKeys.has(`${deal.dealDate}|${deal.dealAmount}|${deal.streetNameHeb}|${deal.houseNum}`),
+                ),
+              ];
+            }
           }
           const deals = selectComparableDeals(rawDeals, input, nearbyStreetNames);
           console.info("[CMA] deals loaded", {
