@@ -34,11 +34,19 @@ function isSecureRequest(req: Request) {
 
 function getSharedSiteCookieDomain(req: Request) {
   const forwardedHost = req.headers["x-forwarded-host"];
-  const rawHost = Array.isArray(forwardedHost) ? forwardedHost[0] : forwardedHost;
-  const host = (rawHost || req.hostname || "").split(",")[0].trim().split(":")[0].toLowerCase();
+  const forwardedOrigin = req.headers.origin;
+  const candidates = [
+    ...(Array.isArray(forwardedHost) ? forwardedHost : [forwardedHost]),
+    req.hostname,
+    ...(Array.isArray(forwardedOrigin) ? forwardedOrigin : [forwardedOrigin]),
+  ].filter(Boolean);
 
-  if (host === "teamshay-jerusalem-homes.co.il" || host.endsWith(".teamshay-jerusalem-homes.co.il")) {
-    return ".teamshay-jerusalem-homes.co.il";
+  for (const candidate of candidates) {
+    const rawValue = String(candidate).split(",")[0].trim();
+    const host = rawValue.includes("://") ? new URL(rawValue).hostname : rawValue.split(":")[0].toLowerCase();
+    if (host === "teamshay-jerusalem-homes.co.il" || host.endsWith(".teamshay-jerusalem-homes.co.il")) {
+      return ".teamshay-jerusalem-homes.co.il";
+    }
   }
 
   return undefined;
