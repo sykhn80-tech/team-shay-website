@@ -1,4 +1,5 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
+import { parse as parseCookieHeader } from "cookie";
 import type { AgentAccount, User } from "../../drizzle/schema";
 import { getAgentById } from "../db";
 import { verifyAgentSessionToken } from "./agentSession";
@@ -28,7 +29,8 @@ export async function createContext(
     user = null;
   }
 
-  const agentSessionCookie = opts.req.cookies?.team_shay_agent_session;
+  const requestCookies = opts.req.cookies ?? parseCookieHeader(opts.req.headers.cookie ?? "");
+  const agentSessionCookie = requestCookies.team_shay_agent_session;
   const agentSessionHeader = opts.req.headers["x-team-shay-agent-session"];
   const headerToken = Array.isArray(agentSessionHeader)
     ? agentSessionHeader[0]
