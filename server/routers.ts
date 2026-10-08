@@ -319,6 +319,12 @@ const activityTypeSchema = z.enum(["meetings", "buyer_tours", "calls", "followup
 
 const CMA_DEFAULT_CITY_NAME = "ירושלים";
 const NADLAN_NEIGHBORHOOD_INDEX_TTL_MS = 1000 * 60 * 60 * 6;
+const GOVMAP_BROWSER_HEADERS = {
+  Accept: "application/json",
+  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+  Referer: "https://www.govmap.gov.il/",
+  Origin: "https://www.govmap.gov.il",
+};
 
 type GovmapAutocompletePayload = {
   results?: Array<{
@@ -1010,11 +1016,14 @@ async function fetchNeighborhoodReference(neighborhood: string, city?: string, s
     const response = await fetch("https://www.govmap.gov.il/api/search-service/autocomplete", {
       method: "POST",
       headers: {
+        ...GOVMAP_BROWSER_HEADERS,
         "Content-Type": "application/json",
-        Accept: "application/json",
       },
       body: JSON.stringify({
         searchText: searchTerm,
+        language: "he",
+        isAccurate: false,
+        maxResults: 10,
       }),
     });
 
@@ -1061,10 +1070,15 @@ async function fetchNeighborhoodReference(neighborhood: string, city?: string, s
     const response = await fetch("https://www.govmap.gov.il/api/search-service/autocomplete", {
       method: "POST",
       headers: {
+        ...GOVMAP_BROWSER_HEADERS,
         "Content-Type": "application/json",
-        Accept: "application/json",
       },
-      body: JSON.stringify({ searchText: searchTerm }),
+      body: JSON.stringify({
+        searchText: searchTerm,
+        language: "he",
+        isAccurate: false,
+        maxResults: 10,
+      }),
     });
 
     if (!response.ok) return null;
@@ -1187,9 +1201,9 @@ async function fetchNadlanNeighborhoodPage(legacyNeighborhoodId: number) {
 async function fetchNeighborhoodDealsPolygonId(point: { x: number; y: number }, recaptchaToken: string) {
   const response = await fetch(`https://www.govmap.gov.il/api/real-estate/deals/${point.x},${point.y}/350`, {
     headers: {
+      ...GOVMAP_BROWSER_HEADERS,
       Accept: "application/json",
       "x-recaptcha-token": recaptchaToken,
-      Referer: "https://www.govmap.gov.il/",
     },
   });
 
@@ -1226,9 +1240,9 @@ async function fetchNeighborhoodDealsPolygonId(point: { x: number; y: number }, 
 async function fetchGovmapNeighborhoodDeals(polygonId: string, recaptchaToken: string, limit = 80) {
   const response = await fetch(`https://www.govmap.gov.il/api/real-estate/neighborhood-deals/${polygonId}?limit=${limit}&offset=0`, {
     headers: {
+      ...GOVMAP_BROWSER_HEADERS,
       Accept: "application/json",
       "x-recaptcha-token": recaptchaToken,
-      Referer: "https://www.govmap.gov.il/",
     },
   });
 
