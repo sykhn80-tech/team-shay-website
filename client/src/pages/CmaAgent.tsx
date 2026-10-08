@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { agents as fallbackAgents, BRAND_NAME, TEAM_LOGO } from "@/lib/siteData";
@@ -28,6 +28,17 @@ interface CmaFormState {
   minSqm: string;
   maxSqm: string;
   notes: string;
+}
+
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready: (callback: () => void) => void;
+      render: (container: HTMLElement, options: { sitekey: string; size: "invisible" }) => number;
+      execute: (widgetId: number) => Promise<string>;
+      reset: (widgetId: number) => void;
+    };
+  }
 }
 
 interface CmaDeal {
@@ -127,11 +138,61 @@ export default function CmaAgent() {
   const [report, setReport] = useState<CmaResult | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [manualCompetitors, setManualCompetitors] = useState<ManualCompetitor[]>(EMPTY_COMPETITORS);
+  const recaptchaContainerRef = useRef<HTMLDivElement>(null);
+  const recaptchaWidgetIdRef = useRef<number | null>(null);
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
   const agentFallback = getAgentFallback(agent?.email, agent?.name);
   const agentPhotoUrl = agent?.photoUrl || agentFallback?.image || "";
   const agentDisplayName = agent?.name ?? agentFallback?.name ?? BRAND_NAME;
   const agentPhone = agent?.phone || agentFallback?.phone || "052-863-6631";
   const agentEmail = agent?.email || agentFallback?.email || "";
+
+  useEffect(() => {
+    const siteKey = import.meta.env.VITE_GOVMAP_RECAPTCHA_SITE_KEY || "6LcJV_IpAAAAABl7ACnh8UqDhsfd1pr3PnULpebw";
+    const markReady = () => {
+      if (!window.grecaptcha || !recaptchaContainerRef.current || recaptchaWidgetIdRef.current !== null) return;
+      window.grecaptcha.ready(() => {
+        if (!window.grecaptcha || !recaptchaContainerRef.current || recaptchaWidgetIdRef.current !== null) return;
+        recaptchaWidgetIdRef.current = window.grecaptcha.render(recaptchaContainerRef.current, {
+          sitekey: siteKey,
+          size: "invisible",
+        });
+        setRecaptchaReady(true);
+      });
+    };
+
+    if (window.grecaptcha) {
+      markReady();
+      return;
+    }
+
+    const existingScript = document.querySelector<HTMLScriptElement>('script[src*="google.com/recaptcha/api.js"]');
+    if (existingScript) {
+      existingScript.addEventListener("load", markReady);
+      return () => existingScript.removeEventListener("load", markReady);
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://www.google.com/recaptcha/api.js?render=explicit";
+    script.async = true;
+    script.defer = true;
+    script.addEventListener("load", markReady);
+    document.head.appendChild(script);
+
+    return () => script.removeEventListener("load", markReady);
+  }, []);
+
+  const getGovmapRecaptchaToken = useCallback(async () => {
+    const widgetId = recaptchaWidgetIdRef.current;
+    if (!recaptchaReady || widgetId === null || !window.grecaptcha) {
+      throw new Error("אימות העסקאות עדיין נטען. יש להמתין רגע ולנסות שוב.");
+    }
+
+    window.grecaptcha.reset(widgetId);
+    const token = await window.grecaptcha.execute(widgetId);
+    if (!token) throw new Error("לא התקבל אישור אבטחה ממאגר העסקאות.");
+    return token;
+  }, [recaptchaReady]);
 
   const reportStats = useMemo(() => {
     if (!report) return null;
@@ -292,7 +353,16 @@ export default function CmaAgent() {
     }
 
     try {
-      const nextResult = await generateCmaMutation.mutateAsync(form);
+      let recaptchaToken: string | undefined;
+      try {
+        recaptchaToken = await getGovmapRecaptchaToken();
+      } catch {
+        // The server has a non-blocking mirrored-data fallback when Govmap's captcha is unavailable.
+      }
+      const nextResult = await generateCmaMutation.mutateAsync({
+        ...form,
+        ...(recaptchaToken ? { recaptchaToken } : {}),
+      });
       setReport(nextResult);
       setIsEditMode(false);
       setManualCompetitors(EMPTY_COMPETITORS);
@@ -338,6 +408,7 @@ export default function CmaAgent() {
 
   return (
     <AgentLayout>
+      <div ref={recaptchaContainerRef} className="pointer-events-none fixed left-0 top-0 z-[-1] size-px opacity-0" aria-hidden="true" />
       <div className="min-h-screen overflow-x-hidden bg-[#fbfaf5] text-black print:bg-white" dir="rtl">
         <main className="overflow-x-hidden px-4 py-6 md:px-8 md:py-8 print:px-0 print:py-0">
           <div className="mx-auto max-w-6xl">

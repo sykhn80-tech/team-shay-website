@@ -230,6 +230,7 @@ const cmaInputSchema = z.object({
   minSqm: z.string().trim().default(""),
   maxSqm: z.string().trim().default(""),
   notes: z.string().trim().default(""),
+  recaptchaToken: z.string().trim().min(1).optional(),
 });
 
 const cmaAiSummarySchema = z.object({
@@ -356,6 +357,8 @@ type GovmapNeighborhoodDealsPayload = {
   }>;
 };
 
+type GovmapDeal = NonNullable<GovmapNeighborhoodDealsPayload["data"]>[number];
+
 function asGovmapArray<T>(payload: unknown, keys: string[] = ["data", "results", "items", "deals"]): T[] {
   if (Array.isArray(payload)) return payload as T[];
   if (!payload || typeof payload !== "object") return [];
@@ -394,7 +397,7 @@ function normalizeGovmapDate(value: unknown) {
   return raw;
 }
 
-function normalizeGovmapDeal(raw: unknown): NonNullable<GovmapNeighborhoodDealsPayload["data"]>[number] | null {
+function normalizeGovmapDeal(raw: unknown): GovmapDeal | null {
   if (!raw || typeof raw !== "object") return null;
   const item = raw as Record<string, unknown>;
   const dealAmount = asFiniteNumber(item.dealAmount ?? item.deal_amount ?? item.price ?? item.amount);
@@ -419,6 +422,65 @@ function normalizeGovmapDeal(raw: unknown): NonNullable<GovmapNeighborhoodDealsP
     dealNatureDescription: asText(item.dealNatureDescription ?? item.deal_nature ?? item.dealNature) || null,
     neighborhood: asText(item.neighborhood ?? item.neighborhoodName ?? item.neighborhood_name) || null,
   };
+}
+
+function stableDealId(value: string, index: number) {
+  let hash = 2166136261;
+  for (const character of value) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return Math.abs(hash) || index + 1;
+}
+
+function normalizeOverDeal(raw: unknown, index: number): GovmapDeal | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as Record<string, unknown>;
+  const addresses = Array.isArray(item.addresses) ? item.addresses.map(asText).filter(Boolean) : [];
+  const address = addresses[0] ?? asText(item.address);
+  const addressMatch = address.match(/^(.*?)(?:\s+)(\d+(?:[./-]\d+)?)$/);
+  const streetNameHeb = asText(item.streetNameHeb ?? item.streetName ?? (addressMatch?.[1] ?? ""));
+  const houseNum = asFiniteNumber(item.houseNum ?? item.houseNumber ?? (addressMatch?.[2] ?? ""));
+  const dealAmount = asFiniteNumber(item.amount ?? item.dealAmount ?? item.price);
+  const assetArea = asFiniteNumber(item.area_sqm ?? item.assetArea ?? item.area);
+  const assetRoomNum = asFiniteNumber(item.rooms ?? item.assetRoomNum);
+  const dealDate = normalizeGovmapDate(item.date ?? item.dealDate ?? item.date_src);
+  if (dealAmount == null || !dealDate) return null;
+
+  return {
+    dealId: stableDealId(`${dealDate}|${dealAmount}|${address}|${index}`, index),
+    dealAmount,
+    dealDate,
+    settlementNameHeb: asText(item.settlement),
+    streetNameHeb: streetNameHeb || null,
+    houseNum,
+    floorNo: asText(item.floor) || null,
+    assetArea,
+    assetRoomNum,
+    propertyTypeDescription: asText(item.nature) || null,
+    dealNatureDescription: asText(item.nature) || null,
+    neighborhood: null,
+  };
+}
+
+async function fetchOverDeals(input: z.infer<typeof cmaInputSchema>) {
+  const params = new URLSearchParams({
+    settlement: input.city.trim() || CMA_DEFAULT_CITY_NAME,
+    limit: "200",
+    sort: "date_desc",
+  });
+  if (input.street.trim()) params.set("street", input.street.trim());
+  if (input.houseNumber.trim()) params.set("house", input.houseNumber.trim());
+
+  const response = await fetch(`https://www.over.org.il/api/deals/search?${params.toString()}`, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) throw new Error("לא הצלחנו לטעון עסקאות ממקור הגיבוי.");
+
+  const payload = await response.json();
+  return asGovmapArray<unknown>(payload, ["data", "results"])
+    .map(normalizeOverDeal)
+    .filter((deal): deal is GovmapDeal => Boolean(deal));
 }
 
 type NadlanNeighborhoodIndexEntry = {
@@ -1122,10 +1184,12 @@ async function fetchNadlanNeighborhoodPage(legacyNeighborhoodId: number) {
   return (await response.json()) as NadlanNeighborhoodPage;
 }
 
-async function fetchNeighborhoodDealsPolygonId(point: { x: number; y: number }) {
+async function fetchNeighborhoodDealsPolygonId(point: { x: number; y: number }, recaptchaToken: string) {
   const response = await fetch(`https://www.govmap.gov.il/api/real-estate/deals/${point.x},${point.y}/350`, {
     headers: {
       Accept: "application/json",
+      "x-recaptcha-token": recaptchaToken,
+      Referer: "https://www.govmap.gov.il/",
     },
   });
 
@@ -1135,6 +1199,9 @@ async function fetchNeighborhoodDealsPolygonId(point: { x: number; y: number }) 
 
   const payload = await response.json();
   const results = asGovmapArray<GovmapDealLocator>(payload, ["results", "data", "items"]);
+  if (!results.length && payload && typeof payload === "object" && "message" in payload) {
+    throw new Error(asText((payload as Record<string, unknown>).message) || "מאגר העסקאות דורש אימות נוסף.");
+  }
   const candidate =
     results
       .filter((item) => item.polygon_id)
@@ -1156,10 +1223,12 @@ async function fetchNeighborhoodDealsPolygonId(point: { x: number; y: number }) 
   };
 }
 
-async function fetchGovmapNeighborhoodDeals(polygonId: string, limit = 80) {
+async function fetchGovmapNeighborhoodDeals(polygonId: string, recaptchaToken: string, limit = 80) {
   const response = await fetch(`https://www.govmap.gov.il/api/real-estate/neighborhood-deals/${polygonId}?limit=${limit}&offset=0`, {
     headers: {
       Accept: "application/json",
+      "x-recaptcha-token": recaptchaToken,
+      Referer: "https://www.govmap.gov.il/",
     },
   });
 
@@ -2102,7 +2171,17 @@ export const appRouter = router({
             houseNumber: input.houseNumber.trim(),
             label: neighborhoodRef.label,
           });
-          const { polygonId, nearbyStreetNames } = await fetchNeighborhoodDealsPolygonId(neighborhoodRef.point);
+          let nearbyStreetNames = new Set<string>();
+          let rawDeals: NonNullable<GovmapNeighborhoodDealsPayload["data"]> = [];
+          if (input.recaptchaToken) {
+            try {
+              const govmapResult = await fetchNeighborhoodDealsPolygonId(neighborhoodRef.point, input.recaptchaToken);
+              nearbyStreetNames = govmapResult.nearbyStreetNames;
+              rawDeals = await fetchGovmapNeighborhoodDeals(govmapResult.polygonId, input.recaptchaToken, 100);
+            } catch (error) {
+              console.warn("[CMA] Govmap deals unavailable, using mirrored government data", error instanceof Error ? error.message : error);
+            }
+          }
 
           let pageData: NadlanNeighborhoodPage | null = null;
           if (typeof neighborhoodRef.govmapNeighborhoodId === "number" && Number.isFinite(neighborhoodRef.govmapNeighborhoodId)) {
@@ -2114,10 +2193,11 @@ export const appRouter = router({
             }
           }
 
-          const rawDeals = await fetchGovmapNeighborhoodDeals(polygonId, 100);
+          if (!rawDeals.length) {
+            rawDeals = await fetchOverDeals(input);
+          }
           const deals = selectComparableDeals(rawDeals, input, nearbyStreetNames);
           console.info("[CMA] deals loaded", {
-            polygonId,
             rawDeals: rawDeals.length,
             selectedDeals: deals.length,
             nearbyStreets: nearbyStreetNames.size,
