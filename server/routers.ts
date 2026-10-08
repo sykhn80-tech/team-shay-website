@@ -356,6 +356,71 @@ type GovmapNeighborhoodDealsPayload = {
   }>;
 };
 
+function asGovmapArray<T>(payload: unknown, keys: string[] = ["data", "results", "items", "deals"]): T[] {
+  if (Array.isArray(payload)) return payload as T[];
+  if (!payload || typeof payload !== "object") return [];
+
+  const record = payload as Record<string, unknown>;
+  for (const key of keys) {
+    if (Array.isArray(record[key])) return record[key] as T[];
+  }
+
+  return [];
+}
+
+function asFiniteNumber(value: unknown) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value !== "string") return null;
+  const normalized = value.replace(/₪/g, "").replace(/,/g, "").trim();
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function asText(value: unknown) {
+  return value == null ? "" : String(value).trim();
+}
+
+function normalizeGovmapDate(value: unknown) {
+  const raw = asText(value);
+  if (!raw) return "";
+
+  const israeliDate = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+  if (israeliDate) {
+    const [, day, month, year] = israeliDate;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  }
+
+  return raw;
+}
+
+function normalizeGovmapDeal(raw: unknown): NonNullable<GovmapNeighborhoodDealsPayload["data"]>[number] | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as Record<string, unknown>;
+  const dealAmount = asFiniteNumber(item.dealAmount ?? item.deal_amount ?? item.price ?? item.amount);
+  const assetArea = asFiniteNumber(item.assetArea ?? item.asset_area ?? item.sqm ?? item.area);
+  const assetRoomNum = asFiniteNumber(item.assetRoomNum ?? item.asset_room_num ?? item.rooms ?? item.roomNum);
+  const dealId = asFiniteNumber(item.dealId ?? item.deal_id ?? item.id);
+  const dealDate = normalizeGovmapDate(item.dealDate ?? item.deal_date ?? item.date ?? item.transactionDate);
+
+  if (dealId == null || dealAmount == null || !dealDate) return null;
+
+  return {
+    dealId,
+    dealAmount,
+    dealDate,
+    settlementNameHeb: asText(item.settlementNameHeb ?? item.settlement_name ?? item.city ?? item.cityName),
+    streetNameHeb: asText(item.streetNameHeb ?? item.street_name ?? item.street ?? item.streetName) || null,
+    houseNum: asFiniteNumber(item.houseNum ?? item.house_number ?? item.houseNumber),
+    floorNo: asText(item.floorNo ?? item.floor ?? item.floorNumber) || null,
+    assetArea,
+    assetRoomNum,
+    propertyTypeDescription: asText(item.propertyTypeDescription ?? item.property_type ?? item.propertyType) || null,
+    dealNatureDescription: asText(item.dealNatureDescription ?? item.deal_nature ?? item.dealNature) || null,
+    neighborhood: asText(item.neighborhood ?? item.neighborhoodName ?? item.neighborhood_name) || null,
+  };
+}
+
 type NadlanNeighborhoodIndexEntry = {
   UNIQ_ID_OLD?: number;
 };
@@ -627,7 +692,8 @@ function buildComparableAddress(streetName: string | null | undefined, houseNum:
 }
 
 function formatComparableDealDate(dateValue: string) {
-  const date = new Date(dateValue);
+  const normalizedDate = normalizeGovmapDate(dateValue);
+  const date = new Date(normalizedDate);
   if (Number.isNaN(date.getTime())) return dateValue;
 
   return new Intl.DateTimeFormat("he-IL", {
@@ -894,8 +960,8 @@ async function fetchNeighborhoodReference(neighborhood: string, city?: string, s
       throw new Error("לא הצלחנו לאתר את השכונה במאגר הממשלתי.");
     }
 
-    const payload = (await response.json()) as GovmapAutocompletePayload;
-    const results = payload.results ?? [];
+    const payload = await response.json();
+    const results = asGovmapArray<GovmapAutocompleteResult>(payload, ["results", "data", "items"]);
     if (!results.length) {
       return null;
     }
@@ -941,11 +1007,12 @@ async function fetchNeighborhoodReference(neighborhood: string, city?: string, s
 
     if (!response.ok) return null;
 
-    const payload = (await response.json()) as GovmapAutocompletePayload;
+    const payload = await response.json();
+    const results = asGovmapArray<GovmapAutocompleteResult>(payload, ["results", "data", "items"]);
     const normalizedStreetToken = normalizeHebrewToken(normalizedStreet);
     const normalizedHouseToken = normalizeHebrewToken(normalizedHouseNumber).replace(/[^\d\u0590-\u05FF]/g, "");
     const normalizedCityToken = normalizeHebrewToken(normalizedCity || CMA_DEFAULT_CITY_NAME);
-    const ranked = (payload.results ?? [])
+    const ranked = results
       .map((result) => {
         const normalizedText = normalizeHebrewToken(result.text);
         const hasStreet = Boolean(normalizedStreetToken && normalizedText.includes(normalizedStreetToken));
@@ -1066,7 +1133,8 @@ async function fetchNeighborhoodDealsPolygonId(point: { x: number; y: number }) 
     throw new Error("לא הצלחנו למשוך עסקאות אחרונות מאתר המידע הממשלתי.");
   }
 
-  const results = (await response.json()) as GovmapDealLocator[];
+  const payload = await response.json();
+  const results = asGovmapArray<GovmapDealLocator>(payload, ["results", "data", "items"]);
   const candidate =
     results
       .filter((item) => item.polygon_id)
@@ -1099,8 +1167,10 @@ async function fetchGovmapNeighborhoodDeals(polygonId: string, limit = 80) {
     throw new Error("לא הצלחנו לטעון את רשימת העסקאות מהמאגר הממשלתי.");
   }
 
-  const payload = (await response.json()) as GovmapNeighborhoodDealsPayload;
-  return payload.data ?? [];
+  const payload = await response.json();
+  return asGovmapArray<unknown>(payload)
+    .map(normalizeGovmapDeal)
+    .filter((deal): deal is NonNullable<GovmapNeighborhoodDealsPayload["data"]>[number] => Boolean(deal));
 }
 
 function pickDealsWithinPricePerSqmSpread<T extends { pricePerSqm: number | null; score: number }>(
@@ -2025,6 +2095,13 @@ export const appRouter = router({
             input.street.trim(),
             input.houseNumber.trim(),
           );
+          console.info("[CMA] reference resolved", {
+            city: input.city.trim(),
+            neighborhood: input.neighborhood.trim(),
+            street: input.street.trim(),
+            houseNumber: input.houseNumber.trim(),
+            label: neighborhoodRef.label,
+          });
           const { polygonId, nearbyStreetNames } = await fetchNeighborhoodDealsPolygonId(neighborhoodRef.point);
 
           let pageData: NadlanNeighborhoodPage | null = null;
@@ -2039,6 +2116,12 @@ export const appRouter = router({
 
           const rawDeals = await fetchGovmapNeighborhoodDeals(polygonId, 100);
           const deals = selectComparableDeals(rawDeals, input, nearbyStreetNames);
+          console.info("[CMA] deals loaded", {
+            polygonId,
+            rawDeals: rawDeals.length,
+            selectedDeals: deals.length,
+            nearbyStreets: nearbyStreetNames.size,
+          });
           if (deals.length === 0) {
             throw new Error("לא נמצאו עסקאות השוואה מתאימות עבור השכונה והחדרים שבחרת.");
           }
@@ -2074,6 +2157,7 @@ export const appRouter = router({
             },
           };
         } catch (error) {
+          console.error("[CMA] generation failed", error instanceof Error ? error.message : error);
           return buildManualCmaFallback(input, error);
         }
       }),
