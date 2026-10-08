@@ -224,6 +224,7 @@ const cmaInputSchema = z.object({
   city: z.string().trim().default(""),
   neighborhood: z.string().trim().min(2),
   street: z.string().trim().default(""),
+  houseNumber: z.string().trim().default(""),
   rooms: z.string().trim().min(1),
   floor: z.string().trim().default(""),
   minSqm: z.string().trim().default(""),
@@ -694,6 +695,7 @@ function buildCmaPrompt(
 - עיר: ${cityName}
 - שכונה: ${input.neighborhood}
 - רחוב יעד (אם קיים): ${input.street || "לא הוזן"}
+- מספר בית (אם קיים): ${input.houseNumber || "לא הוזן"}
 - חדרים מבוקשים: ${input.rooms}
 - קומה מבוקשת: ${input.floor || "לא הוזנה"}
 - טווח מ"ר: ${input.minSqm || "לא הוזן"} - ${input.maxSqm || "לא הוזן"}
@@ -796,7 +798,7 @@ function buildManualCmaFallback(input: z.infer<typeof cmaInputSchema>, reason?: 
   const recommendedMin = roundCurrency(averagePricePerSqm * estimatedSqmMin * 0.94);
   const recommendedMax = roundCurrency(averagePricePerSqm * estimatedSqmMax * 1.06);
   const street = input.street.trim() || input.neighborhood.trim();
-  const broadSearchQuery = `site:yad2.co.il/realestate/forsale ${input.street || ""} ${input.neighborhood} ${cityName} ${input.rooms} חדרים`;
+  const broadSearchQuery = `site:yad2.co.il/realestate/forsale ${input.street || ""} ${input.houseNumber || ""} ${input.neighborhood} ${cityName} ${input.rooms} חדרים`;
   const technicalReason = reason instanceof Error ? reason.message : "";
 
   return {
@@ -839,10 +841,11 @@ function buildManualCmaFallback(input: z.infer<typeof cmaInputSchema>, reason?: 
   };
 }
 
-async function fetchNeighborhoodReference(neighborhood: string, city?: string, street?: string) {
+async function fetchNeighborhoodReference(neighborhood: string, city?: string, street?: string, houseNumber?: string) {
   const normalizedNeighborhood = sanitizeNeighborhoodInput(neighborhood.trim().replace(/\s+/g, " "));
   const normalizedCity = sanitizeCityInput((city ?? "").trim().replace(/\s+/g, " "));
   const normalizedStreet = sanitizeStreetInput((street ?? "").trim().replace(/\s+/g, " "));
+  const normalizedHouseNumber = (houseNumber ?? "").trim().replace(/\s+/g, " ");
 
   const neighborhoodAliases: Record<string, string[]> = {
     "גבעת קנדה": ["גילה"],
@@ -925,6 +928,60 @@ async function fetchNeighborhoodReference(neighborhood: string, city?: string, s
 
     return null;
   };
+
+  const lookupExactAddress = async (searchTerm: string) => {
+    const response = await fetch("https://www.govmap.gov.il/api/search-service/autocomplete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ searchText: searchTerm }),
+    });
+
+    if (!response.ok) return null;
+
+    const payload = (await response.json()) as GovmapAutocompletePayload;
+    const normalizedStreetToken = normalizeHebrewToken(normalizedStreet);
+    const normalizedHouseToken = normalizeHebrewToken(normalizedHouseNumber).replace(/[^\d\u0590-\u05FF]/g, "");
+    const normalizedCityToken = normalizeHebrewToken(normalizedCity || CMA_DEFAULT_CITY_NAME);
+    const ranked = (payload.results ?? [])
+      .map((result) => {
+        const normalizedText = normalizeHebrewToken(result.text);
+        const hasStreet = Boolean(normalizedStreetToken && normalizedText.includes(normalizedStreetToken));
+        const textHouseNumbers = normalizedText.match(/\d+(?:\.\d+)?/g) ?? [];
+        const hasHouseNumber = Boolean(normalizedHouseToken && textHouseNumbers.includes(normalizedHouseToken));
+        const hasCity = Boolean(normalizedCityToken && normalizedText.includes(normalizedCityToken));
+        let score = 0;
+        if (result.type === "address" || result.type === "street") score += 30;
+        if (hasStreet) score += 50;
+        if (hasHouseNumber) score += 60;
+        if (hasCity) score += 15;
+        return { result, score, hasStreet, hasHouseNumber };
+      })
+      .filter((item) => item.hasStreet && item.hasHouseNumber)
+      .sort((left, right) => right.score - left.score);
+
+    for (const item of ranked) {
+      const mapped = getNeighborhoodReferenceFromResult(item.result, searchTerm);
+      if (mapped) return mapped;
+    }
+
+    return null;
+  };
+
+  if (normalizedStreet && normalizedHouseNumber) {
+    const exactAddressTerms = [
+      `${normalizedStreet} ${normalizedHouseNumber}, ${normalizedCity || CMA_DEFAULT_CITY_NAME}`,
+      `${normalizedStreet} ${normalizedHouseNumber} ${normalizedCity || CMA_DEFAULT_CITY_NAME}`,
+      `${normalizedCity || CMA_DEFAULT_CITY_NAME} ${normalizedStreet} ${normalizedHouseNumber}`,
+    ];
+
+    for (const term of exactAddressTerms) {
+      const exactMatch = await lookupExactAddress(term);
+      if (exactMatch) return exactMatch;
+    }
+  }
 
   const candidateTerms = new Set<string>();
   const addTerm = (value: string) => {
@@ -1089,6 +1146,7 @@ function selectComparableDeals(
     pricePerSqm: number | null;
     roomDelta: number | null;
     floorDelta: number | null;
+    houseNumberDelta: number | null;
     sqmDeltaPercent: number | null;
     recencyDays: number;
     streetRelation: StreetRelation;
@@ -1104,8 +1162,10 @@ function selectComparableDeals(
 
   const normalizedNeighborhood = normalizeHebrewToken(input.neighborhood);
   const normalizedStreet = normalizeHebrewToken(input.street);
+  const normalizedHouseNumber = normalizeHebrewToken(input.houseNumber).replace(/[^\d\u0590-\u05FF]/g, "");
   const targetRooms = parseNumericInput(input.rooms);
   const targetFloor = parseFloorInput(input.floor);
+  const targetHouseNumber = parseNumericInput(input.houseNumber);
   const minSqm = parseNumericInput(input.minSqm);
   const maxSqm = parseNumericInput(input.maxSqm);
 
@@ -1135,6 +1195,16 @@ function selectComparableDeals(
       const roomDelta = targetRooms == null || deal.assetRoomNum == null ? null : Math.abs(deal.assetRoomNum - targetRooms);
       const dealFloor = parseFloorInput(deal.floorNo);
       const floorDelta = targetFloor == null || dealFloor == null ? null : Math.abs(dealFloor - targetFloor);
+      const normalizedDealHouseNumber = normalizeHebrewToken(String(deal.houseNum ?? "")).replace(/[^\d\u0590-\u05FF]/g, "");
+      const dealHouseNumber = parseNumericInput(String(deal.houseNum ?? ""));
+      const houseNumberDelta =
+        normalizedHouseNumber && normalizedDealHouseNumber
+          ? targetHouseNumber != null && dealHouseNumber != null
+            ? Math.abs(dealHouseNumber - targetHouseNumber)
+            : normalizedHouseNumber === normalizedDealHouseNumber
+              ? 0
+              : null
+          : null;
       const sqmPenalty =
         typeof deal.assetArea !== "number"
           ? 0
@@ -1191,6 +1261,7 @@ function selectComparableDeals(
           streetMatchScore +
           (roomDelta ?? 0) * 2200 +
           (floorDelta ?? 0) * 900 +
+          (houseNumberDelta ?? 0) * 1800 +
           sqmPenalty * 6 +
           recencyDays * 0.8,
         isRecent: !Number.isNaN(dealDate.getTime()) && dealDate >= fromDate,
@@ -1203,6 +1274,7 @@ function selectComparableDeals(
             : null,
         roomDelta,
         floorDelta,
+        houseNumberDelta,
         sqmDeltaPercent,
         recencyDays,
         streetRelation,
@@ -1218,6 +1290,11 @@ function selectComparableDeals(
     if (targetFloor != null) {
       const floorDiff = (left.floorDelta ?? 99) - (right.floorDelta ?? 99);
       if (floorDiff !== 0) return floorDiff;
+    }
+
+    if (normalizedHouseNumber) {
+      const houseNumberDiff = (left.houseNumberDelta ?? 99) - (right.houseNumberDelta ?? 99);
+      if (houseNumberDiff !== 0) return houseNumberDiff;
     }
 
     const leftSqmDelta = left.sqmDeltaPercent ?? 99;
@@ -1289,6 +1366,8 @@ function selectComparableDeals(
       else if (entry.floorDelta === 2) matchScore += 4;
     }
 
+    if (normalizedHouseNumber && entry.houseNumberDelta === 0) matchScore += 8;
+
     if (entry.sqmDeltaPercent == null) matchScore += 8;
     else if (entry.sqmDeltaPercent <= 0.08) matchScore += 22;
     else if (entry.sqmDeltaPercent <= 0.15) matchScore += 18;
@@ -1322,6 +1401,8 @@ function selectComparableDeals(
     if (targetFloor != null && entry.floorDelta === 0) strengths.push("קומה זהה");
     else if (targetFloor != null && entry.floorDelta === 1) strengths.push("קומה קרובה");
 
+    if (normalizedHouseNumber && entry.houseNumberDelta === 0) strengths.push("מספר בית זהה");
+
     if (entry.sqmDeltaPercent != null) {
       if (entry.sqmDeltaPercent <= 0.12) strengths.push("שטח דומה");
       else if (entry.sqmDeltaPercent <= 0.25) strengths.push("שטח קרוב");
@@ -1341,6 +1422,7 @@ function selectComparableDeals(
     if (targetFloor != null && floorDelta == null) weaknesses.push("נתון קומה חסר");
     else if (targetFloor != null && typeof floorDelta === "number" && floorDelta > 2) weaknesses.push("פער קומה מורגש");
     if (entry.sqmDeltaPercent != null && entry.sqmDeltaPercent > 0.25) weaknesses.push("פער שטח מורגש");
+    if (normalizedHouseNumber && entry.houseNumberDelta == null) weaknesses.push("מספר בית לא זמין בעסקה");
 
     return {
       ...entry,
@@ -1357,6 +1439,11 @@ function selectComparableDeals(
     if (targetFloor != null) {
       const floorDiff = (left.floorDelta ?? 99) - (right.floorDelta ?? 99);
       if (floorDiff !== 0) return floorDiff;
+    }
+
+    if (normalizedHouseNumber) {
+      const houseNumberDiff = (left.houseNumberDelta ?? 99) - (right.houseNumberDelta ?? 99);
+      if (houseNumberDiff !== 0) return houseNumberDiff;
     }
 
     const leftSqmDelta = left.sqmDeltaPercent ?? 99;
@@ -1912,7 +1999,12 @@ export const appRouter = router({
       .input(cmaInputSchema)
       .mutation(async ({ input }) => {
         try {
-          const neighborhoodRef = await fetchNeighborhoodReference(input.neighborhood.trim(), input.city.trim(), input.street.trim());
+          const neighborhoodRef = await fetchNeighborhoodReference(
+            input.neighborhood.trim(),
+            input.city.trim(),
+            input.street.trim(),
+            input.houseNumber.trim(),
+          );
           const polygonId = await fetchNeighborhoodDealsPolygonId(neighborhoodRef.point);
 
           let pageData: NadlanNeighborhoodPage | null = null;
@@ -1946,7 +2038,7 @@ export const appRouter = router({
             }
           }
 
-          const broadSearchQuery = `site:yad2.co.il/realestate/forsale ${input.street || ""} ${input.neighborhood} ${cityName} ${input.rooms} חדרים`;
+          const broadSearchQuery = `site:yad2.co.il/realestate/forsale ${input.street || ""} ${input.houseNumber || ""} ${input.neighborhood} ${cityName} ${input.rooms} חדרים`;
 
           return {
             neighborhoodLabel: pageData?.neighborhoodName ?? neighborhoodRef.label,

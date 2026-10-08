@@ -972,7 +972,7 @@ export default function Home() {
               נדל״ן בירושלים. עם צוות שנשאר גם אחרי המפתח.
             </h1>
 
-            <p className="mt-8 max-w-[680px] text-xl font-bold leading-8 text-[#FFFDF8]/90 md:text-[1.35rem]">
+            <p className="mt-8 max-w-[680px] text-[1.3rem] font-bold leading-8 text-[#FFFDF8]/90 md:text-[1.45rem]">
               מלווים אתכם מהפגישה הראשונה, דרך המשכנתא ועורך הדין, ועד שהדירה מושכרת ומנוהלת. הכול בכתובת אחת.
             </p>
 
@@ -985,7 +985,7 @@ export default function Home() {
               </Button>
             </div>
 
-            <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm font-bold text-[#FFFDF8]/85">
+            <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-3 text-base font-bold text-[#FFFDF8]/85 md:text-lg">
               <button type="button" onClick={() => selectLeadTrack("seller")} className="underline-offset-4 transition hover:text-[#D9AE4C] hover:underline">מוכרים דירה</button>
               <button type="button" onClick={() => selectLeadTrack("investor")} className="underline-offset-4 transition hover:text-[#D9AE4C] hover:underline">רוצים להשקיע</button>
               <button type="button" onClick={() => selectLeadTrack("landlord")} className="underline-offset-4 transition hover:text-[#D9AE4C] hover:underline">צריכים להשכיר נכס</button>

@@ -22,6 +22,7 @@ interface CmaFormState {
   city: string;
   neighborhood: string;
   street: string;
+  houseNumber: string;
   rooms: string;
   floor: string;
   minSqm: string;
@@ -82,6 +83,7 @@ const EMPTY_FORM: CmaFormState = {
   city: "",
   neighborhood: "",
   street: "",
+  houseNumber: "",
   rooms: "",
   floor: "",
   minSqm: "",
@@ -344,7 +346,7 @@ export default function CmaAgent() {
                 <p className="text-sm font-black uppercase tracking-[0.08em] text-[#4b8067]">CMA</p>
                 <h2 className="mt-3 text-3xl font-black text-black md:text-4xl">הערכת שווי CMA</h2>
                 <p className="mt-3 text-base leading-7 text-slate-600">
-                  מזינים עיר, שכונה, רחוב, חדרים וטווח מ"ר, ומקבלים דוח שאפשר לערוך ידנית לפני שליחה ללקוח.
+                  מזינים עיר, שכונה, רחוב ומספר בית, חדרים וטווח מ"ר, ומקבלים דוח שאפשר לערוך ידנית לפני שליחה ללקוח.
                 </p>
               </div>
 
@@ -360,7 +362,7 @@ export default function CmaAgent() {
                   <BarChart2 className="size-5 text-[#4b8067]" />
                   <div>
                     <h3 className="text-xl font-black text-black">פרטי החיפוש</h3>
-                    <p className="mt-1 text-sm text-slate-500">עדיפות אוטומטית ניתנת לאותו הרחוב המדויק כאשר הוא מוזן.</p>
+                    <p className="mt-1 text-sm text-slate-500">כתובת מלאה מעגנת את החיפוש בנקודה המדויקת, ולאחר מכן העסקאות מסוננות לפי כל הנתונים שהוזנו.</p>
                   </div>
                 </div>
 
@@ -391,6 +393,17 @@ export default function CmaAgent() {
                       value={form.street}
                       onChange={(event) => setField("street", event.target.value)}
                       placeholder="למשל: מקור חיים"
+                      className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
+                    />
+                  </label>
+
+                  <label className="grid gap-2">
+                    <span className="text-sm font-bold text-slate-700">מספר בית (לחיפוש מדויק)</span>
+                    <input
+                      value={form.houseNumber}
+                      onChange={(event) => setField("houseNumber", event.target.value)}
+                      placeholder="למשל: 13"
+                      inputMode="numeric"
                       className="h-12 rounded-2xl border border-slate-200 bg-[#fafafa] px-4 text-sm outline-none transition focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
                     />
                   </label>
