@@ -420,6 +420,13 @@ export default function Home() {
     }
   }, [shayVideoInView, shayVideoLoaded, shayVideoReducedMotion, shayVideoMotionOverride]);
 
+  const playShayVideoIfVisible = useCallback(() => {
+    const video = shayVideoRef.current;
+    const motionAllowed = !shayVideoReducedMotion || shayVideoMotionOverride;
+    if (!video || !shayVideoInView || !motionAllowed) return;
+    void video.play().catch(() => undefined);
+  }, [shayVideoInView, shayVideoReducedMotion, shayVideoMotionOverride]);
+
   useEffect(() => () => {
     if (sliderSparkTimeout.current) window.clearTimeout(sliderSparkTimeout.current);
   }, []);
@@ -1101,11 +1108,16 @@ export default function Home() {
                         className="h-[520px] w-full rounded-[28px] object-cover"
                         poster={SHAY_BRAND_VIDEO_POSTER}
                         muted={shayVideoMuted}
+                        autoPlay
                         loop
                         playsInline
                         preload="none"
                         aria-label="סרטון תדמית של Shay Group"
-                        onLoadedData={() => setShayVideoLoaded(true)}
+                        onLoadedData={() => {
+                          setShayVideoLoaded(true);
+                          playShayVideoIfVisible();
+                        }}
+                        onCanPlay={playShayVideoIfVisible}
                       >
                         <source src={SHAY_BRAND_VIDEO_WEBM} type="video/webm" />
                         <source src={SHAY_BRAND_VIDEO_MP4} type="video/mp4" />
