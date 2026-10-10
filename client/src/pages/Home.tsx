@@ -15,6 +15,8 @@ import {
   Star,
   Search,
   TrendingUp,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -51,6 +53,9 @@ const HERO_VIDEO_URL = "/media/hero-animation.mp4";
 const HERO_LOOP_END_SECONDS = 5.4;
 const HERO_LOOP_START_SECONDS = 0.02;
 const HERO_LOOP_TARGET_SECONDS = 8;
+const SHAY_BRAND_VIDEO_WEBM = "/media/shay-group-brand.webm";
+const SHAY_BRAND_VIDEO_MP4 = "/media/shay-group-brand.mp4";
+const SHAY_BRAND_VIDEO_POSTER = "/media/shay-group-brand-poster.jpg";
 const ELIYA_IMAGE_URL = "/agents/eliya-card.jpeg";
 const AVIAD_IMAGE_URL = "/agents/aviad-card.jpeg";
 const HODIYA_IMAGE_URL = "/agents/hodiya-card.png";
@@ -334,6 +339,14 @@ export default function Home() {
   const sliderSparkTimeout = useRef<number | null>(null);
   const [marketingPreviewOpen, setMarketingPreviewOpen] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
+  const shayVideoSectionRef = useRef<HTMLDivElement | null>(null);
+  const shayVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [shayVideoInView, setShayVideoInView] = useState(false);
+  const [shouldLoadShayVideo, setShouldLoadShayVideo] = useState(false);
+  const [shayVideoLoaded, setShayVideoLoaded] = useState(false);
+  const [shayVideoMuted, setShayVideoMuted] = useState(true);
+  const [shayVideoReducedMotion, setShayVideoReducedMotion] = useState(false);
+  const [shayVideoMotionOverride, setShayVideoMotionOverride] = useState(false);
   const testimonialsSectionRef = useRef<HTMLElement | null>(null);
   const [testimonialsExpanded, setTestimonialsExpanded] = useState(false);
   const [testimonialPreview, setTestimonialPreview] = useState<{
@@ -373,6 +386,39 @@ export default function Home() {
     const timeout = window.setTimeout(() => setShowThankYou(false), 2500);
     return () => window.clearTimeout(timeout);
   }, [showThankYou]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateReducedMotion = () => setShayVideoReducedMotion(mediaQuery.matches);
+    updateReducedMotion();
+    mediaQuery.addEventListener?.("change", updateReducedMotion);
+    return () => mediaQuery.removeEventListener?.("change", updateReducedMotion);
+  }, []);
+
+  useEffect(() => {
+    const node = shayVideoSectionRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShayVideoInView(entry.isIntersecting);
+        if (entry.isIntersecting) setShouldLoadShayVideo(true);
+      },
+      { rootMargin: "200px 0px", threshold: 0.15 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const video = shayVideoRef.current;
+    if (!video || !shayVideoLoaded) return;
+    const motionAllowed = !shayVideoReducedMotion || shayVideoMotionOverride;
+    if (shayVideoInView && motionAllowed) {
+      void video.play().catch(() => undefined);
+    } else {
+      video.pause();
+    }
+  }, [shayVideoInView, shayVideoLoaded, shayVideoReducedMotion, shayVideoMotionOverride]);
 
   useEffect(() => () => {
     if (sliderSparkTimeout.current) window.clearTimeout(sliderSparkTimeout.current);
@@ -991,9 +1037,12 @@ export default function Home() {
               <button type="button" onClick={() => selectLeadTrack("landlord")} className="underline-offset-4 transition hover:text-[#D9AE4C] hover:underline">צריכים להשכיר נכס</button>
             </div>
 
-            <div className="mt-10 grid w-full max-w-4xl grid-cols-2 divide-x divide-x-reverse divide-[#E8DCC6]/30 md:grid-cols-4">
+            <div className="mt-10 grid w-full max-w-4xl grid-cols-2 pb-14 md:grid-cols-4 md:pb-0">
               {trustBadges.map((badge, index) => (
-                <div key={badge.label} className={`flex min-h-20 flex-col items-center justify-center px-3 text-center first:border-none ${index === trustBadges.length - 1 ? "border-r border-[#E8DCC6]/30" : ""}`}>
+                <div
+                  key={badge.label}
+                  className={`flex min-h-20 flex-col items-center justify-center px-3 text-center ${index === 1 ? "border-r border-[#E8DCC6]/30" : index === 2 ? "border-t border-[#E8DCC6]/30" : index === 3 ? "border-r border-t border-[#E8DCC6]/30" : ""} ${index > 0 ? "md:border-r md:border-t-0 md:border-[#E8DCC6]/30" : ""}`}
+                >
                   <AnimatedStat value={badge.value} className="text-2xl font-black text-[#D9AE4C] md:text-3xl" />
                   <span className="mt-1 text-xs font-bold text-[#FFFDF8]/80 md:text-sm">{badge.label}</span>
                 </div>
@@ -1045,13 +1094,58 @@ export default function Home() {
               <div className="relative mx-auto max-w-[30rem]">
                 <div className="absolute -inset-5 rounded-[42px] bg-[radial-gradient(circle_at_top,rgba(217,174,76,0.22),rgba(255,255,255,0))] blur-2xl" />
                 <div className="relative overflow-hidden rounded-[36px] border border-[#E8DCC6] bg-[#FFFDF8] p-4 shadow-[0_28px_70px_rgba(90,78,68,0.14)]">
-                  <img
-                    src={settings?.shayAboutImageUrl || SHAY_ABOUT_IMAGE}
-                    alt="שי כהן"
-                    className="h-[520px] w-full rounded-[28px] object-cover"
-                    style={{ objectPosition: "center 18%" }}
-                    loading="lazy"
-                  />
+                  <div ref={shayVideoSectionRef} className="relative">
+                    {shouldLoadShayVideo && !shayVideoReducedMotion || shayVideoMotionOverride ? (
+                      <video
+                        ref={shayVideoRef}
+                        className="h-[520px] w-full rounded-[28px] object-cover"
+                        poster={SHAY_BRAND_VIDEO_POSTER}
+                        muted={shayVideoMuted}
+                        loop
+                        playsInline
+                        preload="none"
+                        aria-label="סרטון תדמית של Shay Group"
+                        onLoadedData={() => setShayVideoLoaded(true)}
+                      >
+                        <source src={SHAY_BRAND_VIDEO_WEBM} type="video/webm" />
+                        <source src={SHAY_BRAND_VIDEO_MP4} type="video/mp4" />
+                      </video>
+                    ) : (
+                      <img
+                        src={SHAY_BRAND_VIDEO_POSTER}
+                        alt="סרטון תדמית של Shay Group"
+                        className="h-[520px] w-full rounded-[28px] object-cover"
+                        loading="lazy"
+                      />
+                    )}
+                    {shayVideoReducedMotion && !shayVideoMotionOverride ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShayVideoMotionOverride(true);
+                          setShouldLoadShayVideo(true);
+                        }}
+                        className="absolute bottom-4 left-4 inline-flex size-11 items-center justify-center rounded-full bg-[#D9AE4C] text-[#2A211B] shadow-lg"
+                        aria-label="הפעלת סרטון תדמית של Shay Group"
+                      >
+                        <Play className="size-5 fill-current" aria-hidden="true" />
+                      </button>
+                    ) : shouldLoadShayVideo ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const video = shayVideoRef.current;
+                          if (!video) return;
+                          video.muted = !video.muted;
+                          setShayVideoMuted(video.muted);
+                        }}
+                        className="absolute bottom-4 left-4 inline-flex size-10 items-center justify-center rounded-full bg-[#D9AE4C] text-[#2A211B] shadow-lg"
+                        aria-label={shayVideoMuted ? "הפעלת סאונד בסרטון התדמית" : "כיבוי סאונד בסרטון התדמית"}
+                      >
+                        {shayVideoMuted ? <VolumeX className="size-4" aria-hidden="true" /> : <Volume2 className="size-4" aria-hidden="true" />}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1730,9 +1824,9 @@ export default function Home() {
                         <span>650K+</span>
                       </div>
                     </div>
-                    <div className="grid gap-2"><span className="text-sm font-bold text-slate-700">יש בבעלותכם נכס?</span><div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-2"><span className="text-sm font-bold text-slate-700">יש בבעלותכם נכס?</span><div className="grid gap-3 sm:grid-cols-2">
                       {["כן", "לא, זו תהיה העסקה הראשונה"].map((value) => (
-                        <button key={value} type="button" onClick={() => setFormData((previous) => ({ ...previous, hasProperty: value }))} className={`min-h-14 rounded-2xl border px-4 text-base font-bold transition ${formData.hasProperty === value ? "border-[#D9AE4C] bg-[#FFF8E6] text-[#2A211B]" : "border-slate-200 bg-white text-slate-700 hover:border-[#D9AE4C]"}`}>{value}</button>
+                        <button key={value} type="button" onClick={() => setFormData((previous) => ({ ...previous, hasProperty: value }))} className={`min-h-14 w-full whitespace-nowrap rounded-2xl border px-4 text-sm font-bold transition sm:text-base ${formData.hasProperty === value ? "border-[#D9AE4C] bg-[#FFF8E6] text-[#2A211B]" : "border-slate-200 bg-white text-slate-700 hover:border-[#D9AE4C]"}`}>{value}</button>
                       ))}
                     </div></div>
                   </>
