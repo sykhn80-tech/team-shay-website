@@ -284,13 +284,40 @@ const celebrationPieces = Array.from({ length: 30 }, (_, index) => ({
   color: celebrationColors[index % celebrationColors.length],
 }));
 
+const EFFECTS_MEDIA_QUERY = "(min-width: 1024px) and (hover: hover) and (pointer: fine)";
+
+function useEffectsEnabled() {
+  const [effectsEnabled, setEffectsEnabled] = useState(false);
+
+  useEffect(() => {
+    const desktopQuery = window.matchMedia(EFFECTS_MEDIA_QUERY);
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setEffectsEnabled(desktopQuery.matches && !reducedMotionQuery.matches);
+    update();
+    desktopQuery.addEventListener?.("change", update);
+    reducedMotionQuery.addEventListener?.("change", update);
+    return () => {
+      desktopQuery.removeEventListener?.("change", update);
+      reducedMotionQuery.removeEventListener?.("change", update);
+    };
+  }, []);
+
+  return effectsEnabled;
+}
+
 function AnimatedStat({ value, className }: { value: string; className?: string }) {
   const elementRef = useRef<HTMLSpanElement | null>(null);
   const [progress, setProgress] = useState(0);
+  const effectsEnabled = useEffectsEnabled();
 
   useEffect(() => {
     const element = elementRef.current;
     if (!element) return;
+
+    if (!effectsEnabled) {
+      setProgress(1);
+      return;
+    }
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const start = () => {
@@ -312,7 +339,7 @@ function AnimatedStat({ value, className }: { value: string; className?: string 
     }, { threshold: 0.5 });
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
+  }, [effectsEnabled]);
 
   const numericValue = Number.parseFloat(value.replace(/[^0-9.]/g, "")) || 0;
   const prefix = value.startsWith("₪") ? "₪" : "";
@@ -323,6 +350,7 @@ function AnimatedStat({ value, className }: { value: string; className?: string 
 }
 
 export default function Home() {
+  const effectsEnabled = useEffectsEnabled();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [leadStep, setLeadStep] = useState<1 | 2 | 3>(1);
   const [leadTrack, setLeadTrack] = useState<"seller" | "investor" | "landlord" | "buyer" | null>(null);
@@ -347,6 +375,7 @@ export default function Home() {
   const [shayVideoMuted, setShayVideoMuted] = useState(true);
   const [shayVideoReducedMotion, setShayVideoReducedMotion] = useState(false);
   const [shayVideoMotionOverride, setShayVideoMotionOverride] = useState(false);
+  const [shayVideoManualPlay, setShayVideoManualPlay] = useState(false);
   const testimonialsSectionRef = useRef<HTMLElement | null>(null);
   const [testimonialsExpanded, setTestimonialsExpanded] = useState(false);
   const [testimonialPreview, setTestimonialPreview] = useState<{
@@ -370,8 +399,7 @@ export default function Home() {
   });
 
   useEffect(() => {
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotion) return;
+    if (!effectsEnabled) return;
 
     setFormData((previous) => ({ ...previous, equity: "50000" }));
     const start = window.setTimeout(() => {
@@ -379,13 +407,20 @@ export default function Home() {
     }, 120);
 
     return () => window.clearTimeout(start);
-  }, []);
+  }, [effectsEnabled]);
 
   useEffect(() => {
     if (!showThankYou) return;
     const timeout = window.setTimeout(() => setShowThankYou(false), 2500);
     return () => window.clearTimeout(timeout);
   }, [showThankYou]);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -412,20 +447,20 @@ export default function Home() {
   useEffect(() => {
     const video = shayVideoRef.current;
     if (!video || !shayVideoLoaded) return;
-    const motionAllowed = !shayVideoReducedMotion || shayVideoMotionOverride;
-    if (shayVideoInView && motionAllowed) {
+    const motionAllowed = shayVideoManualPlay || (effectsEnabled && (!shayVideoReducedMotion || shayVideoMotionOverride));
+    if ((shayVideoInView || shayVideoManualPlay) && motionAllowed) {
       void video.play().catch(() => undefined);
     } else {
       video.pause();
     }
-  }, [shayVideoInView, shayVideoLoaded, shayVideoReducedMotion, shayVideoMotionOverride]);
+  }, [effectsEnabled, shayVideoInView, shayVideoLoaded, shayVideoReducedMotion, shayVideoMotionOverride, shayVideoManualPlay]);
 
   const playShayVideoIfVisible = useCallback(() => {
     const video = shayVideoRef.current;
-    const motionAllowed = !shayVideoReducedMotion || shayVideoMotionOverride;
-    if (!video || !shayVideoInView || !motionAllowed) return;
+    const motionAllowed = shayVideoManualPlay || (effectsEnabled && (!shayVideoReducedMotion || shayVideoMotionOverride));
+    if (!video || (!shayVideoInView && !shayVideoManualPlay) || !motionAllowed) return;
     void video.play().catch(() => undefined);
-  }, [shayVideoInView, shayVideoReducedMotion, shayVideoMotionOverride]);
+  }, [effectsEnabled, shayVideoInView, shayVideoReducedMotion, shayVideoMotionOverride, shayVideoManualPlay]);
 
   useEffect(() => () => {
     if (sliderSparkTimeout.current) window.clearTimeout(sliderSparkTimeout.current);
@@ -433,8 +468,7 @@ export default function Home() {
 
   useEffect(() => {
     const target = Number(formData.equity || 50000);
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotion) {
+    if (!effectsEnabled) {
       setDisplayedEquity(target);
       return;
     }
@@ -453,7 +487,7 @@ export default function Home() {
     return () => {
       if (equityAnimationFrame.current) cancelAnimationFrame(equityAnimationFrame.current);
     };
-  }, [formData.equity]);
+  }, [effectsEnabled, formData.equity]);
 
   const homeQuery = trpc.publicSite.home.useQuery(undefined, {
     staleTime: 60_000,
@@ -713,7 +747,10 @@ export default function Home() {
   ], []);
 
   useEffect(() => {
-    if (testimonialsExpanded) return;
+    if (testimonialsExpanded || !effectsEnabled) {
+      if (!effectsEnabled) setTestimonialsExpanded(true);
+      return;
+    }
     const section = testimonialsSectionRef.current;
     if (!section) return;
 
@@ -733,7 +770,7 @@ export default function Home() {
       observer.disconnect();
       if (revealTimer) window.clearTimeout(revealTimer);
     };
-  }, [testimonialsExpanded]);
+  }, [effectsEnabled, testimonialsExpanded]);
 
   const handleFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
@@ -742,7 +779,7 @@ export default function Home() {
 
   const handleEquitySliderRelease = (event: React.PointerEvent<HTMLInputElement>) => {
     setEquitySliderDragging(false);
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!effectsEnabled) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
     const left = `${Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100))}%`;
@@ -897,7 +934,7 @@ export default function Home() {
         )}
 
         <div
-          className={`fixed top-0 right-0 z-[70] flex h-full w-80 flex-col overflow-hidden shadow-2xl transition-transform duration-300 ease-in-out lg:hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}
+          className={`fixed top-0 right-0 z-[70] flex h-full w-80 flex-col overflow-hidden shadow-2xl transition-transform duration-300 ease-in-out lg:hidden ${mobileMenuOpen ? "visible translate-x-0" : "invisible translate-x-full"}`}
           style={{ backgroundColor: "#ffffff", borderLeft: "2px solid #d9ae4c" }}
           dir="rtl"
         >
@@ -1102,7 +1139,7 @@ export default function Home() {
                 <div className="absolute -inset-5 rounded-[42px] bg-[radial-gradient(circle_at_top,rgba(217,174,76,0.22),rgba(255,255,255,0))] blur-2xl" />
                 <div className="relative overflow-hidden rounded-[36px] border border-[#E8DCC6] bg-[#FFFDF8] p-4 shadow-[0_28px_70px_rgba(90,78,68,0.14)]">
                   <div ref={shayVideoSectionRef} className="relative">
-                    {shouldLoadShayVideo && !shayVideoReducedMotion || shayVideoMotionOverride ? (
+                    {shayVideoManualPlay || (effectsEnabled && shouldLoadShayVideo && !shayVideoReducedMotion) || shayVideoMotionOverride ? (
                       <video
                         ref={shayVideoRef}
                         className="h-[520px] w-full rounded-[28px] object-cover"
@@ -1130,19 +1167,21 @@ export default function Home() {
                         loading="lazy"
                       />
                     )}
-                    {shayVideoReducedMotion && !shayVideoMotionOverride ? (
+                    {(!effectsEnabled || shayVideoReducedMotion) && !shayVideoManualPlay && !shayVideoMotionOverride ? (
                       <button
                         type="button"
                         onClick={() => {
                           setShayVideoMotionOverride(true);
                           setShouldLoadShayVideo(true);
+                          setShayVideoManualPlay(true);
+                          setShayVideoMuted(false);
                         }}
                         className="absolute bottom-4 left-4 inline-flex size-11 items-center justify-center rounded-full bg-[#D9AE4C] text-[#2A211B] shadow-lg"
                         aria-label="הפעלת סרטון תדמית של Shay Group"
                       >
                         <Play className="size-5 fill-current" aria-hidden="true" />
                       </button>
-                    ) : shouldLoadShayVideo ? (
+                    ) : shayVideoManualPlay || (effectsEnabled && shouldLoadShayVideo) ? (
                       <button
                         type="button"
                         onClick={() => {
@@ -1747,13 +1786,13 @@ export default function Home() {
             {showThankYou ? (
               <div className="pointer-events-none absolute inset-0 z-30 overflow-hidden rounded-[36px]" aria-live="polite">
                 <div className="absolute inset-x-0 top-1/2 text-center text-2xl font-black text-[#2A211B]">תודה, הפרטים התקבלו</div>
-                {celebrationPieces.map((piece, index) => (
+                {effectsEnabled ? celebrationPieces.map((piece, index) => (
                   <span
                     key={`celebration-${index}`}
                     className="celebration-confetti absolute top-1/2 h-3 w-1.5 rounded-sm"
                     style={{ left: piece.left, backgroundColor: piece.color, animationDelay: piece.delay, transform: `rotate(${piece.rotation})` }}
                   />
-                ))}
+                )) : null}
               </div>
             ) : null}
             <div className="text-center">
@@ -1892,36 +1931,36 @@ export default function Home() {
 
       </main>
 
-      <footer className="bg-[#1C1612] px-[5%] py-14 text-[#FFFDF8]" dir="rtl">
-        <div className="relative flex w-full flex-col items-end gap-12 text-right md:flex-row md:items-start md:justify-between md:text-right">
-          <div className="flex flex-col items-end text-right md:max-w-[28%]">
+      <footer className="bg-[#1C1612] px-[5%] py-14 pb-24 text-[#FFFDF8] md:pb-14" dir="rtl">
+        <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-10 text-center md:grid-cols-2 md:gap-x-16 lg:grid-cols-3 lg:items-start lg:gap-8">
+          <div className="flex flex-col items-center text-center md:col-start-1 md:row-start-2 lg:col-start-auto lg:row-start-auto lg:items-end lg:text-right">
             <p className="text-base font-extrabold uppercase tracking-[0.03em] text-white">יצירת קשר</p>
-            <div className="mt-4 flex flex-col items-end gap-3 text-right text-white" dir="rtl">
-              <a href={`tel:${officePhoneLink}`} className="flex flex-row-reverse items-center justify-start gap-2 self-end text-right">
+            <div className="mt-4 flex flex-col items-center gap-3 text-center text-white lg:items-end lg:text-right" dir="rtl">
+              <a href={`tel:${officePhoneLink}`} className="flex min-h-11 flex-row-reverse items-center justify-start gap-2 text-center lg:self-end lg:text-right">
                 <span>{officePhone}</span>
                 <Phone className="size-4 shrink-0" />
               </a>
-              <p className="self-end text-right">האומן 25, תלפיות, ירושלים</p>
+              <p className="text-center lg:text-right">האומן 25, תלפיות, ירושלים</p>
             </div>
           </div>
 
-          <div className="flex flex-col items-end text-right md:absolute md:left-1/2 md:top-0 md:w-[34rem] md:-translate-x-1/2 md:items-center md:text-center">
+          <div className="flex flex-col items-center text-center md:col-span-2 md:row-start-1 lg:col-span-1 lg:row-start-auto">
             <div className="rounded-[28px] bg-transparent px-4 py-2 md:px-6 md:py-3">
             <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-56 w-auto object-contain brightness-0 invert md:h-64" loading="lazy" />
             </div>
             <p className="mt-5 text-lg font-black text-white md:text-center" style={{ fontSize: "30px" }}>{footerSloganDisplay}</p>
-            <p className="mt-10 w-full max-w-3xl text-right text-xs leading-6 text-white/60 md:text-center">אין לראות באמור באתר ייעוץ השקעות או תחליף לייעוץ אישי המתחשב בנתוניו של כל אדם.</p>
+            <p className="mt-10 w-full max-w-3xl text-center text-xs leading-6 text-white/60">אין לראות באמור באתר ייעוץ השקעות או תחליף לייעוץ אישי המתחשב בנתוניו של כל אדם.</p>
           </div>
 
-          <div className="flex flex-col items-end text-right md:max-w-[28%] md:self-start md:items-start md:justify-start">
-            <p className="text-base font-extrabold uppercase tracking-[0.03em] text-white md:self-start">ניווט</p>
-            <div className="mt-4 flex flex-col items-end gap-3 text-right text-white md:items-start" dir="rtl">
-              <a href="#home" className="self-end text-right md:self-start">דף הבית</a>
-              <a href="#about" className="self-end text-right md:self-start">הסיפור שלנו</a>
-              <a href="#services" className="self-end text-right md:self-start">השירותים</a>
-              <Link href="/properties" className="self-end text-right md:self-start">נכסים</Link>
-              <a href="#team" className="self-end text-right md:self-start">הצוות</a>
-              <Link href="/agent-login" className="self-end text-right md:self-start">התחברות סוכנים</Link>
+          <div className="flex flex-col items-center text-center md:col-start-2 md:row-start-2 lg:col-start-auto lg:row-start-auto lg:items-end lg:text-right">
+            <p className="text-base font-extrabold uppercase tracking-[0.03em] text-white">ניווט</p>
+            <div className="mt-4 flex flex-col items-center gap-3 text-center text-white lg:items-end lg:text-right" dir="rtl">
+              <a href="#home" className="flex min-h-11 items-center text-center lg:text-right">דף הבית</a>
+              <a href="#about" className="flex min-h-11 items-center text-center lg:text-right">הסיפור שלנו</a>
+              <a href="#services" className="flex min-h-11 items-center text-center lg:text-right">השירותים</a>
+              <Link href="/properties" className="flex min-h-11 items-center text-center lg:text-right">נכסים</Link>
+              <a href="#team" className="flex min-h-11 items-center text-center lg:text-right">הצוות</a>
+              <Link href="/agent-login" className="flex min-h-11 items-center text-center lg:text-right">התחברות סוכנים</Link>
             </div>
           </div>
         </div>

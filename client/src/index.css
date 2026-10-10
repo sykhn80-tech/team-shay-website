@@ -488,7 +488,7 @@ All global tokens should support a modern, clean, conversion-first interface.
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .testimonials-grid-motion {
     transform: none !important;
     opacity: 1 !important;
@@ -503,6 +503,11 @@ All global tokens should support a modern, clean, conversion-first interface.
 
   .testimonials-stack-motion {
     display: none !important;
+  }
+
+  .sold-properties-marquee {
+    animation: none !important;
+    transform: none !important;
   }
 }
 
