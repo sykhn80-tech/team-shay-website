@@ -1905,11 +1905,12 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex flex-col items-end text-right md:absolute md:left-1/2 md:top-0 md:w-fit md:-translate-x-1/2 md:items-center md:text-center">
+          <div className="flex flex-col items-end text-right md:absolute md:left-1/2 md:top-0 md:w-[34rem] md:-translate-x-1/2 md:items-center md:text-center">
             <div className="rounded-[28px] bg-transparent px-4 py-2 md:px-6 md:py-3">
-            <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-80 w-auto object-contain brightness-0 invert md:h-96" loading="lazy" />
+            <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-96 w-auto object-contain brightness-0 invert md:h-[28rem]" loading="lazy" />
             </div>
             <p className="mt-5 text-lg font-black text-white md:text-center" style={{ fontSize: "30px" }}>{footerSloganDisplay}</p>
+            <p className="mt-16 w-full max-w-3xl text-right text-xs leading-6 text-white/60 md:text-center">אין לראות באמור באתר ייעוץ השקעות או תחליף לייעוץ אישי המתחשב בנתוניו של כל אדם.</p>
           </div>
 
           <div className="flex flex-col items-end text-right md:max-w-[28%] md:self-start md:items-start md:justify-start">
@@ -1924,7 +1925,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <p className="mx-auto mt-32 max-w-3xl text-center text-xs leading-6 text-white/60 md:mt-40">אין לראות באמור באתר ייעוץ השקעות או תחליף לייעוץ אישי המתחשב בנתוניו של כל אדם.</p>
       </footer>
 
       <button
