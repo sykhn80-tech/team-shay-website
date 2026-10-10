@@ -537,19 +537,19 @@ All global tokens should support a modern, clean, conversion-first interface.
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: center;
 }
 
 .site-footer-logo {
   width: auto;
-  height: 120px;
+  height: clamp(200px, 17vw, 240px);
 }
 
 .site-footer-slogan {
-  margin-top: 16px;
+  margin-top: 20px;
   color: #fffdf8;
-  font-size: 22px;
+  font-size: clamp(28px, 2.4vw, 36px);
   font-weight: 900;
   line-height: 1.35;
   white-space: nowrap;
@@ -678,14 +678,15 @@ All global tokens should support a modern, clean, conversion-first interface.
 
 @media (max-width: 767px) {
   .site-footer {
-    padding: 48px 16px 96px;
-  }
-
-  .site-footer-inner {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 32px;
+    padding: 48px 16px 96px;
+  }
+
+  .site-footer-inner {
+    display: contents;
   }
 
   .site-footer-brand,
@@ -696,14 +697,31 @@ All global tokens should support a modern, clean, conversion-first interface.
     text-align: center;
   }
 
+  .site-footer-contact {
+    order: 1;
+  }
+
+  .site-footer-brand {
+    order: 2;
+  }
+
+  .site-footer-bottom {
+    order: 3;
+  }
+
+  .site-footer-nav {
+    order: 4;
+  }
+
   .site-footer-logo {
-    height: 80px;
+    width: 224px;
+    height: auto;
   }
 
   .site-footer-slogan {
     max-width: 100%;
-    font-size: 20px;
-    white-space: normal;
+    font-size: 30px;
+    white-space: nowrap;
   }
 
   .site-footer-contact-details {
@@ -712,11 +730,9 @@ All global tokens should support a modern, clean, conversion-first interface.
   }
 
   .site-footer-nav-links {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0 24px;
-    width: min(100%, 320px);
-    justify-items: center;
+    display: flex;
+    width: 100%;
+    align-items: center;
   }
 
   .site-footer-nav-links a {
@@ -726,7 +742,8 @@ All global tokens should support a modern, clean, conversion-first interface.
   }
 
   .site-footer-bottom {
-    margin-top: 32px;
+    width: 100%;
+    margin-top: 0;
     padding-top: 0;
   }
 
