@@ -1931,38 +1931,39 @@ export default function Home() {
 
       </main>
 
-      <footer className="bg-[#1C1612] px-[5%] py-14 pb-24 text-[#FFFDF8] md:pb-14" dir="rtl">
-        <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-10 text-center md:grid-cols-2 md:gap-x-16 lg:grid-cols-3 lg:items-start lg:gap-8">
-          <div className="flex flex-col items-center text-center md:col-start-1 md:row-start-2 lg:col-start-auto lg:row-start-auto lg:items-end lg:text-right">
-            <p className="text-base font-extrabold uppercase tracking-[0.03em] text-white">יצירת קשר</p>
-            <div className="mt-4 flex flex-col items-center gap-3 text-center text-white lg:items-end lg:text-right" dir="rtl">
-              <a href={`tel:${officePhoneLink}`} className="flex min-h-11 flex-row-reverse items-center justify-start gap-2 text-center lg:self-end lg:text-right">
+      <footer className="site-footer bg-[#1C1612] text-[#FFFDF8]" dir="rtl">
+        <div className="site-footer-inner">
+          <div className="site-footer-brand">
+            <img src={TEAM_LOGO} alt={BRAND_NAME} className="site-footer-logo team-shay-logo object-contain brightness-0 invert" loading="lazy" />
+            <p className="site-footer-slogan">{footerSloganDisplay}</p>
+          </div>
+
+          <div className="site-footer-contact">
+            <p className="site-footer-heading">יצירת קשר</p>
+            <div className="site-footer-contact-details" dir="rtl">
+              <a href={`tel:${officePhoneLink}`} className="site-footer-phone">
                 <span>{officePhone}</span>
                 <Phone className="size-4 shrink-0" />
               </a>
-              <p className="text-center lg:text-right">האומן 25, תלפיות, ירושלים</p>
+              <p>האומן 25, תלפיות, ירושלים</p>
             </div>
           </div>
 
-          <div className="flex flex-col items-center text-center md:col-span-2 md:row-start-1 lg:col-span-1 lg:row-start-auto">
-            <div className="rounded-[28px] bg-transparent px-4 py-2 md:px-6 md:py-3">
-            <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-56 w-auto object-contain brightness-0 invert md:h-64" loading="lazy" />
-            </div>
-            <p className="mt-5 text-lg font-black text-white md:text-center" style={{ fontSize: "30px" }}>{footerSloganDisplay}</p>
-            <p className="mt-10 w-full max-w-3xl text-center text-xs leading-6 text-white/60">אין לראות באמור באתר ייעוץ השקעות או תחליף לייעוץ אישי המתחשב בנתוניו של כל אדם.</p>
-          </div>
-
-          <div className="flex flex-col items-center text-center md:col-start-2 md:row-start-2 lg:col-start-auto lg:row-start-auto lg:items-end lg:text-right">
-            <p className="text-base font-extrabold uppercase tracking-[0.03em] text-white">ניווט</p>
-            <div className="mt-4 flex flex-col items-center gap-3 text-center text-white lg:items-end lg:text-right" dir="rtl">
-              <a href="#home" className="flex min-h-11 items-center text-center lg:text-right">דף הבית</a>
-              <a href="#about" className="flex min-h-11 items-center text-center lg:text-right">הסיפור שלנו</a>
-              <a href="#services" className="flex min-h-11 items-center text-center lg:text-right">השירותים</a>
-              <Link href="/properties" className="flex min-h-11 items-center text-center lg:text-right">נכסים</Link>
-              <a href="#team" className="flex min-h-11 items-center text-center lg:text-right">הצוות</a>
-              <Link href="/agent-login" className="flex min-h-11 items-center text-center lg:text-right">התחברות סוכנים</Link>
+          <div className="site-footer-nav">
+            <p className="site-footer-heading">ניווט</p>
+            <div className="site-footer-nav-links" dir="rtl">
+              <a href="#home">דף הבית</a>
+              <a href="#about">הסיפור שלנו</a>
+              <a href="#services">השירותים</a>
+              <Link href="/properties">נכסים</Link>
+              <a href="#team">הצוות</a>
+              <Link href="/agent-login">התחברות סוכנים</Link>
             </div>
           </div>
+        </div>
+        <div className="site-footer-bottom">
+          <div className="site-footer-divider" />
+          <p>אין לראות באמור באתר ייעוץ השקעות או תחליף לייעוץ אישי המתחשב בנתוניו של כל אדם.</p>
         </div>
       </footer>
 
