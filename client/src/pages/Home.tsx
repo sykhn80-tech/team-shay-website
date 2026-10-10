@@ -403,7 +403,7 @@ export default function Home() {
         setShayVideoInView(entry.isIntersecting);
         if (entry.isIntersecting) setShouldLoadShayVideo(true);
       },
-      { rootMargin: "200px 0px", threshold: 0.15 },
+      { rootMargin: "0px", threshold: 0.25 },
     );
     observer.observe(node);
     return () => observer.disconnect();
