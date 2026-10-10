@@ -488,6 +488,24 @@ All global tokens should support a modern, clean, conversion-first interface.
   }
 }
 
+@media (max-width: 767px) {
+  .testimonials-grid-motion {
+    transform: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transition: none !important;
+  }
+
+  .testimonials-grid-motion > button {
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .testimonials-stack-motion {
+    display: none !important;
+  }
+}
+
 @media print {
   @page {
     size: A4;

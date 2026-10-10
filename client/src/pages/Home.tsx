@@ -845,7 +845,7 @@ export default function Home() {
   return (
     <div className="home-page min-h-screen overflow-x-hidden bg-[#FBF7EF] text-[#2A211B]" dir="rtl">
       <div className="fixed inset-x-0 top-4 z-50 px-3 md:px-6">
-        <header className="mx-auto max-w-7xl rounded-full border border-[#4a382b] bg-[#1C1612] px-4 py-2 shadow-[0_12px_34px_rgba(28,22,18,0.28)] backdrop-blur-md md:px-6">
+        <header className="mx-auto max-w-7xl origin-top scale-[0.9] rounded-full border border-[#4a382b] bg-[#1C1612] px-4 py-2 shadow-[0_12px_34px_rgba(28,22,18,0.28)] backdrop-blur-md md:px-6">
           <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
             <Button
               onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}
@@ -1595,7 +1595,7 @@ export default function Home() {
               ) : visibleTestimonials.length ? (
                 <div className="relative mx-auto overflow-visible py-3 transition-all duration-[1600ms] ease-[cubic-bezier(0.22,1,0.36,1)]" aria-label="קיר המלצות חי">
                   <div
-                    className={`grid gap-4 transition-all duration-[1500ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 ${
+                    className={`testimonials-grid-motion grid gap-4 transition-all duration-[1500ms] ease-[cubic-bezier(0.22,1,0.36,1)] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 ${
                       testimonialsExpanded ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
                     }`}
                   >
@@ -1640,7 +1640,7 @@ export default function Home() {
                   </div>
 
                   <div
-                    className={`absolute inset-x-0 top-3 flex min-h-[23rem] justify-center transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    className={`testimonials-stack-motion absolute inset-x-0 top-3 flex min-h-[23rem] justify-center transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
                       testimonialsExpanded ? "pointer-events-none -translate-y-2 opacity-0 blur-[1px]" : "translate-y-0 opacity-100 blur-0"
                     }`}
                     aria-hidden={testimonialsExpanded}
@@ -1907,7 +1907,7 @@ export default function Home() {
 
           <div className="flex flex-col items-end text-right md:absolute md:left-1/2 md:top-0 md:w-fit md:-translate-x-1/2 md:items-center md:text-center">
             <div className="rounded-[28px] bg-transparent px-4 py-2 md:px-6 md:py-3">
-              <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-36 w-auto object-contain brightness-0 invert md:h-44" loading="lazy" />
+            <img src={TEAM_LOGO} alt={BRAND_NAME} className="team-shay-logo h-48 w-auto object-contain brightness-0 invert md:h-52" loading="lazy" />
             </div>
             <p className="mt-5 text-lg font-black text-white md:text-center" style={{ fontSize: "30px" }}>{footerSloganDisplay}</p>
           </div>
