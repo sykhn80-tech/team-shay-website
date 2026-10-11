@@ -56,6 +56,7 @@ const HERO_LOOP_TARGET_SECONDS = 8;
 const SHAY_BRAND_VIDEO_WEBM = "/media/shay-group-brand.webm";
 const SHAY_BRAND_VIDEO_MP4 = "/media/shay-group-brand.mp4";
 const SHAY_BRAND_VIDEO_POSTER = "/media/shay-group-brand-poster.jpg";
+const FOOTER_LOGO_URL = "/brand/shay-group-logo-trimmed.png";
 const ELIYA_IMAGE_URL = "/agents/eliya-card.jpeg";
 const AVIAD_IMAGE_URL = "/agents/aviad-card.jpeg";
 const HODIYA_IMAGE_URL = "/agents/hodiya-card.png";
@@ -1934,7 +1935,7 @@ export default function Home() {
       <footer className="site-footer bg-[#1C1612] text-[#FFFDF8]" dir="rtl">
         <div className="site-footer-inner">
           <div className="site-footer-brand">
-            <img src={TEAM_LOGO} alt={BRAND_NAME} className="site-footer-logo team-shay-logo object-contain brightness-0 invert" loading="lazy" />
+            <img src={FOOTER_LOGO_URL} alt={BRAND_NAME} className="site-footer-logo object-contain" loading="lazy" />
             <p className="site-footer-slogan">{footerSloganDisplay}</p>
           </div>
 

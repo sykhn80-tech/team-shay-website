@@ -633,6 +633,21 @@ All global tokens should support a modern, clean, conversion-first interface.
   line-height: 1.6;
 }
 
+@media (min-width: 1024px) {
+  .site-footer-brand {
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  .site-footer-logo {
+    height: clamp(170px, 14vw, 210px);
+  }
+
+  .site-footer-slogan {
+    margin-top: 16px;
+  }
+}
+
 @media (min-width: 768px) and (max-width: 1023px) {
   .site-footer {
     padding: 56px 24px 32px;
@@ -714,8 +729,8 @@ All global tokens should support a modern, clean, conversion-first interface.
   }
 
   .site-footer-logo {
-    width: 224px;
-    height: auto;
+    width: auto;
+    height: 150px;
   }
 
   .site-footer-slogan {
