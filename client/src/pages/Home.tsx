@@ -1579,7 +1579,7 @@ export default function Home() {
         <section className="order-8 overflow-hidden bg-[#FBF7EF] px-4 py-20 text-[#2A211B] md:px-6 md:py-24">
           <div className="mx-auto max-w-7xl">
             <div className="text-center">
-              <p className="text-base font-black uppercase tracking-[0.08em] text-[#d9ae4c]">הצלחות מהשטח</p>
+              <p className="text-base font-black uppercase tracking-[0.08em] text-[#d9ae4c]">עסקאות אחרונות שלנו</p>
               <h2 className="mt-4 text-4xl font-black text-[#1A1A1A] md:text-[3.35rem]">נמכר, נקנה והושכר.</h2>
               <p className="mx-auto mt-4 max-w-3xl text-lg font-semibold leading-8 text-[#6B6B6B]">
                 כל כתובת כאן היא חוזה חתום.
@@ -1602,7 +1602,7 @@ export default function Home() {
                       </div>
                       <div className="p-5">
                         <h3 className="text-xl font-black text-[#1A1A1A]">{property.displayLocation || property.title}</h3>
-                        <p className="mt-5 text-2xl font-black text-[#d9ae4c]">₪{property.price.toLocaleString("he-IL")}{property.displayStatus === "הושכר" ? " לחודש" : ""}</p>
+                        <p className="mt-5 text-2xl font-black text-[#d9ae4c]">₪{property.price.toLocaleString("he-IL")}</p>
                         <div className="mt-4 border-t border-[#d9ae4c]/20 pt-4 text-sm font-bold">
                           <span className="text-[#6B6B6B]">עסקה שנחתמה עם Shay Group</span>
                         </div>
