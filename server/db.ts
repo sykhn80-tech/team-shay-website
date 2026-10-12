@@ -183,7 +183,7 @@ export type PropertyListItem = {
   builtSqm: number | null;
   outdoorSpace: string | null;
   floor: number | null;
-  status: "חדש" | "בלעדי" | "למכירה" | "נמכר";
+  status: "חדש" | "בלעדי" | "למכירה" | "להשכרה" | "נמכר" | "הושכר";
   description: string;
   descriptionHtml: string | null;
   featuredImageUrl: string | null;
@@ -1411,6 +1411,7 @@ export async function listPublishedProperties(filters?: {
   area?: string;
   minPrice?: number;
   maxPrice?: number;
+  status?: "חדש" | "בלעדי" | "למכירה" | "להשכרה" | "נמכר" | "הושכר";
 }): Promise<PropertyListItem[]> {
   const db = await getDb();
   if (!db) {
@@ -1421,6 +1422,7 @@ export async function listPublishedProperties(filters?: {
         if (filters?.area && !property.neighborhood.includes(filters.area)) return false;
         if (filters?.minPrice && property.price < filters.minPrice) return false;
         if (filters?.maxPrice && property.price > filters.maxPrice) return false;
+        if (filters?.status && property.status !== filters.status) return false;
         return true;
       })
       .sort(sortByNewestProperty);
@@ -1438,6 +1440,9 @@ export async function listPublishedProperties(filters?: {
   }
   if (filters?.maxPrice) {
     conditions.push(lte(properties.price, filters.maxPrice));
+  }
+  if (filters?.status) {
+    conditions.push(eq(properties.status, filters.status));
   }
 
   const propertyRows = await db

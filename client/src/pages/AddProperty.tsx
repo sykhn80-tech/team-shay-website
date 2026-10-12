@@ -350,7 +350,7 @@ export default function AddProperty() {
       rooms: parsePositiveInteger(form.rooms) ?? 0,
       floor: parsePositiveInteger(form.floor),
       outdoorSpace: form.outdoorSpace.trim() || null,
-      status: form.status as "חדש" | "בלעדי" | "למכירה" | "נמכר",
+      status: form.status as "חדש" | "בלעדי" | "למכירה" | "להשכרה" | "נמכר" | "הושכר",
       description: form.description.trim(),
       descriptionHtml: null,
       isPublished: form.isPublished,

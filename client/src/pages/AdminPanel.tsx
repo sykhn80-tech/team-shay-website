@@ -361,6 +361,7 @@ export default function AdminPanel() {
   const [editingTestimonialForm, setEditingTestimonialForm] = useState<TestimonialFormState>(emptyTestimonialForm);
   const [propertyGalleryDrafts, setPropertyGalleryDrafts] = useState<Record<number, PropertyGalleryDraft>>({});
   const [adminMediaPreview, setAdminMediaPreview] = useState<{ title: string; type: "image" | "video"; url: string; posterUrl?: string } | null>(null);
+  const [propertyStatusFilter, setPropertyStatusFilter] = useState("active");
 
   const agentSessionQuery = trpc.agent.me.useQuery();
   const dashboardQuery = trpc.admin.dashboard.useQuery(undefined, {
@@ -525,6 +526,13 @@ export default function AdminPanel() {
   const activeStaff = useMemo(() => dashboardQuery.data?.staff ?? [], [dashboardQuery.data?.staff]);
   const testimonials = useMemo(() => dashboardQuery.data?.testimonials ?? [], [dashboardQuery.data?.testimonials]);
   const properties = useMemo(() => dashboardQuery.data?.properties ?? [], [dashboardQuery.data?.properties]);
+  const filteredProperties = useMemo(() => {
+    if (propertyStatusFilter === "active") {
+      return properties.filter((property) => !["נמכר", "הושכר"].includes(property.status));
+    }
+    if (propertyStatusFilter === "all") return properties;
+    return properties.filter((property) => property.status === propertyStatusFilter);
+  }, [properties, propertyStatusFilter]);
   const leads = useMemo(() => dashboardQuery.data?.leads ?? [], [dashboardQuery.data?.leads]);
   const projectCount = useMemo(() => dashboardQuery.data?.projects?.length ?? 0, [dashboardQuery.data?.projects]);
 
@@ -1551,8 +1559,33 @@ export default function AdminPanel() {
               כעת אפשר להעלות מתוך /admin קבצי JPG, PNG ו-WebP ישירות ללוגואים, תמונות התוכן וגלריות הנכסים. לאחר השמירה התמונות נשמרות באחסון הקבוע, מקושרות למסד ומתעדכנות מיד באתר הציבורי.
             </div>
 
+            <div className="mt-6 flex flex-col gap-3 rounded-[24px] border border-[#4b8067]/20 bg-[#fbfaf5] p-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-black text-slate-950">סינון מאגר הנכסים</p>
+                <p className="mt-1 text-sm text-slate-500">ריכוז מהיר של כל הנכסים הפעילים, למכירה ולהשכרה.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-slate-500">{filteredProperties.length} נכסים מוצגים</span>
+                <select
+                  value={propertyStatusFilter}
+                  onChange={(event) => setPropertyStatusFilter(event.target.value)}
+                  aria-label="סינון נכסים לפי סטטוס"
+                  className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#4b8067] focus:ring-4 focus:ring-[#4b8067]/10"
+                >
+                  <option value="active">נכסים פעילים</option>
+                  <option value="all">כל הנכסים</option>
+                  <option value="חדש">חדש</option>
+                  <option value="בלעדי">בלעדי</option>
+                  <option value="למכירה">למכירה</option>
+                  <option value="להשכרה">להשכרה</option>
+                  <option value="נמכר">נמכר</option>
+                  <option value="הושכר">הושכר</option>
+                </select>
+              </div>
+            </div>
+
             <div className="mt-6 space-y-4">
-              {properties.map((property) => (
+              {filteredProperties.map((property) => (
                 <article key={property.id} className="rounded-[24px] border border-slate-200 p-5">
                   {(() => {
                     const draft = propertyGalleryDrafts[property.id];
@@ -1668,6 +1701,11 @@ export default function AdminPanel() {
                   })()}
                 </article>
               ))}
+              {!filteredProperties.length ? (
+                <div className="rounded-[24px] border border-dashed border-slate-200 p-8 text-center text-sm font-bold text-slate-500">
+                  אין נכסים שתואמים לסינון הנוכחי.
+                </div>
+              ) : null}
             </div>
           </section>
 

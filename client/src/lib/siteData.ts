@@ -255,6 +255,6 @@ export const sampleProperties = [
 export const neighborhoods = Array.from(new Set(sampleProperties.map((property) => property.neighborhood)));
 
 export const roomOptions = [2, 3, 4, 5, 6] as const;
-export const statusOptions = ["חדש", "בלעדי", "למכירה", "נמכר"] as const;
+export const statusOptions = ["חדש", "בלעדי", "למכירה", "להשכרה", "נמכר", "הושכר"] as const;
 export const minPropertyPrice = Math.min(...sampleProperties.map((property) => property.price));
 export const maxPropertyPrice = Math.max(...sampleProperties.map((property) => property.price));

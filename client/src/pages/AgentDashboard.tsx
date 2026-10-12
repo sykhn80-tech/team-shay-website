@@ -49,7 +49,8 @@ export default function AgentDashboard() {
 
   const totalProperties = properties?.length ?? 0;
   const soldProperties = properties?.filter((p) => p.status === "נמכר").length ?? 0;
-  const activeProperties = properties?.filter((p) => p.status !== "נמכר").length ?? 0;
+  const rentedProperties = properties?.filter((p) => p.status === "הושכר").length ?? 0;
+  const activeProperties = properties?.filter((p) => !["נמכר", "הושכר"].includes(p.status)).length ?? 0;
 
   const selectedSummary = useMemo(() => {
     if (!selectedProperty) return null;
@@ -88,11 +89,12 @@ export default function AgentDashboard() {
           </div>
 
           {/* Stats */}
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="mt-8 grid gap-4 md:grid-cols-4">
             {[
               { label: "סה״כ נכסים", value: String(totalProperties), color: "text-[#4b8067]" },
               { label: "נכסים פעילים", value: String(activeProperties), color: "text-emerald-500" },
               { label: "נכסים שנמכרו", value: String(soldProperties), color: "text-slate-400" },
+              { label: "נכסים שהושכרו", value: String(rentedProperties), color: "text-slate-400" },
             ].map((item) => (
               <article
                 key={item.label}

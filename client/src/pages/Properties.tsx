@@ -26,6 +26,7 @@ export default function Properties() {
   const [areaQuery, setAreaQuery] = useState("");
   const [priceRange, setPriceRange] = useState<[number, number]>([minPropertyPrice, maxPropertyPrice]);
   const [roomFilter, setRoomFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const homeQuery = trpc.publicSite.home.useQuery(undefined, {
     staleTime: 0,
@@ -39,6 +40,7 @@ export default function Properties() {
       area: areaQuery.trim() || undefined,
       minPrice: priceRange[0],
       maxPrice: priceRange[1],
+      status: statusFilter ? statusFilter as "חדש" | "בלעדי" | "למכירה" | "להשכרה" | "נמכר" | "הושכר" : undefined,
     },
     {
       staleTime: 0,
@@ -122,12 +124,13 @@ export default function Properties() {
           sampleProperties[index % sampleProperties.length]?.image,
       };
     }).filter((property) => {
-      if (property.status.trim() === "נמכר") return false;
+      if (statusFilter && property.status.trim() !== statusFilter) return false;
+      if (!statusFilter && ["נמכר", "הושכר"].includes(property.status.trim())) return false;
       if (!roomFilter) return true;
       if (roomFilter === "5+") return property.rooms >= 5;
       return Math.floor(property.rooms) === Number(roomFilter);
     });
-  }, [areaQuery, priceRange, propertiesQuery.data, propertiesQuery.isLoading, roomFilter]);
+  }, [areaQuery, priceRange, propertiesQuery.data, propertiesQuery.isLoading, roomFilter, statusFilter]);
 
   const handleMinChange = (value: number) => {
     setPriceRange(([_, max]) => [Math.min(value, max), max]);
@@ -229,6 +232,24 @@ export default function Properties() {
                 </div>
 
                 <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-5">
+                  <label htmlFor="property-status-filter" className="text-sm font-black text-slate-700">סוג נכס</label>
+                  <select
+                    id="property-status-filter"
+                    value={statusFilter}
+                    onChange={(event) => setStatusFilter(event.target.value)}
+                    className="mt-3 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#d9ae4c] focus:ring-4 focus:ring-[#d9ae4c]/10"
+                  >
+                    <option value="">נכסים פעילים</option>
+                    <option value="חדש">חדש</option>
+                    <option value="בלעדי">בלעדי</option>
+                    <option value="למכירה">למכירה</option>
+                    <option value="להשכרה">להשכרה</option>
+                    <option value="נמכר">נמכר</option>
+                    <option value="הושכר">הושכר</option>
+                  </select>
+                </div>
+
+                <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-5">
                   <p className="text-sm font-black text-slate-700">מספר חדרים</p>
                   <div className="mt-4 grid grid-cols-4 gap-2">
                     {["2", "3", "4", "5+"].map((rooms) => (
@@ -318,6 +339,7 @@ export default function Properties() {
                         setAreaQuery("");
                         setPriceRange([computedMinPrice, computedMaxPrice]);
                         setRoomFilter("");
+                        setStatusFilter("");
                       }}
                       variant="outline"
                       className="mt-6 rounded-full border-[#d9ae4c] text-[#d9ae4c] hover:bg-[#fbf5e6]"

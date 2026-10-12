@@ -118,7 +118,7 @@ const propertyInputSchema = z.object({
   builtSqm: z.number().int().positive().optional().nullable(),
   outdoorSpace: z.string().trim().optional().nullable(),
   floor: z.number().int().optional().nullable(),
-  status: z.enum(["חדש", "בלעדי", "למכירה", "נמכר"]),
+  status: z.enum(["חדש", "בלעדי", "למכירה", "להשכרה", "נמכר", "הושכר"]),
   description: z.string().min(10),
   descriptionHtml: z.string().optional().nullable(),
   isPublished: z.boolean().default(true),
@@ -1958,6 +1958,7 @@ export const appRouter = router({
             area: z.string().trim().optional(),
             minPrice: z.number().int().positive().optional(),
             maxPrice: z.number().int().positive().optional(),
+            status: z.enum(["חדש", "בלעדי", "למכירה", "להשכרה", "נמכר", "הושכר"]).optional(),
           })
           .optional(),
       )

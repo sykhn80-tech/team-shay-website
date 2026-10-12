@@ -581,7 +581,7 @@ export default function Home() {
   }, [homeQuery.data?.properties]);
 
   const featuredProperties = useMemo(
-    () => homepageProperties.filter((property) => ["בלעדי", "למכירה", "חדש"].includes(property.status.trim())).slice(0, 10),
+    () => homepageProperties.filter((property) => ["בלעדי", "למכירה", "להשכרה", "חדש"].includes(property.status.trim())).slice(0, 10),
     [homepageProperties],
   );
 
@@ -591,7 +591,7 @@ export default function Home() {
         const location = formatPropertyLocation(property);
         const isTargetRental = (location.includes("סן מרטין 13") && property.price === 4900)
           || (location.includes("סן מרטין 25") && property.price === 8500);
-        return property.status.trim() === "נמכר" || isTargetRental;
+        return ["נמכר", "הושכר"].includes(property.status.trim()) || isTargetRental;
       })
       .slice(0, 10)
       .map((property) => {

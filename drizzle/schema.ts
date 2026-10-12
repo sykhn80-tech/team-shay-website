@@ -100,7 +100,7 @@ export const properties = mysqlTable("properties", {
   builtSqm: int("builtSqm"),
   outdoorSpace: varchar("outdoorSpace", { length: 120 }),
   floor: int("floor"),
-  status: mysqlEnum("status", ["חדש", "בלעדי", "למכירה", "נמכר"]).default("חדש").notNull(),
+  status: mysqlEnum("status", ["חדש", "בלעדי", "למכירה", "להשכרה", "נמכר", "הושכר"]).default("חדש").notNull(),
   description: text("description").notNull(),
   descriptionHtml: text("descriptionHtml"),
   featuredImageUrl: varchar("featuredImageUrl", { length: 512 }),
