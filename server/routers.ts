@@ -198,9 +198,9 @@ const projectInputSchema = z.object({
 const leadInputSchema = z.object({
   fullName: z.string().min(2),
   phone: z.string().min(6),
-  neighborhood: z.string().min(2),
-  rooms: z.number().int().positive(),
-  sqm: z.number().int().positive(),
+  neighborhood: z.string().min(2).nullable(),
+  rooms: z.number().int().positive().nullable(),
+  sqm: z.number().int().positive().nullable(),
   notes: z.string().optional().nullable(),
   source: z.string().trim().max(120).optional().nullable(),
   leadType: z.string().trim().max(120).optional().nullable(),

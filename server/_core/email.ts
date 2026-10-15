@@ -5,9 +5,9 @@ type LeadNotificationInput = {
   leadId: number;
   fullName: string;
   phone: string;
-  neighborhood: string;
-  rooms: number;
-  sqm: number;
+  neighborhood: string | null;
+  rooms: number | null;
+  sqm: number | null;
   notes?: string | null;
   source?: string | null;
   leadType?: string | null;
@@ -28,9 +28,9 @@ export async function sendLeadNotificationEmail(input: LeadNotificationInput) {
   const rows = [
     ["שם מלא", input.fullName],
     ["טלפון", input.phone],
-    ["שכונה / אזור", input.neighborhood],
-    ["חדרים", String(input.rooms)],
-    ["גודל במ״ר", String(input.sqm)],
+    ["שכונה / אזור", input.neighborhood || "—"],
+    ["חדרים", input.rooms == null ? "—" : String(input.rooms)],
+    ["גודל במ״ר", input.sqm == null ? "—" : String(input.sqm)],
     ["מספר ליד", String(input.leadId)],
     ["מקור", input.source || "—"],
     ["סוג פנייה", input.leadType || "—"],

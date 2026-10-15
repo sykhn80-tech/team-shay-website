@@ -1324,19 +1324,8 @@ export async function createLeadSubmission(input: InsertLeadSubmission) {
     throw new Error("Database not available");
   }
 
-  try {
-    const inserted = await db.insert(leadSubmissions).values(input);
-    return Number(inserted[0].insertId);
-  } catch (error) {
-    // Keep lead capture working while an older production schema is being migrated.
-    const { source, leadType, marketingConsent, ...legacyInput } = input;
-    if (source === undefined && leadType === undefined && marketingConsent === undefined) {
-      throw error;
-    }
-
-    const inserted = await db.insert(leadSubmissions).values(legacyInput);
-    return Number(inserted[0].insertId);
-  }
+  const inserted = await db.insert(leadSubmissions).values(input);
+  return Number(inserted[0].insertId);
 }
 
 export async function listLeadSubmissions() {

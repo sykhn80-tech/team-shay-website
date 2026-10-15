@@ -43,6 +43,13 @@
       "when": 1791979200000,
       "tag": "0005_add_lead_popup_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1792065600000,
+      "tag": "0006_make_lead_details_nullable",
+      "breakpoints": true
     }
   ]
 }

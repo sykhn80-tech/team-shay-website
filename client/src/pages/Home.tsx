@@ -5,6 +5,8 @@ import {
   ArrowLeft,
   ArrowRight,
   ChevronLeft,
+  CheckCircle2,
+  Gift,
   Home as HomeIcon,
   KeyRound,
   Loader2,
@@ -378,10 +380,15 @@ export default function Home() {
   const [exitIntentTrack, setExitIntentTrack] = useState<"seller" | "buyer" | null>(null);
   const [exitIntentName, setExitIntentName] = useState("");
   const [exitIntentPhone, setExitIntentPhone] = useState("");
+  const [exitIntentNameError, setExitIntentNameError] = useState("");
+  const [exitIntentPhoneError, setExitIntentPhoneError] = useState("");
   const [exitIntentConsent, setExitIntentConsent] = useState(false);
   const exitIntentDialogRef = useRef<HTMLDivElement | null>(null);
   const exitIntentCloseRef = useRef<HTMLButtonElement | null>(null);
+  const exitIntentNameRef = useRef<HTMLInputElement | null>(null);
+  const exitIntentSuccessRef = useRef<HTMLButtonElement | null>(null);
   const exitIntentPreviousFocusRef = useRef<HTMLElement | null>(null);
+  const exitIntentPreviewOpenedRef = useRef(false);
   const shayVideoSectionRef = useRef<HTMLDivElement | null>(null);
   const shayVideoRef = useRef<HTMLVideoElement | null>(null);
   const [shayVideoInView, setShayVideoInView] = useState(false);
@@ -447,6 +454,16 @@ export default function Home() {
   }, [hasSubmittedLead]);
 
   useEffect(() => {
+    if (exitIntentPreviewOpenedRef.current) return;
+    const preview = new URLSearchParams(window.location.search).get("exit-popup") === "preview";
+    if (!preview) return;
+    exitIntentPreviewOpenedRef.current = true;
+    setExitIntentStep(1);
+    setExitIntentTrack(null);
+    setExitIntentOpen(true);
+  }, []);
+
+  useEffect(() => {
     if (!exitIntentEligible || hasSubmittedLead || exitIntentOpen) return;
     const desktopQuery = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine)");
     const handleExitIntent = (event: MouseEvent) => {
@@ -502,6 +519,16 @@ export default function Home() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [exitIntentOpen]);
+
+  useEffect(() => {
+    if (!exitIntentOpen) return;
+    const focusTimer = window.setTimeout(() => {
+      if (exitIntentStep === 2) exitIntentNameRef.current?.focus();
+      else if (exitIntentStep === 3) exitIntentSuccessRef.current?.focus();
+      else exitIntentCloseRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(focusTimer);
+  }, [exitIntentOpen, exitIntentStep]);
 
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
@@ -949,8 +976,12 @@ export default function Home() {
   const handleExitIntentSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!exitIntentTrack) return;
-    if (!exitIntentName.trim() || !isValidIsraeliPhone(exitIntentPhone)) {
-      toast.error("נא להזין שם מלא ומספר טלפון ישראלי תקין.");
+    if (!exitIntentName.trim()) {
+      setExitIntentNameError("נשמח לדעת איך קוראים לכם");
+      return;
+    }
+    if (!isValidIsraeliPhone(exitIntentPhone)) {
+      setExitIntentPhoneError("נראה שחסרה ספרה. בדקו את מספר הטלפון");
       return;
     }
 
@@ -958,9 +989,9 @@ export default function Home() {
       await submitLeadMutation.mutateAsync({
         fullName: exitIntentName.trim(),
         phone: exitIntentPhone.trim(),
-        neighborhood: "לא צוין",
-        rooms: 1,
-        sqm: 1,
+        neighborhood: null,
+        rooms: null,
+        sqm: null,
         source: "פופאפ יציאה",
         leadType: exitIntentTrack === "seller" ? "מכירה" : "קנייה או השקעה",
         marketingConsent: exitIntentConsent,
@@ -2109,89 +2140,77 @@ export default function Home() {
 
       {exitIntentOpen ? (
         <div
-          className="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 p-6 lg:flex"
+          className="fixed inset-0 z-[100] hidden items-center justify-center bg-[#07100c]/70 p-6 backdrop-blur-[6px] lg:flex"
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) closeExitIntent();
           }}
         >
-          <div
-            ref={exitIntentDialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="exit-intent-title"
-            dir="rtl"
-            className="w-full max-w-[560px] origin-center rounded-[30px] bg-[#1C1612] p-7 text-[#FFFDF8] shadow-[0_28px_90px_rgba(0,0,0,0.38)] animate-in fade-in zoom-in-95 duration-200 md:p-9"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-black uppercase tracking-[0.12em] text-[#D9AE4C]">Shay Group</p>
-                <h2 id="exit-intent-title" className="mt-3 text-3xl font-black leading-tight text-[#FFFDF8]">
-                  {exitIntentStep === 1 ? "לפני שאתם הולכים, קחו משהו איתכם." : exitIntentStep === 2 ? "רק עוד שני פרטים ונחזור אליכם." : "הפרטים התקבלו."}
-                </h2>
-              </div>
-              <button
-                ref={exitIntentCloseRef}
-                type="button"
-                onClick={closeExitIntent}
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-white/30 text-2xl text-[#FFFDF8] transition hover:border-[#D9AE4C] hover:text-[#D9AE4C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]"
-                aria-label="סגירת הפופאפ"
-              >
-                <X className="size-5" />
+          <style>{`
+            @keyframes exit-intent-border-spin { from { background-position: 0% 50%; } to { background-position: 200% 50%; } }
+            @keyframes exit-intent-pop-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+            @keyframes exit-intent-gift-bounce { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-5px); } }
+            @media (prefers-reduced-motion: reduce) {
+              .exit-intent-card, .exit-intent-gift { animation: none !important; }
+            }
+          `}</style>
+          <div className="exit-intent-card relative w-full max-w-[600px] rounded-[28px] p-px shadow-[0_0_44px_rgba(47,102,83,.45)]" style={{ background: "linear-gradient(120deg, #D9AE4C, #2F6653, #D9AE4C)", backgroundSize: "200% 200%", animation: "exit-intent-border-spin 6s linear infinite" }}>
+            <div
+              ref={exitIntentDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="exit-intent-title"
+              dir="rtl"
+              className="relative overflow-hidden rounded-[27px] bg-gradient-to-b from-[#0E241D] to-[#2F6653] p-6 text-center text-[#FFFDF8] shadow-[inset_0_1px_0_rgba(255,255,255,.14)] md:p-9"
+              style={{ backgroundImage: "radial-gradient(circle at 50% 18%, rgba(217,174,76,.12), transparent 34%), radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(180deg, #0E241D 0%, #2F6653 100%)", backgroundSize: "auto, 12px 12px, auto", animation: "exit-intent-pop-in 250ms ease-out both" }}
+            >
+              <img src={FOOTER_LOGO_URL} alt="Shay Group" className="mx-auto h-14 w-auto object-contain" />
+              <button ref={exitIntentCloseRef} type="button" onClick={closeExitIntent} className="absolute left-5 top-5 inline-flex size-11 items-center justify-center rounded-full border border-[#D9AE4C] bg-white/[0.04] text-[#FFFDF8] transition hover:bg-[#D9AE4C]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]" aria-label="סגירת הפופאפ">
+                <X className="size-5" aria-hidden="true" />
               </button>
-            </div>
 
-            {exitIntentStep === 1 ? (
-              <div className="mt-7">
-                <p className="text-base font-semibold leading-7 text-white/75">מתנה מאיתנו, בלי התחייבות. מה מתאים לכם?</p>
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => { setExitIntentTrack("seller"); setExitIntentStep(2); }}
-                    className="group rounded-2xl border border-white/20 bg-white/[0.06] p-5 text-right transition hover:border-[#D9AE4C] focus-visible:border-[#D9AE4C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]"
-                  >
-                    <HomeIcon className="size-6 text-[#D9AE4C]" />
-                    <span className="mt-4 block text-lg font-black text-[#FFFDF8]">יש לי דירה למכירה</span>
-                    <span className="mt-2 block text-sm font-semibold leading-6 text-white/70">הערכת שווי במתנה: כמה הדירה שלכם שווה היום, לפי עסקאות אחרונות באזור.</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setExitIntentTrack("buyer"); setExitIntentStep(2); }}
-                    className="group rounded-2xl border border-white/20 bg-white/[0.06] p-5 text-right transition hover:border-[#D9AE4C] focus-visible:border-[#D9AE4C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]"
-                  >
-                    <KeyRound className="size-6 text-[#D9AE4C]" />
-                    <span className="mt-4 block text-lg font-black text-[#FFFDF8]">אני מחפש/ת לקנות או להשקיע</span>
-                    <span className="mt-2 block text-sm font-semibold leading-6 text-white/70">שיחה קצרה, ותקבלו את כל הפרטים על הנכסים שמתאימים לכם: מחיר, מצב, ומה באמת שווה לראות.</span>
-                  </button>
+              {exitIntentStep === 1 ? (
+                <div className="mt-6">
+                  <p className="flex items-center justify-center gap-2 text-[22px] font-black text-[#D9AE4C]"><Gift className="exit-intent-gift size-6" aria-hidden="true" style={{ animation: "exit-intent-gift-bounce 600ms ease-out 250ms 1" }} />רגע, לפני שאתם הולכים...</p>
+                  <h2 id="exit-intent-title" className="mt-3 text-3xl font-black leading-tight text-white md:text-4xl">בחרו מתנה. היא עלינו.</h2>
+                  <p className="mt-3 text-base leading-7 text-[#FFFDF8]/80">בלי עלות ובלי התחייבות. מומחה מהצוות שלנו יחזור אליכם תוך יום עסקים.</p>
+                  <div className="mt-7 grid items-stretch gap-4 sm:grid-cols-2">
+                    <button type="button" onClick={() => { setExitIntentTrack("seller"); setExitIntentStep(2); }} className="group relative rounded-[20px] border border-white/15 bg-white/[0.06] p-5 text-right backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-[#D9AE4C] hover:shadow-[0_12px_30px_rgba(217,174,76,.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]">
+                      <span className="absolute right-4 top-4 rounded-full bg-[#D9AE4C] px-3 py-1 text-xs font-black text-[#0E241D]">מתנה</span>
+                      <HomeIcon className="mt-8 size-10 text-[#D9AE4C]" strokeWidth={1.5} aria-hidden="true" />
+                      <span className="mt-5 block text-sm font-bold text-[#D9AE4C]">למוכרים</span>
+                      <span className="mt-1 block text-xl font-black text-white">הערכת שווי לדירה שלכם</span>
+                      <span className="mt-2 block text-sm leading-6 text-[#FFFDF8]/80">כמה הדירה שווה היום, לפי עסקאות אחרונות באזור.</span>
+                    </button>
+                    <button type="button" onClick={() => { setExitIntentTrack("buyer"); setExitIntentStep(2); }} className="group relative rounded-[20px] border border-white/15 bg-white/[0.06] p-5 text-right backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-[#D9AE4C] hover:shadow-[0_12px_30px_rgba(217,174,76,.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]">
+                      <span className="absolute right-4 top-4 rounded-full bg-[#D9AE4C] px-3 py-1 text-xs font-black text-[#0E241D]">מתנה</span>
+                      <KeyRound className="mt-8 size-10 text-[#D9AE4C]" strokeWidth={1.5} aria-hidden="true" />
+                      <span className="mt-5 block text-sm font-bold text-[#D9AE4C]">לקונים ולמשקיעים</span>
+                      <span className="mt-1 block text-xl font-black text-white">שיחת התאמה אישית</span>
+                      <span className="mt-2 block text-sm leading-6 text-[#FFFDF8]/80">כל הפרטים על הנכסים שמתאימים לכם: מחיר, מצב, ומה באמת שווה לראות.</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : exitIntentStep === 2 ? (
-              <form onSubmit={handleExitIntentSubmit} className="mt-7 grid gap-4">
-                <button type="button" onClick={() => setExitIntentStep(1)} className="justify-self-start text-sm font-black text-[#D9AE4C] underline underline-offset-4">→ חזרה</button>
-                <p className="text-base font-semibold text-white/75">נשמור את הפרטים ונחזור אליכם בלי התחייבות.</p>
-                <label className="grid gap-2">
-                  <span className="text-sm font-bold text-white/80">שם מלא</span>
-                  <input required value={exitIntentName} onChange={(event) => setExitIntentName(event.target.value)} className="h-13 rounded-2xl border border-white/20 bg-white/[0.08] px-4 text-base text-white outline-none placeholder:text-white/45 focus:border-[#D9AE4C]" placeholder="שם מלא" />
-                </label>
-                <label className="grid gap-2">
-                  <span className="text-sm font-bold text-white/80">טלפון</span>
-                  <input required inputMode="tel" pattern="(?:0[23489][0-9]{7}|05[0-9]{8})" value={exitIntentPhone} onChange={(event) => setExitIntentPhone(event.target.value)} className="h-13 rounded-2xl border border-white/20 bg-white/[0.08] px-4 text-base text-white outline-none placeholder:text-white/45 focus:border-[#D9AE4C]" placeholder="050-0000000" dir="ltr" />
-                </label>
-                <label className="flex items-start gap-3 text-sm font-semibold leading-6 text-white/75">
-                  <input type="checkbox" checked={exitIntentConsent} onChange={(event) => setExitIntentConsent(event.target.checked)} className="mt-1 size-4 accent-[#D9AE4C]" />
-                  <span>אני מסכים/ה לקבל עדכונים על נכסים בוואטסאפ ובהודעות.</span>
-                </label>
-                <button type="submit" disabled={submitLeadMutation.isPending} className="mt-2 h-14 rounded-full bg-[#D9AE4C] px-6 text-base font-black text-[#2A211B] transition hover:bg-[#B98B2F] disabled:opacity-60">
-                  {submitLeadMutation.isPending ? "שומרים פרטים..." : exitIntentTrack === "seller" ? "אני רוצה הערכת שווי" : "תתקשרו אליי"}
-                </button>
-                <p className="text-center text-xs font-semibold text-white/55">בלי ספאם ובלי התחייבות.</p>
-              </form>
-            ) : (
-              <div className="mt-7">
-                <p className="text-lg font-semibold leading-8 text-white/80">{exitIntentTrack === "seller" ? "מעולה. המומחה באזורכם ייצור איתכם קשר עם הערכת שווי לדירה." : "מעולה. המומחה באזורכם ייצור איתכם קשר עם כל הפרטים על הנכסים שמתאימים לכם."}</p>
-                <button type="button" onClick={closeExitIntent} className="mt-7 h-12 w-full rounded-full border border-[#D9AE4C] px-6 text-base font-black text-[#D9AE4C] transition hover:bg-[#D9AE4C] hover:text-[#2A211B]">סגירה</button>
-              </div>
-            )}
+              ) : exitIntentStep === 2 ? (
+                <form onSubmit={handleExitIntentSubmit} noValidate className="mt-6 grid gap-4 text-right">
+                  <h2 id="exit-intent-title" className="text-3xl font-black leading-tight text-white">רק עוד שני פרטים ונחזור אליכם.</h2>
+                  <p className="mx-auto rounded-full bg-[#D9AE4C] px-4 py-2 text-sm font-black text-[#0E241D]">{exitIntentTrack === "seller" ? "המתנה שלכם: הערכת שווי לדירה" : "המתנה שלכם: שיחת התאמה אישית"}</p>
+                  <button type="button" onClick={() => setExitIntentStep(1)} className="justify-self-start text-sm font-black text-[#D9AE4C] underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]">→ חזרה</button>
+                  <label className="grid gap-2"><span className="text-sm font-bold text-white/90">שם מלא</span><input ref={exitIntentNameRef} value={exitIntentName} onChange={(event) => { setExitIntentName(event.target.value); setExitIntentNameError(""); }} className="h-14 rounded-2xl border border-white/20 bg-white/[0.08] px-4 text-base text-white outline-none placeholder:text-white/45 focus:border-[#D9AE4C]" placeholder="שם מלא" aria-invalid={Boolean(exitIntentNameError)} />{exitIntentNameError ? <span className="text-sm font-bold text-[#F3B39A]" role="alert">{exitIntentNameError}</span> : null}</label>
+                  <label className="grid gap-2"><span className="text-sm font-bold text-white/90">טלפון</span><input value={exitIntentPhone} onChange={(event) => { setExitIntentPhone(event.target.value); setExitIntentPhoneError(""); }} className="h-14 rounded-2xl border border-white/20 bg-white/[0.08] px-4 text-base text-white outline-none placeholder:text-white/45 focus:border-[#D9AE4C]" placeholder="050-0000000" inputMode="tel" dir="ltr" style={{ textAlign: "right" }} aria-invalid={Boolean(exitIntentPhoneError)} />{exitIntentPhoneError ? <span className="text-sm font-bold text-[#F3B39A]" role="alert">{exitIntentPhoneError}</span> : null}</label>
+                  <label className="flex items-start gap-3 text-sm font-semibold leading-6 text-white/80"><input type="checkbox" checked={exitIntentConsent} onChange={(event) => setExitIntentConsent(event.target.checked)} className="mt-1 size-4 accent-[#D9AE4C]" /><span>אני מסכים/ה לקבל עדכונים על נכסים בוואטסאפ ובהודעות.</span></label>
+                  <button type="submit" disabled={submitLeadMutation.isPending} className="mt-2 h-14 w-full rounded-full bg-[#D9AE4C] px-6 text-base font-black text-[#0E241D] shadow-[0_8px_24px_rgba(217,174,76,.24)] transition hover:bg-[#E5C46D] disabled:opacity-60">{submitLeadMutation.isPending ? "שומרים פרטים..." : "אני רוצה את המתנה שלי"}</button>
+                  <p className="text-center text-xs font-semibold text-white/75">בלי ספאם ובלי התחייבות.</p>
+                </form>
+              ) : (
+                <div className="mt-8">
+                  <CheckCircle2 className="mx-auto size-16 text-[#D9AE4C]" strokeWidth={1.5} aria-hidden="true" />
+                  <h2 id="exit-intent-title" className="mt-5 text-3xl font-black text-white">הפרטים התקבלו.</h2>
+                  <p className="mt-4 text-lg font-semibold leading-8 text-[#FFFDF8]/90">{exitIntentTrack === "seller" ? "מעולה. המומחה באזורכם ייצור איתכם קשר עם הערכת שווי לדירה." : "מעולה. המומחה באזורכם ייצור איתכם קשר עם כל הפרטים על הנכסים שמתאימים לכם."}</p>
+                  <button ref={exitIntentSuccessRef} type="button" onClick={closeExitIntent} className="mt-7 h-14 w-full rounded-full border border-[#D9AE4C] px-6 text-base font-black text-[#D9AE4C] transition hover:bg-[#D9AE4C] hover:text-[#0E241D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]">סגירה</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : null}
