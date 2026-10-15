@@ -469,7 +469,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!exitIntentEligible || hasSubmittedLead || exitIntentOpen || exitIntentShownThisVisitRef.current) return;
+    if (hasSubmittedLead || exitIntentOpen || exitIntentShownThisVisitRef.current) return;
     const desktopQuery = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine)");
     const mobileQuery = window.matchMedia("(max-width: 1023px)");
 
@@ -502,6 +502,7 @@ export default function Home() {
       }
     };
     const openFromTrigger = () => {
+      if (!exitIntentEligible) return;
       if (!canShow()) return;
       exitIntentShownThisVisitRef.current = true;
       recordShown();
