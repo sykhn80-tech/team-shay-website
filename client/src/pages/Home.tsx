@@ -61,7 +61,8 @@ const SHAY_BRAND_VIDEO_POSTER = "/media/shay-group-brand-poster.jpg";
 const FOOTER_LOGO_URL = "/brand/shay-group-logo-trimmed.png";
 const EXIT_INTENT_SEEN_KEY = "shay-group-exit-intent-seen-at";
 const LEAD_SUBMITTED_KEY = "shay-group-lead-submitted";
-const EXIT_INTENT_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+const EXIT_INTENT_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000;
+const EXIT_INTENT_MAX_SHOWS = 3;
 const ELIYA_IMAGE_URL = "/agents/eliya-card.jpeg";
 const AVIAD_IMAGE_URL = "/agents/aviad-card.jpeg";
 const HODIYA_IMAGE_URL = "/agents/hodiya-card.png";
@@ -389,6 +390,11 @@ export default function Home() {
   const exitIntentSuccessRef = useRef<HTMLButtonElement | null>(null);
   const exitIntentPreviousFocusRef = useRef<HTMLElement | null>(null);
   const exitIntentPreviewOpenedRef = useRef(false);
+  const exitIntentShownThisVisitRef = useRef(false);
+  const exitIntentMobileReadyRef = useRef(false);
+  const exitIntentHiddenAtRef = useRef<number | null>(null);
+  const exitIntentLastScrollRef = useRef({ y: 0, time: 0 });
+  const exitIntentTouchStartYRef = useRef<number | null>(null);
   const shayVideoSectionRef = useRef<HTMLDivElement | null>(null);
   const shayVideoRef = useRef<HTMLVideoElement | null>(null);
   const [shayVideoInView, setShayVideoInView] = useState(false);
@@ -448,8 +454,7 @@ export default function Home() {
   useEffect(() => {
     if (hasSubmittedLead) return;
     const desktopQuery = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine)");
-    if (!desktopQuery.matches) return;
-    const timeout = window.setTimeout(() => setExitIntentEligible(true), 15000);
+    const timeout = window.setTimeout(() => setExitIntentEligible(true), desktopQuery.matches ? 15000 : 20000);
     return () => window.clearTimeout(timeout);
   }, [hasSubmittedLead]);
 
@@ -464,26 +469,81 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!exitIntentEligible || hasSubmittedLead || exitIntentOpen) return;
+    if (!exitIntentEligible || hasSubmittedLead || exitIntentOpen || exitIntentShownThisVisitRef.current) return;
     const desktopQuery = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine)");
-    const handleExitIntent = (event: MouseEvent) => {
-      if (!desktopQuery.matches || event.relatedTarget !== null || event.clientY > 0) return;
+    const mobileQuery = window.matchMedia("(max-width: 1023px)");
 
+    const hasFormFocus = () => {
+      const active = document.activeElement;
+      return active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement || active?.hasAttribute("contenteditable");
+    };
+    const canShow = () => {
+      if (hasFormFocus()) return false;
       try {
-        const seenAt = Number(window.localStorage.getItem(EXIT_INTENT_SEEN_KEY) ?? 0);
-        if (seenAt && Date.now() - seenAt < EXIT_INTENT_COOLDOWN_MS) return;
-        window.localStorage.setItem(EXIT_INTENT_SEEN_KEY, String(Date.now()));
+        const raw = window.localStorage.getItem(EXIT_INTENT_SEEN_KEY);
+        if (!raw) return true;
+        const legacyTime = Number(raw);
+        const record = Number.isFinite(legacyTime) && legacyTime > 0 ? { count: 1, lastShownAt: legacyTime } : JSON.parse(raw) as { count?: number; lastShownAt?: number };
+        const count = Number(record.count) || 0;
+        const lastShownAt = Number(record.lastShownAt) || 0;
+        return count < EXIT_INTENT_MAX_SHOWS && (!lastShownAt || Date.now() - lastShownAt >= EXIT_INTENT_COOLDOWN_MS);
       } catch {
-        // Exit intent should remain usable when storage is blocked.
+        return true;
       }
-
+    };
+    const recordShown = () => {
+      try {
+        const raw = window.localStorage.getItem(EXIT_INTENT_SEEN_KEY);
+        const legacyTime = raw ? Number(raw) : 0;
+        const previous = raw && !Number.isFinite(legacyTime) ? JSON.parse(raw) as { count?: number; lastShownAt?: number } : { count: legacyTime > 0 ? 1 : 0 };
+        window.localStorage.setItem(EXIT_INTENT_SEEN_KEY, JSON.stringify({ count: (Number(previous.count) || 0) + 1, lastShownAt: Date.now() }));
+      } catch {
+        // The popup remains usable when browser storage is blocked.
+      }
+    };
+    const openFromTrigger = () => {
+      if (!canShow()) return;
+      exitIntentShownThisVisitRef.current = true;
+      recordShown();
       setExitIntentStep(1);
       setExitIntentTrack(null);
       setExitIntentOpen(true);
     };
+    const handleDesktopExit = (event: MouseEvent) => {
+      if (!desktopQuery.matches || event.relatedTarget !== null || event.clientY > 0) return;
+      openFromTrigger();
+    };
+    const handleScroll = () => {
+      if (!mobileQuery.matches) return;
+      const now = performance.now();
+      const currentY = window.scrollY;
+      const previous = exitIntentLastScrollRef.current;
+      const movedUpFast = previous.y - currentY > 400 && now - previous.time < 500;
+      exitIntentLastScrollRef.current = { y: currentY, time: now };
+      const pageHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+      const passedHalfway = currentY + window.innerHeight >= pageHeight * 0.5;
+      if (passedHalfway) exitIntentMobileReadyRef.current = true;
+      if (movedUpFast && exitIntentMobileReadyRef.current) openFromTrigger();
+    };
+    const handleVisibility = () => {
+      if (!mobileQuery.matches) return;
+      if (document.visibilityState === "hidden") {
+        exitIntentHiddenAtRef.current = Date.now();
+        return;
+      }
+      const hiddenAt = exitIntentHiddenAtRef.current;
+      exitIntentHiddenAtRef.current = null;
+      if (hiddenAt && Date.now() - hiddenAt >= 3000) openFromTrigger();
+    };
 
-    document.addEventListener("mouseout", handleExitIntent);
-    return () => document.removeEventListener("mouseout", handleExitIntent);
+    document.addEventListener("mouseout", handleDesktopExit);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("mouseout", handleDesktopExit);
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [exitIntentEligible, exitIntentOpen, hasSubmittedLead]);
 
   useEffect(() => {
@@ -531,11 +591,11 @@ export default function Home() {
   }, [exitIntentOpen, exitIntentStep]);
 
   useEffect(() => {
-    document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
+    document.body.style.overflow = mobileMenuOpen || exitIntentOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [mobileMenuOpen]);
+  }, [mobileMenuOpen, exitIntentOpen]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -960,11 +1020,6 @@ export default function Home() {
 
   const closeExitIntent = () => {
     setExitIntentOpen(false);
-    try {
-      window.localStorage.setItem(EXIT_INTENT_SEEN_KEY, String(Date.now()));
-    } catch {
-      // The popup can close even if browser storage is unavailable.
-    }
     window.setTimeout(() => exitIntentPreviousFocusRef.current?.focus(), 0);
   };
 
@@ -2140,7 +2195,7 @@ export default function Home() {
 
       {exitIntentOpen ? (
         <div
-          className="fixed inset-0 z-[100] hidden items-center justify-center bg-[#07100c]/70 p-6 backdrop-blur-[6px] lg:flex"
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-[#07100c]/70 p-0 backdrop-blur-[6px] lg:items-center lg:p-6"
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) closeExitIntent();
@@ -2149,21 +2204,38 @@ export default function Home() {
           <style>{`
             @keyframes exit-intent-border-spin { from { background-position: 0% 50%; } to { background-position: 200% 50%; } }
             @keyframes exit-intent-pop-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+            @keyframes exit-intent-sheet-in { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
             @keyframes exit-intent-gift-bounce { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-5px); } }
+            @media (max-width: 1023px) {
+              .exit-intent-card { padding: 0 !important; border-radius: 24px 24px 0 0 !important; box-shadow: none !important; animation: exit-intent-sheet-in 250ms ease-out both !important; }
+              .exit-intent-inner { animation: none !important; }
+              .exit-intent-gift { animation: none !important; }
+            }
             @media (prefers-reduced-motion: reduce) {
               .exit-intent-card, .exit-intent-gift { animation: none !important; }
             }
           `}</style>
-          <div className="exit-intent-card relative w-full max-w-[600px] rounded-[28px] p-px shadow-[0_0_44px_rgba(47,102,83,.45)]" style={{ background: "linear-gradient(120deg, #D9AE4C, #2F6653, #D9AE4C)", backgroundSize: "200% 200%", animation: "exit-intent-border-spin 6s linear infinite" }}>
+          <div
+            className="exit-intent-card relative w-full max-w-[600px] rounded-t-[24px] p-0 shadow-[0_0_44px_rgba(47,102,83,.45)] lg:rounded-[28px] lg:p-px"
+            style={{ background: "linear-gradient(120deg, #D9AE4C, #2F6653, #D9AE4C)", backgroundSize: "200% 200%", animation: "exit-intent-border-spin 6s linear infinite" }}
+            onTouchStart={(event) => { exitIntentTouchStartYRef.current = event.touches[0]?.clientY ?? null; }}
+            onTouchEnd={(event) => {
+              const startY = exitIntentTouchStartYRef.current;
+              const endY = event.changedTouches[0]?.clientY;
+              exitIntentTouchStartYRef.current = null;
+              if (startY !== null && endY !== undefined && endY - startY > 80) closeExitIntent();
+            }}
+          >
             <div
               ref={exitIntentDialogRef}
               role="dialog"
               aria-modal="true"
               aria-labelledby="exit-intent-title"
               dir="rtl"
-              className="relative overflow-hidden rounded-[27px] bg-gradient-to-b from-[#0E241D] to-[#2F6653] p-6 text-center text-[#FFFDF8] shadow-[inset_0_1px_0_rgba(255,255,255,.14)] md:p-9"
+              className="exit-intent-inner relative max-h-[85vh] overflow-y-auto rounded-t-[24px] bg-gradient-to-b from-[#0E241D] to-[#2F6653] p-6 text-center text-[#FFFDF8] shadow-[inset_0_1px_0_rgba(255,255,255,.14)] md:p-9 lg:rounded-[27px]"
               style={{ backgroundImage: "radial-gradient(circle at 50% 18%, rgba(217,174,76,.12), transparent 34%), radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(180deg, #0E241D 0%, #2F6653 100%)", backgroundSize: "auto, 12px 12px, auto", animation: "exit-intent-pop-in 250ms ease-out both" }}
             >
+              <div className="mx-auto mb-4 h-1 w-12 rounded-full bg-white/40 lg:hidden" aria-hidden="true" />
               <img src={FOOTER_LOGO_URL} alt="Shay Group" className="mx-auto h-14 w-auto object-contain" />
               <button ref={exitIntentCloseRef} type="button" onClick={closeExitIntent} className="absolute left-5 top-5 inline-flex size-11 items-center justify-center rounded-full border border-[#D9AE4C] bg-white/[0.04] text-[#FFFDF8] transition hover:bg-[#D9AE4C]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]" aria-label="סגירת הפופאפ">
                 <X className="size-5" aria-hidden="true" />
@@ -2174,7 +2246,7 @@ export default function Home() {
                   <p className="flex items-center justify-center gap-2 text-[22px] font-black text-[#D9AE4C]"><Gift className="exit-intent-gift size-6" aria-hidden="true" style={{ animation: "exit-intent-gift-bounce 600ms ease-out 250ms 1" }} />רגע, לפני שאתם הולכים...</p>
                   <h2 id="exit-intent-title" className="mt-3 text-3xl font-black leading-tight text-white md:text-4xl">בחרו מתנה. היא עלינו.</h2>
                   <p className="mt-3 text-base leading-7 text-[#FFFDF8]/80">בלי עלות ובלי התחייבות. מומחה מהצוות שלנו יחזור אליכם תוך יום עסקים.</p>
-                  <div className="mt-7 grid items-stretch gap-4 sm:grid-cols-2">
+                  <div className="mt-7 grid items-stretch gap-4 lg:grid-cols-2">
                     <button type="button" onClick={() => { setExitIntentTrack("seller"); setExitIntentStep(2); }} className="group relative rounded-[20px] border border-white/15 bg-white/[0.06] p-5 text-right backdrop-blur transition duration-200 hover:-translate-y-1 hover:border-[#D9AE4C] hover:shadow-[0_12px_30px_rgba(217,174,76,.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]">
                       <span className="absolute right-4 top-4 rounded-full bg-[#D9AE4C] px-3 py-1 text-xs font-black text-[#0E241D]">מתנה</span>
                       <HomeIcon className="mt-8 size-10 text-[#D9AE4C]" strokeWidth={1.5} aria-hidden="true" />
@@ -2215,7 +2287,7 @@ export default function Home() {
         </div>
       ) : null}
 
-      <button
+      {!exitIntentOpen ? <button
         onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}
         className="fixed bottom-6 right-6 z-40 inline-flex size-16 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_18px_40px_rgba(37,211,102,0.35)] transition hover:scale-105"
         aria-label="שלחו הודעה עכשיו ב-WhatsApp"
@@ -2228,7 +2300,7 @@ export default function Home() {
             <path d="M16 3.2c-7.06 0-12.8 5.74-12.8 12.8 0 2.25.59 4.44 1.71 6.37L3 29l6.85-1.79A12.76 12.76 0 0 0 16 28.8c7.06 0 12.8-5.74 12.8-12.8S23.06 3.2 16 3.2Zm0 23.36c-1.94 0-3.84-.52-5.49-1.49l-.39-.23-4.06 1.06 1.08-3.96-.25-.41a10.51 10.51 0 1 1 9.11 5.03Z" />
           </svg>
         </span>
-      </button>
+      </button> : null}
     </div>
   );
 }
