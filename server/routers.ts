@@ -202,6 +202,9 @@ const leadInputSchema = z.object({
   rooms: z.number().int().positive(),
   sqm: z.number().int().positive(),
   notes: z.string().optional().nullable(),
+  source: z.string().trim().max(120).optional().nullable(),
+  leadType: z.string().trim().max(120).optional().nullable(),
+  marketingConsent: z.boolean().optional().default(false),
 });
 
 const marketingInputSchema = z.object({
@@ -1986,6 +1989,9 @@ export const appRouter = router({
           rooms: input.rooms,
           sqm: input.sqm,
           notes: input.notes ?? null,
+          source: input.source ?? null,
+          leadType: input.leadType ?? null,
+          marketingConsent: input.marketingConsent,
         });
         leadSaved = true;
       } catch (error) {
@@ -2001,6 +2007,9 @@ export const appRouter = router({
         rooms: input.rooms,
         sqm: input.sqm,
         notes: input.notes ?? null,
+        source: input.source ?? null,
+        leadType: input.leadType ?? null,
+        marketingConsent: input.marketingConsent,
       });
 
       return {

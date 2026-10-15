@@ -9,6 +9,9 @@ type LeadNotificationInput = {
   rooms: number;
   sqm: number;
   notes?: string | null;
+  source?: string | null;
+  leadType?: string | null;
+  marketingConsent?: boolean;
 };
 
 function escapeHtml(value: string) {
@@ -29,6 +32,9 @@ export async function sendLeadNotificationEmail(input: LeadNotificationInput) {
     ["חדרים", String(input.rooms)],
     ["גודל במ״ר", String(input.sqm)],
     ["מספר ליד", String(input.leadId)],
+    ["מקור", input.source || "—"],
+    ["סוג פנייה", input.leadType || "—"],
+    ["הסכמה לעדכונים", input.marketingConsent ? "כן" : "לא"],
     ["הערות", input.notes || "—"],
   ];
 

@@ -36,6 +36,13 @@
       "when": 1791792000000,
       "tag": "0004_add_rental_property_statuses",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1791979200000,
+      "tag": "0005_add_lead_popup_metadata",
+      "breakpoints": true
     }
   ]
 }

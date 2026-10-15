@@ -57,6 +57,9 @@ const SHAY_BRAND_VIDEO_WEBM = "/media/shay-group-brand.webm";
 const SHAY_BRAND_VIDEO_MP4 = "/media/shay-group-brand.mp4";
 const SHAY_BRAND_VIDEO_POSTER = "/media/shay-group-brand-poster.jpg";
 const FOOTER_LOGO_URL = "/brand/shay-group-logo-trimmed.png";
+const EXIT_INTENT_SEEN_KEY = "shay-group-exit-intent-seen-at";
+const LEAD_SUBMITTED_KEY = "shay-group-lead-submitted";
+const EXIT_INTENT_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 const ELIYA_IMAGE_URL = "/agents/eliya-card.jpeg";
 const AVIAD_IMAGE_URL = "/agents/aviad-card.jpeg";
 const HODIYA_IMAGE_URL = "/agents/hodiya-card.png";
@@ -368,6 +371,17 @@ export default function Home() {
   const sliderSparkTimeout = useRef<number | null>(null);
   const [marketingPreviewOpen, setMarketingPreviewOpen] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
+  const [hasSubmittedLead, setHasSubmittedLead] = useState(false);
+  const [exitIntentEligible, setExitIntentEligible] = useState(false);
+  const [exitIntentOpen, setExitIntentOpen] = useState(false);
+  const [exitIntentStep, setExitIntentStep] = useState<1 | 2 | 3>(1);
+  const [exitIntentTrack, setExitIntentTrack] = useState<"seller" | "buyer" | null>(null);
+  const [exitIntentName, setExitIntentName] = useState("");
+  const [exitIntentPhone, setExitIntentPhone] = useState("");
+  const [exitIntentConsent, setExitIntentConsent] = useState(false);
+  const exitIntentDialogRef = useRef<HTMLDivElement | null>(null);
+  const exitIntentCloseRef = useRef<HTMLButtonElement | null>(null);
+  const exitIntentPreviousFocusRef = useRef<HTMLElement | null>(null);
   const shayVideoSectionRef = useRef<HTMLDivElement | null>(null);
   const shayVideoRef = useRef<HTMLVideoElement | null>(null);
   const [shayVideoInView, setShayVideoInView] = useState(false);
@@ -415,6 +429,79 @@ export default function Home() {
     const timeout = window.setTimeout(() => setShowThankYou(false), 2500);
     return () => window.clearTimeout(timeout);
   }, [showThankYou]);
+
+  useEffect(() => {
+    try {
+      setHasSubmittedLead(window.localStorage.getItem(LEAD_SUBMITTED_KEY) === "1");
+    } catch {
+      setHasSubmittedLead(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (hasSubmittedLead) return;
+    const desktopQuery = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine)");
+    if (!desktopQuery.matches) return;
+    const timeout = window.setTimeout(() => setExitIntentEligible(true), 15000);
+    return () => window.clearTimeout(timeout);
+  }, [hasSubmittedLead]);
+
+  useEffect(() => {
+    if (!exitIntentEligible || hasSubmittedLead || exitIntentOpen) return;
+    const desktopQuery = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine)");
+    const handleExitIntent = (event: MouseEvent) => {
+      if (!desktopQuery.matches || event.relatedTarget !== null || event.clientY > 0) return;
+
+      try {
+        const seenAt = Number(window.localStorage.getItem(EXIT_INTENT_SEEN_KEY) ?? 0);
+        if (seenAt && Date.now() - seenAt < EXIT_INTENT_COOLDOWN_MS) return;
+        window.localStorage.setItem(EXIT_INTENT_SEEN_KEY, String(Date.now()));
+      } catch {
+        // Exit intent should remain usable when storage is blocked.
+      }
+
+      setExitIntentStep(1);
+      setExitIntentTrack(null);
+      setExitIntentOpen(true);
+    };
+
+    document.addEventListener("mouseout", handleExitIntent);
+    return () => document.removeEventListener("mouseout", handleExitIntent);
+  }, [exitIntentEligible, exitIntentOpen, hasSubmittedLead]);
+
+  useEffect(() => {
+    if (!exitIntentOpen) return;
+    exitIntentPreviousFocusRef.current = document.activeElement as HTMLElement | null;
+    const focusTimer = window.setTimeout(() => exitIntentCloseRef.current?.focus(), 0);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeExitIntent();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = exitIntentDialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
+        "button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])",
+      ));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [exitIntentOpen]);
 
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
@@ -835,6 +922,57 @@ export default function Home() {
     setLeadStep(3);
   };
 
+  const markLeadSubmitted = () => {
+    setHasSubmittedLead(true);
+    try {
+      window.localStorage.setItem(LEAD_SUBMITTED_KEY, "1");
+    } catch {
+      // The lead was still submitted even if browser storage is unavailable.
+    }
+  };
+
+  const closeExitIntent = () => {
+    setExitIntentOpen(false);
+    try {
+      window.localStorage.setItem(EXIT_INTENT_SEEN_KEY, String(Date.now()));
+    } catch {
+      // The popup can close even if browser storage is unavailable.
+    }
+    window.setTimeout(() => exitIntentPreviousFocusRef.current?.focus(), 0);
+  };
+
+  const isValidIsraeliPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    return /^(?:0[23489]\d{7}|05\d{8})$/.test(digits);
+  };
+
+  const handleExitIntentSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!exitIntentTrack) return;
+    if (!exitIntentName.trim() || !isValidIsraeliPhone(exitIntentPhone)) {
+      toast.error("נא להזין שם מלא ומספר טלפון ישראלי תקין.");
+      return;
+    }
+
+    try {
+      await submitLeadMutation.mutateAsync({
+        fullName: exitIntentName.trim(),
+        phone: exitIntentPhone.trim(),
+        neighborhood: "לא צוין",
+        rooms: 1,
+        sqm: 1,
+        source: "פופאפ יציאה",
+        leadType: exitIntentTrack === "seller" ? "מכירה" : "קנייה או השקעה",
+        marketingConsent: exitIntentConsent,
+        notes: `פופאפ יציאה | מסלול: ${exitIntentTrack === "seller" ? "מכירה" : "קנייה או השקעה"} | הסכמה לעדכונים: ${exitIntentConsent ? "כן" : "לא"}`,
+      });
+      markLeadSubmitted();
+      setExitIntentStep(3);
+    } catch {
+      toast.error("לא הצלחנו לשמור את הפרטים כרגע. נסו שוב בעוד רגע.");
+    }
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -870,6 +1008,7 @@ export default function Home() {
         toast.warning("הפרטים נשמרו, אבל המייל לא נשלח. צריך להגדיר RESEND_API_KEY ב-Vercel.");
       }
       setShowThankYou(true);
+      markLeadSubmitted();
       setLeadStep(1);
       setLeadTrack(null);
       setFormData({ neighborhood: "", rooms: "", sqm: "", fullName: "", phone: "", equity: "200000", hasProperty: "", propertyLocation: "", landlordPath: "", buyerArea: "" });
@@ -1967,6 +2106,95 @@ export default function Home() {
           <p>אין לראות באמור באתר ייעוץ השקעות או תחליף לייעוץ אישי המתחשב בנתוניו של כל אדם.</p>
         </div>
       </footer>
+
+      {exitIntentOpen ? (
+        <div
+          className="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 p-6 lg:flex"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeExitIntent();
+          }}
+        >
+          <div
+            ref={exitIntentDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="exit-intent-title"
+            dir="rtl"
+            className="w-full max-w-[560px] origin-center rounded-[30px] bg-[#1C1612] p-7 text-[#FFFDF8] shadow-[0_28px_90px_rgba(0,0,0,0.38)] animate-in fade-in zoom-in-95 duration-200 md:p-9"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.12em] text-[#D9AE4C]">Shay Group</p>
+                <h2 id="exit-intent-title" className="mt-3 text-3xl font-black leading-tight text-[#FFFDF8]">
+                  {exitIntentStep === 1 ? "לפני שאתם הולכים, קחו משהו איתכם." : exitIntentStep === 2 ? "רק עוד שני פרטים ונחזור אליכם." : "הפרטים התקבלו."}
+                </h2>
+              </div>
+              <button
+                ref={exitIntentCloseRef}
+                type="button"
+                onClick={closeExitIntent}
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-white/30 text-2xl text-[#FFFDF8] transition hover:border-[#D9AE4C] hover:text-[#D9AE4C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]"
+                aria-label="סגירת הפופאפ"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {exitIntentStep === 1 ? (
+              <div className="mt-7">
+                <p className="text-base font-semibold leading-7 text-white/75">מתנה מאיתנו, בלי התחייבות. מה מתאים לכם?</p>
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => { setExitIntentTrack("seller"); setExitIntentStep(2); }}
+                    className="group rounded-2xl border border-white/20 bg-white/[0.06] p-5 text-right transition hover:border-[#D9AE4C] focus-visible:border-[#D9AE4C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]"
+                  >
+                    <HomeIcon className="size-6 text-[#D9AE4C]" />
+                    <span className="mt-4 block text-lg font-black text-[#FFFDF8]">יש לי דירה למכירה</span>
+                    <span className="mt-2 block text-sm font-semibold leading-6 text-white/70">הערכת שווי במתנה: כמה הדירה שלכם שווה היום, לפי עסקאות אחרונות באזור.</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setExitIntentTrack("buyer"); setExitIntentStep(2); }}
+                    className="group rounded-2xl border border-white/20 bg-white/[0.06] p-5 text-right transition hover:border-[#D9AE4C] focus-visible:border-[#D9AE4C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9AE4C]"
+                  >
+                    <KeyRound className="size-6 text-[#D9AE4C]" />
+                    <span className="mt-4 block text-lg font-black text-[#FFFDF8]">אני מחפש/ת לקנות או להשקיע</span>
+                    <span className="mt-2 block text-sm font-semibold leading-6 text-white/70">שיחה קצרה, ותקבלו את כל הפרטים על הנכסים שמתאימים לכם: מחיר, מצב, ומה באמת שווה לראות.</span>
+                  </button>
+                </div>
+              </div>
+            ) : exitIntentStep === 2 ? (
+              <form onSubmit={handleExitIntentSubmit} className="mt-7 grid gap-4">
+                <button type="button" onClick={() => setExitIntentStep(1)} className="justify-self-start text-sm font-black text-[#D9AE4C] underline underline-offset-4">→ חזרה</button>
+                <p className="text-base font-semibold text-white/75">נשמור את הפרטים ונחזור אליכם בלי התחייבות.</p>
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-white/80">שם מלא</span>
+                  <input required value={exitIntentName} onChange={(event) => setExitIntentName(event.target.value)} className="h-13 rounded-2xl border border-white/20 bg-white/[0.08] px-4 text-base text-white outline-none placeholder:text-white/45 focus:border-[#D9AE4C]" placeholder="שם מלא" />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-sm font-bold text-white/80">טלפון</span>
+                  <input required inputMode="tel" pattern="(?:0[23489][0-9]{7}|05[0-9]{8})" value={exitIntentPhone} onChange={(event) => setExitIntentPhone(event.target.value)} className="h-13 rounded-2xl border border-white/20 bg-white/[0.08] px-4 text-base text-white outline-none placeholder:text-white/45 focus:border-[#D9AE4C]" placeholder="050-0000000" dir="ltr" />
+                </label>
+                <label className="flex items-start gap-3 text-sm font-semibold leading-6 text-white/75">
+                  <input type="checkbox" checked={exitIntentConsent} onChange={(event) => setExitIntentConsent(event.target.checked)} className="mt-1 size-4 accent-[#D9AE4C]" />
+                  <span>אני מסכים/ה לקבל עדכונים על נכסים בוואטסאפ ובהודעות.</span>
+                </label>
+                <button type="submit" disabled={submitLeadMutation.isPending} className="mt-2 h-14 rounded-full bg-[#D9AE4C] px-6 text-base font-black text-[#2A211B] transition hover:bg-[#B98B2F] disabled:opacity-60">
+                  {submitLeadMutation.isPending ? "שומרים פרטים..." : exitIntentTrack === "seller" ? "אני רוצה הערכת שווי" : "תתקשרו אליי"}
+                </button>
+                <p className="text-center text-xs font-semibold text-white/55">בלי ספאם ובלי התחייבות.</p>
+              </form>
+            ) : (
+              <div className="mt-7">
+                <p className="text-lg font-semibold leading-8 text-white/80">{exitIntentTrack === "seller" ? "מעולה. המומחה באזורכם ייצור איתכם קשר עם הערכת שווי לדירה." : "מעולה. המומחה באזורכם ייצור איתכם קשר עם כל הפרטים על הנכסים שמתאימים לכם."}</p>
+                <button type="button" onClick={closeExitIntent} className="mt-7 h-12 w-full rounded-full border border-[#D9AE4C] px-6 text-base font-black text-[#D9AE4C] transition hover:bg-[#D9AE4C] hover:text-[#2A211B]">סגירה</button>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       <button
         onClick={() => window.open(whatsappLink, "_blank", "noopener,noreferrer")}

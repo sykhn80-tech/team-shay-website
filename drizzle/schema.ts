@@ -81,6 +81,9 @@ export const leadSubmissions = mysqlTable("leadSubmissions", {
   rooms: int("rooms").notNull(),
   sqm: int("sqm").notNull(),
   notes: text("notes"),
+  source: varchar("source", { length: 120 }),
+  leadType: varchar("leadType", { length: 120 }),
+  marketingConsent: boolean("marketingConsent").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
