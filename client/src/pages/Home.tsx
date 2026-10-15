@@ -448,7 +448,7 @@ export default function Home() {
   useEffect(() => {
     const video = shayVideoRef.current;
     if (!video || !shayVideoLoaded) return;
-    const motionAllowed = shayVideoManualPlay || (effectsEnabled && (!shayVideoReducedMotion || shayVideoMotionOverride));
+    const motionAllowed = shayVideoManualPlay || !shayVideoReducedMotion || shayVideoMotionOverride;
     if ((shayVideoInView || shayVideoManualPlay) && motionAllowed) {
       void video.play().catch(() => undefined);
     } else {
@@ -458,7 +458,7 @@ export default function Home() {
 
   const playShayVideoIfVisible = useCallback(() => {
     const video = shayVideoRef.current;
-    const motionAllowed = shayVideoManualPlay || (effectsEnabled && (!shayVideoReducedMotion || shayVideoMotionOverride));
+    const motionAllowed = shayVideoManualPlay || !shayVideoReducedMotion || shayVideoMotionOverride;
     if (!video || (!shayVideoInView && !shayVideoManualPlay) || !motionAllowed) return;
     void video.play().catch(() => undefined);
   }, [effectsEnabled, shayVideoInView, shayVideoReducedMotion, shayVideoMotionOverride, shayVideoManualPlay]);
@@ -1140,7 +1140,7 @@ export default function Home() {
                 <div className="absolute -inset-5 rounded-[42px] bg-[radial-gradient(circle_at_top,rgba(217,174,76,0.22),rgba(255,255,255,0))] blur-2xl" />
                 <div className="relative overflow-hidden rounded-[36px] border border-[#E8DCC6] bg-[#FFFDF8] p-4 shadow-[0_28px_70px_rgba(90,78,68,0.14)]">
                   <div ref={shayVideoSectionRef} className="relative">
-                    {shayVideoManualPlay || (effectsEnabled && shouldLoadShayVideo && !shayVideoReducedMotion) || shayVideoMotionOverride ? (
+                    {shayVideoManualPlay || (shouldLoadShayVideo && !shayVideoReducedMotion) || shayVideoMotionOverride ? (
                       <video
                         ref={shayVideoRef}
                         className="h-[520px] w-full rounded-[28px] object-cover"
@@ -1182,7 +1182,7 @@ export default function Home() {
                       >
                         <Play className="size-5 fill-current" aria-hidden="true" />
                       </button>
-                    ) : shayVideoManualPlay || (effectsEnabled && shouldLoadShayVideo) ? (
+                    ) : shayVideoManualPlay || shouldLoadShayVideo ? (
                       <button
                         type="button"
                         onClick={() => {
@@ -1246,7 +1246,7 @@ export default function Home() {
               {homepageAgents.map((agent) => (
                 <article
                   key={agent.id}
-                  className="group w-full overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_16px_36px_rgba(15,23,42,0.06)] transition duration-300 hover:scale-[1.02] hover:shadow-[0_24px_56px_rgba(15,23,42,0.14)] sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] xl:w-[250px]"
+                  className="group mx-auto w-full max-w-[340px] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_16px_36px_rgba(15,23,42,0.06)] transition duration-300 hover:scale-[1.02] hover:shadow-[0_24px_56px_rgba(15,23,42,0.14)] sm:mx-0 sm:w-[calc(50%-0.5rem)] sm:max-w-none lg:w-[calc(33.333%-0.75rem)] xl:w-[250px]"
                 >
                   <div className="relative h-48 overflow-hidden bg-[#F3EADB]">
                     <img
@@ -1644,15 +1644,15 @@ export default function Home() {
                         type="button"
                         key={`grid-${testimonial.id}`}
                         onClick={() => openTestimonialPreview(testimonial)}
-                        className="group relative flex min-h-[23rem] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#d9ae4c] hover:shadow-[0_28px_70px_rgba(217,174,76,0.22)] focus-visible:border-[#d9ae4c] focus-visible:ring-4 focus-visible:ring-[#d9ae4c]/25"
+                        className="group relative mx-auto flex min-h-0 w-full max-w-[360px] cursor-pointer flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] outline-none transition-all duration-[1200ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2 hover:border-[#d9ae4c] hover:shadow-[0_28px_70px_rgba(217,174,76,0.22)] focus-visible:border-[#d9ae4c] focus-visible:ring-4 focus-visible:ring-[#d9ae4c]/25 sm:max-w-none"
                         style={{ transitionDelay: testimonialsExpanded ? `${Math.min(index, 5) * 150}ms` : "0ms" }}
                       >
                         {testimonial.whatsappImageUrl ? (
-                          <div className="relative h-44 overflow-hidden bg-[#1A1A1A] md:h-48 xl:h-52" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
+                          <div className="relative h-52 overflow-hidden bg-[#1A1A1A] md:h-48 xl:h-52" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                             {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
-                              <video src={testimonial.whatsappImageUrl} className="h-full w-full object-contain" muted playsInline preload="metadata" />
+                              <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover md:object-contain" muted playsInline preload="metadata" />
                             ) : (
-                              <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-contain" loading="lazy" />
+                              <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover md:object-contain" loading="lazy" />
                             )}
                             <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
                             <span className="absolute bottom-4 right-4 inline-flex translate-y-3 items-center gap-2 rounded-full bg-[#d9ae4c] px-5 py-2 text-sm font-black text-[#1A1A1A] opacity-0 shadow-lg transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
