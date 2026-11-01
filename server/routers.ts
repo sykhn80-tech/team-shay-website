@@ -472,13 +472,17 @@ function normalizeOverDeal(raw: unknown, index: number): GovmapDeal | null {
   };
 }
 
-async function fetchOverDeals(input: z.infer<typeof cmaInputSchema>, houseNumberOverride = input.houseNumber.trim()) {
+async function fetchOverDeals(
+  input: z.infer<typeof cmaInputSchema>,
+  houseNumberOverride = input.houseNumber.trim(),
+  streetOverride = input.street.trim(),
+) {
   const params = new URLSearchParams({
     settlement: input.city.trim() || CMA_DEFAULT_CITY_NAME,
     limit: "200",
     sort: "date_desc",
   });
-  if (input.street.trim()) params.set("street", input.street.trim());
+  if (streetOverride) params.set("street", streetOverride);
   if (houseNumberOverride) params.set("house", houseNumberOverride);
 
   const response = await fetch(`https://www.over.org.il/api/deals/search?${params.toString()}`, {
@@ -488,6 +492,42 @@ async function fetchOverDeals(input: z.infer<typeof cmaInputSchema>, houseNumber
 
   const payload = await response.json();
   return asGovmapArray<unknown>(payload, ["data", "results"])
+    .map(normalizeOverDeal)
+    .filter((deal): deal is GovmapDeal => Boolean(deal));
+}
+
+async function fetchOverAddressDeals(input: z.infer<typeof cmaInputSchema>) {
+  if (!input.street.trim() || !input.houseNumber.trim()) return [] as GovmapDeal[];
+
+  const addressUrl = new URL("https://www.over.org.il/api/nadlan/address");
+  addressUrl.searchParams.set("city", input.city.trim() || CMA_DEFAULT_CITY_NAME);
+  addressUrl.searchParams.set("street", input.street.trim());
+  addressUrl.searchParams.set("number", input.houseNumber.trim());
+
+  const addressResponse = await fetch(addressUrl, { headers: { Accept: "application/json" } });
+  if (!addressResponse.ok) return [] as GovmapDeal[];
+
+  const addressPayload = await addressResponse.json();
+  const addressRows = asGovmapArray<Record<string, unknown>>(addressPayload, ["data", "results"]);
+  const identity = addressRows[0]?.identity as Record<string, unknown> | undefined;
+  const gush = asFiniteNumber(identity?.gush);
+  const helka = asFiniteNumber(identity?.helka);
+  if (gush == null || helka == null) return [] as GovmapDeal[];
+
+  const dealsUrl = new URL(`https://www.over.org.il/api/nadlan/parcel/${gush}/${helka}/deals`);
+  dealsUrl.searchParams.set("limit", "200");
+  const dealsResponse = await fetch(dealsUrl, { headers: { Accept: "application/json" } });
+  if (!dealsResponse.ok) return [] as GovmapDeal[];
+
+  const dealsPayload = await dealsResponse.json();
+  return asGovmapArray<unknown>(dealsPayload, ["data", "results"])
+    .map((deal) => ({
+      ...(deal && typeof deal === "object" ? deal : {}),
+      address: `${input.street.trim()} ${input.houseNumber.trim()}`,
+      streetNameHeb: input.street.trim(),
+      houseNum: input.houseNumber.trim(),
+      settlement: input.city.trim() || CMA_DEFAULT_CITY_NAME,
+    }))
     .map(normalizeOverDeal)
     .filter((deal): deal is GovmapDeal => Boolean(deal));
 }
@@ -2193,36 +2233,54 @@ export const appRouter = router({
       .input(cmaInputSchema)
       .mutation(async ({ input }) => {
         try {
-          const neighborhoodRef = await fetchNeighborhoodReference(
-            input.neighborhood.trim(),
-            input.city.trim(),
-            input.street.trim(),
-            input.houseNumber.trim(),
-          );
-          console.info("[CMA] reference resolved", {
-            city: input.city.trim(),
-            neighborhood: input.neighborhood.trim(),
-            street: input.street.trim(),
-            houseNumber: input.houseNumber.trim(),
-            label: neighborhoodRef.label,
-          });
+          let neighborhoodRef: Awaited<ReturnType<typeof fetchNeighborhoodReference>> | null = null;
+          try {
+            neighborhoodRef = await fetchNeighborhoodReference(
+              input.neighborhood.trim(),
+              input.city.trim(),
+              input.street.trim(),
+              input.houseNumber.trim(),
+            );
+            console.info("[CMA] reference resolved", {
+              city: input.city.trim(),
+              neighborhood: input.neighborhood.trim(),
+              street: input.street.trim(),
+              houseNumber: input.houseNumber.trim(),
+              label: neighborhoodRef.label,
+            });
+          } catch (error) {
+            console.warn("[CMA] GovMap address reference unavailable; continuing with public address data", error instanceof Error ? error.message : error);
+          }
+
           let nearbyStreetNames = new Set<string>();
           let rawDeals: NonNullable<GovmapNeighborhoodDealsPayload["data"]> = [];
-          if (input.recaptchaToken) {
+          if (input.street.trim() && input.houseNumber.trim()) {
+            try {
+              rawDeals = await fetchOverAddressDeals(input);
+              console.info("[CMA] exact address deals loaded", { count: rawDeals.length });
+            } catch (error) {
+              console.warn("[CMA] exact address lookup unavailable", error instanceof Error ? error.message : error);
+            }
+          }
+
+          if (!rawDeals.length && input.recaptchaToken && neighborhoodRef) {
             try {
               const govmapResult = await fetchNeighborhoodDealsPolygonId(neighborhoodRef.point, input.recaptchaToken);
               nearbyStreetNames = govmapResult.nearbyStreetNames;
               rawDeals = await fetchGovmapNeighborhoodDeals(govmapResult.polygonId, input.recaptchaToken, 100);
             } catch (error) {
-              console.warn("[CMA] Govmap deals unavailable, using mirrored government data", error instanceof Error ? error.message : error);
+              console.warn("[CMA] Govmap deals unavailable, using public address data", error instanceof Error ? error.message : error);
             }
           }
 
           let pageData: NadlanNeighborhoodPage | null = null;
-          if (typeof neighborhoodRef.govmapNeighborhoodId === "number" && Number.isFinite(neighborhoodRef.govmapNeighborhoodId)) {
+          if (neighborhoodRef && typeof neighborhoodRef.govmapNeighborhoodId === "number" && Number.isFinite(neighborhoodRef.govmapNeighborhoodId)) {
             try {
               const legacyNeighborhoodId = await getLegacyNeighborhoodId(neighborhoodRef.govmapNeighborhoodId);
               pageData = await fetchNadlanNeighborhoodPage(legacyNeighborhoodId);
+              nearbyStreetNames = new Set(
+                pageData.otherNeighborhoodStreets?.map((street) => normalizeHebrewToken(street.title ?? "")).filter(Boolean) ?? [],
+              );
             } catch {
               pageData = null;
             }
@@ -2230,15 +2288,30 @@ export const appRouter = router({
 
           if (!rawDeals.length) {
             rawDeals = await fetchOverDeals(input);
-            if (rawDeals.length < 5 && input.street.trim()) {
-              const sameStreetDeals = await fetchOverDeals(input, "");
-              const existingDealKeys = new Set(rawDeals.map((deal) => `${deal.dealDate}|${deal.dealAmount}|${deal.streetNameHeb}|${deal.houseNum}`));
+          }
+
+          if (rawDeals.length < 5 && input.street.trim()) {
+            const sameStreetDeals = await fetchOverDeals(input, "", input.street.trim());
+            const existingDealKeys = new Set(rawDeals.map((deal) => `${deal.dealDate}|${deal.dealAmount}|${deal.streetNameHeb}|${deal.houseNum}`));
+            rawDeals = [
+              ...rawDeals,
+              ...sameStreetDeals.filter(
+                (deal) => !existingDealKeys.has(`${deal.dealDate}|${deal.dealAmount}|${deal.streetNameHeb}|${deal.houseNum}`),
+              ),
+            ];
+          }
+
+          if (rawDeals.length < 5 && nearbyStreetNames.size) {
+            const existingDealKeys = new Set(rawDeals.map((deal) => `${deal.dealDate}|${deal.dealAmount}|${deal.streetNameHeb}|${deal.houseNum}`));
+            for (const nearbyStreet of Array.from(nearbyStreetNames).slice(0, 8)) {
+              const nearbyDeals = await fetchOverDeals(input, "", nearbyStreet);
               rawDeals = [
                 ...rawDeals,
-                ...sameStreetDeals.filter(
+                ...nearbyDeals.filter(
                   (deal) => !existingDealKeys.has(`${deal.dealDate}|${deal.dealAmount}|${deal.streetNameHeb}|${deal.houseNum}`),
                 ),
               ];
+              if (rawDeals.length >= 12) break;
             }
           }
           const deals = selectComparableDeals(rawDeals, input, nearbyStreetNames);
@@ -2269,7 +2342,7 @@ export const appRouter = router({
           const broadSearchQuery = `site:yad2.co.il/realestate/forsale ${input.street || ""} ${input.houseNumber || ""} ${input.neighborhood} ${cityName} ${input.rooms} חדרים`;
 
           return {
-            neighborhoodLabel: pageData?.neighborhoodName ?? neighborhoodRef.label,
+            neighborhoodLabel: pageData?.neighborhoodName ?? neighborhoodRef?.label ?? input.neighborhood.trim(),
             settlementName: cityName,
             deals,
             streetSuggestions,
