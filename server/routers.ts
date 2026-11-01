@@ -2279,7 +2279,9 @@ export const appRouter = router({
               const legacyNeighborhoodId = await getLegacyNeighborhoodId(neighborhoodRef.govmapNeighborhoodId);
               pageData = await fetchNadlanNeighborhoodPage(legacyNeighborhoodId);
               nearbyStreetNames = new Set(
-                pageData.otherNeighborhoodStreets?.map((street) => normalizeHebrewToken(street.title ?? "")).filter(Boolean) ?? [],
+                pageData.otherNeighborhoodStreets
+                  ?.map((street) => normalizeHebrewToken(street.title == null ? "" : String(street.title)))
+                  .filter(Boolean) ?? [],
               );
             } catch {
               pageData = null;
@@ -2290,7 +2292,12 @@ export const appRouter = router({
             rawDeals = await fetchOverDeals(input);
           }
 
-          if (rawDeals.length < 5 && input.street.trim()) {
+          // An exact parcel can contain transactions that do not match the
+          // requested rooms/area. Widen based on comparable results, not raw
+          // row count, so sparse buildings can still use the same street.
+          let deals = selectComparableDeals(rawDeals, input, nearbyStreetNames);
+
+          if (deals.length < 3 && input.street.trim()) {
             const sameStreetDeals = await fetchOverDeals(input, "", input.street.trim());
             const existingDealKeys = new Set(rawDeals.map((deal) => `${deal.dealDate}|${deal.dealAmount}|${deal.streetNameHeb}|${deal.houseNum}`));
             rawDeals = [
@@ -2299,9 +2306,10 @@ export const appRouter = router({
                 (deal) => !existingDealKeys.has(`${deal.dealDate}|${deal.dealAmount}|${deal.streetNameHeb}|${deal.houseNum}`),
               ),
             ];
+            deals = selectComparableDeals(rawDeals, input, nearbyStreetNames);
           }
 
-          if (rawDeals.length < 5 && nearbyStreetNames.size) {
+          if (deals.length < 3 && nearbyStreetNames.size) {
             const existingDealKeys = new Set(rawDeals.map((deal) => `${deal.dealDate}|${deal.dealAmount}|${deal.streetNameHeb}|${deal.houseNum}`));
             for (const nearbyStreet of Array.from(nearbyStreetNames).slice(0, 8)) {
               const nearbyDeals = await fetchOverDeals(input, "", nearbyStreet);
@@ -2311,10 +2319,10 @@ export const appRouter = router({
                   (deal) => !existingDealKeys.has(`${deal.dealDate}|${deal.dealAmount}|${deal.streetNameHeb}|${deal.houseNum}`),
                 ),
               ];
-              if (rawDeals.length >= 12) break;
+              deals = selectComparableDeals(rawDeals, input, nearbyStreetNames);
+              if (deals.length >= 3) break;
             }
           }
-          const deals = selectComparableDeals(rawDeals, input, nearbyStreetNames);
           console.info("[CMA] deals loaded", {
             rawDeals: rawDeals.length,
             selectedDeals: deals.length,
