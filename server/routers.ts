@@ -147,6 +147,7 @@ const testimonialInputSchema = z.object({
   sourceLabel: z.string().min(2).default("WhatsApp"),
   stars: z.number().int().min(1).max(5).default(5),
   whatsappImageUrl: storedOrUploadedMediaSchema,
+  posterUrl: storedOrUploadedImageSchema,
   displayOrder: z.number().int().min(1).default(1),
   isPublished: z.boolean().default(true),
 });
@@ -2536,6 +2537,11 @@ export const appRouter = router({
           input.whatsappImageUrl,
           `${input.sourceName}-testimonial`,
         ),
+        posterUrl: await resolveStoredImage(
+          `team-shay/testimonials/${input.sourceName}`,
+          input.posterUrl,
+          `${input.sourceName}-testimonial-poster`,
+        ),
       });
       return { success: true, testimonialId } as const;
     }),
@@ -2548,6 +2554,11 @@ export const appRouter = router({
             `team-shay/testimonials/${input.data.sourceName ?? input.testimonialId}`,
             input.data.whatsappImageUrl,
             `testimonial-${input.testimonialId}`,
+          ),
+          posterUrl: await resolveStoredImage(
+            `team-shay/testimonials/${input.data.sourceName ?? input.testimonialId}`,
+            input.data.posterUrl,
+            `testimonial-${input.testimonialId}-poster`,
           ),
         });
         return { success: true } as const;

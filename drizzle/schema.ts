@@ -66,6 +66,7 @@ export const testimonials = mysqlTable("testimonials", {
   sourceLabel: varchar("sourceLabel", { length: 180 }).default("WhatsApp").notNull(),
   stars: int("stars").default(5).notNull(),
   whatsappImageUrl: varchar("whatsappImageUrl", { length: 512 }),
+  posterUrl: varchar("posterUrl", { length: 512 }),
   legacySortOrder: int("sortOrder").default(0).notNull(),
   displayOrder: int("displayOrder").default(1).notNull(),
   isPublished: boolean("isPublished").default(true).notNull(),

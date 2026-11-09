@@ -235,6 +235,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 1,
     whatsappImageUrl: "/restored-testimonials/shi-almakais.png",
+    posterUrl: null,
   },
   {
     id: 2,
@@ -244,6 +245,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 2,
     whatsappImageUrl: "/restored-testimonials/linor-loberbaum.png",
+    posterUrl: null,
   },
   {
     id: 3,
@@ -253,6 +255,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 3,
     whatsappImageUrl: "/restored-testimonials/mai-avorian.png",
+    posterUrl: null,
   },
   {
     id: 4,
@@ -262,6 +265,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 4,
     whatsappImageUrl: "/restored-testimonials/bar-eluz.png",
+    posterUrl: null,
   },
   {
     id: 5,
@@ -271,6 +275,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 5,
     whatsappImageUrl: "/restored-testimonials/natali-torgeman.png",
+    posterUrl: null,
   },
   {
     id: 6,
@@ -280,6 +285,7 @@ const fallbackTestimonials = [
     stars: 5,
     displayOrder: 6,
     whatsappImageUrl: "/restored-testimonials/moiz-cohen.png",
+    posterUrl: null,
   },
 ] as const;
 
@@ -414,6 +420,7 @@ export default function Home() {
     quote: string;
     stars: number;
     whatsappImageUrl: string | null;
+    posterUrl: string | null;
   } | null>(null);
   const [formData, setFormData] = useState({
     neighborhood: "",
@@ -913,6 +920,7 @@ export default function Home() {
           stars: testimonial.stars || 5,
           displayOrder: testimonial.displayOrder ?? 1,
           whatsappImageUrl: testimonial.whatsappImageUrl ?? null,
+          posterUrl: testimonial.posterUrl ?? null,
         }))
       : [...fallbackTestimonials];
 
@@ -938,6 +946,7 @@ export default function Home() {
       quote: testimonial.quote,
       stars: testimonial.stars,
       whatsappImageUrl: testimonial.whatsappImageUrl ?? null,
+      posterUrl: testimonial.posterUrl ?? null,
     });
   }, []);
 
@@ -1502,11 +1511,11 @@ export default function Home() {
                   key={agent.id}
                   className="group mx-auto w-full max-w-[340px] overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_16px_36px_rgba(15,23,42,0.06)] transition duration-300 hover:scale-[1.02] hover:shadow-[0_24px_56px_rgba(15,23,42,0.14)] sm:mx-0 sm:w-[calc(50%-0.5rem)] sm:max-w-none lg:w-[calc(33.333%-0.75rem)] xl:w-[250px]"
                 >
-                  <div className="relative h-48 overflow-hidden bg-[#F3EADB]">
+                  <div className="relative h-48 overflow-hidden bg-[#0E241D]">
                     <img
                       src={agent.image}
                       alt={agent.name}
-                      className="agent-card-image h-full w-full object-cover"
+                      className="agent-card-image h-full w-full object-contain"
                       style={{ objectPosition: "center top" }}
                       loading="lazy"
                       onError={(event) => {
@@ -1514,7 +1523,7 @@ export default function Home() {
                         event.currentTarget.nextElementSibling?.classList.remove("hidden");
                       }}
                     />
-                    <div className="absolute inset-0 hidden flex items-center justify-center bg-[#F3EADB] text-4xl font-black text-[#B5653A]" aria-hidden="true">
+                    <div className="absolute inset-0 hidden flex items-center justify-center bg-[#0E241D] text-4xl font-black text-[#D9AE4C]" aria-hidden="true">
                       {agent.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("")}
                     </div>
                   </div>
@@ -1960,7 +1969,7 @@ export default function Home() {
                         {testimonial.whatsappImageUrl ? (
                           <div className="relative h-52 overflow-hidden bg-[#1A1A1A] md:h-48 xl:h-52" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                             {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
-                              <video src={testimonial.whatsappImageUrl} className="testimonial-media h-full w-full object-cover md:object-contain" muted playsInline preload="metadata" />
+                              <video src={testimonial.whatsappImageUrl} poster={testimonial.posterUrl ?? undefined} className="testimonial-media h-full w-full object-cover md:object-contain" muted playsInline preload="auto" />
                             ) : (
                               <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="testimonial-media h-full w-full object-cover md:object-contain" loading="lazy" />
                             )}
@@ -2011,7 +2020,7 @@ export default function Home() {
                           {testimonial.whatsappImageUrl ? (
                             <div className="relative h-44 overflow-hidden bg-[#1A1A1A] md:h-48 xl:h-52" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                               {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
-                                <video src={testimonial.whatsappImageUrl} className="testimonial-media h-full w-full object-contain" muted playsInline preload="metadata" />
+                                <video src={testimonial.whatsappImageUrl} poster={testimonial.posterUrl ?? undefined} className="testimonial-media h-full w-full object-contain" muted playsInline preload="auto" />
                               ) : (
                                 <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="testimonial-media h-full w-full object-contain" loading="lazy" />
                               )}
@@ -2074,7 +2083,7 @@ export default function Home() {
               {testimonialPreview.whatsappImageUrl ? (
                 <div className="bg-[#0f0f0f]">
                   {isVideoMediaUrl(testimonialPreview.whatsappImageUrl) ? (
-                    <video src={testimonialPreview.whatsappImageUrl} className="max-h-[68vh] w-full object-contain" controls playsInline autoPlay />
+                    <video src={testimonialPreview.whatsappImageUrl} poster={testimonialPreview.posterUrl ?? undefined} className="max-h-[68vh] w-full object-contain" controls playsInline autoPlay />
                   ) : (
                     <img src={testimonialPreview.whatsappImageUrl} alt={testimonialPreview.title} className="max-h-[68vh] w-full object-contain" />
                   )}

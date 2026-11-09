@@ -50,6 +50,13 @@
       "when": 1792065600000,
       "tag": "0006_make_lead_details_nullable",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1794220800000,
+      "tag": "0007_add_testimonial_posters",
+      "breakpoints": true
     }
   ]
 }

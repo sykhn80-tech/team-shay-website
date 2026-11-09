@@ -55,6 +55,7 @@ type TestimonialFormState = {
   sourceLabel: string;
   stars: number;
   whatsappImageUrl: ImageFieldState;
+  posterUrl: ImageFieldState;
   displayOrder: number;
   isPublished: boolean;
 };
@@ -146,6 +147,7 @@ const emptyTestimonialForm: TestimonialFormState = {
   sourceLabel: "WhatsApp",
   stars: 5,
   whatsappImageUrl: buildImageField(),
+  posterUrl: buildImageField(),
   displayOrder: 1,
   isPublished: true,
 };
@@ -696,6 +698,7 @@ export default function AdminPanel() {
     await createTestimonialMutation.mutateAsync({
       ...newTestimonial,
       whatsappImageUrl: serializeImageField(newTestimonial.whatsappImageUrl),
+      posterUrl: serializeImageField(newTestimonial.posterUrl),
     });
   };
 
@@ -705,6 +708,7 @@ export default function AdminPanel() {
       data: {
         ...editingTestimonialForm,
         whatsappImageUrl: serializeImageField(editingTestimonialForm.whatsappImageUrl),
+        posterUrl: serializeImageField(editingTestimonialForm.posterUrl),
       },
     });
   };
@@ -1439,6 +1443,16 @@ export default function AdminPanel() {
                   });
                 }}
               />
+              <MediaUploadField
+                label="תמונת פתיחה לסרטון"
+                hint="אופציונלי — תמונה שתופיע מיד בכרטיס לפני הפעלת הסרטון."
+                value={newTestimonial.posterUrl}
+                onFileSelected={(file) =>
+                  handleSingleImageSelection(file, (updater) =>
+                    setNewTestimonial((prev) => ({ ...prev, posterUrl: updater(prev.posterUrl) })),
+                  )
+                }
+              />
               <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" checked={newTestimonial.isPublished} onChange={(e) => setNewTestimonial((prev) => ({ ...prev, isPublished: e.target.checked }))} /> מפורסם באתר</label>
               <Button type="submit" disabled={createTestimonialMutation.isPending} className="rounded-full bg-[#4b8067] text-white hover:bg-[#3a6b55]">
                 {createTestimonialMutation.isPending ? "מוסיפים המלצה..." : "הוספת המלצה חדשה"}
@@ -1477,6 +1491,16 @@ export default function AdminPanel() {
                             });
                           }}
                         />
+                        <MediaUploadField
+                          label="תמונת פתיחה לסרטון"
+                          hint="אפשר לבחור תמונה שתופיע מיד לפני הפעלת הסרטון."
+                          value={editingTestimonialForm.posterUrl}
+                          onFileSelected={(file) =>
+                            handleSingleImageSelection(file, (updater) =>
+                              setEditingTestimonialForm((prev) => ({ ...prev, posterUrl: updater(prev.posterUrl) })),
+                            )
+                          }
+                        />
                         <div className="flex gap-3">
                           <Button type="button" onClick={() => handleSaveTestimonial(item.id)} className="rounded-full bg-[#4b8067] text-white hover:bg-[#3a6b55]">שמירת שינויים</Button>
                           <Button type="button" variant="outline" onClick={() => setEditingTestimonialId(null)} className="rounded-full">ביטול</Button>
@@ -1510,6 +1534,7 @@ export default function AdminPanel() {
                                   sourceLabel: item.sourceLabel,
                                   stars: item.stars,
                                   whatsappImageUrl: buildImageField(item.whatsappImageUrl),
+                                  posterUrl: buildImageField(item.posterUrl),
                                   displayOrder: item.displayOrder,
                                   isPublished: item.isPublished,
                                 });
