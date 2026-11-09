@@ -719,7 +719,7 @@ export default function Home() {
             expertise: agent.roleTitle + (agent.bio ? `. ${agent.bio}` : "") || displayOverride?.expertise || "",
             phone: agent.phone || displayOverride?.phone || officePhone,
             email: agent.email || displayOverride?.email || "",
-            image: displayOverride?.image || agent.photoUrl || fallbackByName?.image || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
+            image: agent.photoUrl || displayOverride?.image || fallbackByName?.image || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
             imagePosition: displayOverride?.imagePosition || fallbackAgent?.imagePosition || "center 20%",
             imageFit: displayOverride?.imageFit || (agent.photoUrl ? "contain" : undefined) || (fallbackAgent as { imageFit?: "cover" | "contain" })?.imageFit || "cover",
             imageTransform: displayOverride?.imageTransform || (fallbackAgent as { imageTransform?: string })?.imageTransform,
