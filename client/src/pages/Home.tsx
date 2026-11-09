@@ -719,9 +719,9 @@ export default function Home() {
             expertise: agent.roleTitle + (agent.bio ? `. ${agent.bio}` : "") || displayOverride?.expertise || "",
             phone: agent.phone || displayOverride?.phone || officePhone,
             email: agent.email || displayOverride?.email || "",
-            image: displayOverride?.image || fallbackByName?.image || agent.photoUrl || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
+            image: displayOverride?.image || agent.photoUrl || fallbackByName?.image || fallbackAgent?.image || SHAY_ABOUT_IMAGE,
             imagePosition: displayOverride?.imagePosition || fallbackAgent?.imagePosition || "center 20%",
-            imageFit: displayOverride?.imageFit || (fallbackAgent as { imageFit?: "cover" | "contain" })?.imageFit || "cover",
+            imageFit: displayOverride?.imageFit || (agent.photoUrl ? "contain" : undefined) || (fallbackAgent as { imageFit?: "cover" | "contain" })?.imageFit || "cover",
             imageTransform: displayOverride?.imageTransform || (fallbackAgent as { imageTransform?: string })?.imageTransform,
           };
         })(),
