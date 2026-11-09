@@ -511,6 +511,19 @@ All global tokens should support a modern, clean, conversion-first interface.
   }
 }
 
+@media (max-width: 767px) {
+  .testimonial-media {
+    display: block;
+    object-fit: contain !important;
+    object-position: center center !important;
+  }
+
+  .agent-card-image {
+    object-fit: contain !important;
+    object-position: center top !important;
+  }
+}
+
 .site-footer {
   padding: 64px 32px 32px;
 }

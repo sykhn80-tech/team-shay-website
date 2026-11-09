@@ -362,8 +362,10 @@ export default function Home() {
   const [leadStep, setLeadStep] = useState<1 | 2 | 3>(1);
   const [leadTrack, setLeadTrack] = useState<"seller" | "investor" | "landlord" | "buyer" | null>(null);
   const [propertyCarouselApi, setPropertyCarouselApi] = useState<CarouselApi | null>(null);
+  const [soldCarouselApi, setSoldCarouselApi] = useState<CarouselApi | null>(null);
   const [marketingCarouselApi, setMarketingCarouselApi] = useState<CarouselApi | null>(null);
   const [selectedPropertySlide, setSelectedPropertySlide] = useState(0);
+  const [selectedSoldSlide, setSelectedSoldSlide] = useState(0);
   const [selectedMarketingSlide, setSelectedMarketingSlide] = useState(0);
   const [isPropertyCarouselPaused, setIsPropertyCarouselPaused] = useState(false);
   const [selectedMarketingIndex, setSelectedMarketingIndex] = useState(0);
@@ -808,6 +810,15 @@ export default function Home() {
     propertyCarouselApi.scrollNext();
   }, [propertyCarouselApi]);
 
+  const scrollSoldCarousel = useCallback((direction: "prev" | "next") => {
+    if (!soldCarouselApi) return;
+    if (direction === "prev") {
+      soldCarouselApi.scrollPrev();
+      return;
+    }
+    soldCarouselApi.scrollNext();
+  }, [soldCarouselApi]);
+
   const scrollMarketingCarousel = useCallback((direction: "prev" | "next") => {
     if (!marketingCarouselApi) return;
 
@@ -835,6 +846,23 @@ export default function Home() {
       propertyCarouselApi.off("reInit", updateSelectedSlide);
     };
   }, [propertyCarouselApi]);
+
+  useEffect(() => {
+    if (!soldCarouselApi) return;
+
+    const updateSelectedSlide = () => {
+      setSelectedSoldSlide(soldCarouselApi.selectedScrollSnap());
+    };
+
+    updateSelectedSlide();
+    soldCarouselApi.on("select", updateSelectedSlide);
+    soldCarouselApi.on("reInit", updateSelectedSlide);
+
+    return () => {
+      soldCarouselApi.off("select", updateSelectedSlide);
+      soldCarouselApi.off("reInit", updateSelectedSlide);
+    };
+  }, [soldCarouselApi]);
 
   useEffect(() => {
     if (!propertyCarouselApi || isPropertyCarouselPaused || featuredPropertyTrack.length <= 1) return;
@@ -1478,7 +1506,7 @@ export default function Home() {
                     <img
                       src={agent.image}
                       alt={agent.name}
-                      className="h-full w-full object-cover"
+                      className="agent-card-image h-full w-full object-cover"
                       style={{ objectPosition: "center top" }}
                       loading="lazy"
                       onError={(event) => {
@@ -1813,30 +1841,86 @@ export default function Home() {
             </div>
 
             {soldPropertiesTrack.length ? (
-              <div className="mt-12 overflow-hidden [direction:ltr]">
-                <div className="sold-properties-marquee flex w-max gap-5 px-3">
-                  {soldPropertiesTrack.map((property, index) => (
-                    <article
-                      key={`${property.id}-${index}`}
-                      className="w-[310px] shrink-0 overflow-hidden rounded-[28px] border border-[#d9ae4c]/30 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] transition hover:border-[#d9ae4c] [direction:rtl] md:w-[360px]"
-                    >
-                      <div className="relative h-52 overflow-hidden">
-                        <img src={property.image} alt={property.title} className="h-full w-full object-cover" loading="lazy" />
-                        <span className="absolute right-4 top-4 rounded-full bg-[#d9ae4c] px-4 py-2 text-sm font-black text-black shadow-lg">
-                          {property.displayStatus === "הושכר" ? "הושכר ✓" : "נמכר ✓"}
-                        </span>
-                      </div>
-                      <div className="p-5">
-                        <h3 className="text-xl font-black text-[#1A1A1A]">{property.displayLocation || property.title}</h3>
-                        <p className="mt-5 text-2xl font-black text-[#d9ae4c]">₪{property.price.toLocaleString("he-IL")}</p>
-                        <div className="mt-4 border-t border-[#d9ae4c]/20 pt-4 text-sm font-bold">
-                          <span className="text-[#6B6B6B]">עסקה שנחתמה עם Shay Group</span>
+              <>
+                <div className="mt-12 hidden overflow-hidden [direction:ltr] md:block">
+                  <div className="sold-properties-marquee flex w-max gap-5 px-3">
+                    {soldPropertiesTrack.map((property, index) => (
+                      <article
+                        key={`${property.id}-${index}`}
+                        className="w-[310px] shrink-0 overflow-hidden rounded-[28px] border border-[#d9ae4c]/30 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] transition hover:border-[#d9ae4c] [direction:rtl] md:w-[360px]"
+                      >
+                        <div className="relative h-52 overflow-hidden">
+                          <img src={property.image} alt={property.title} className="h-full w-full object-cover" loading="lazy" />
+                          <span className="absolute right-4 top-4 rounded-full bg-[#d9ae4c] px-4 py-2 text-sm font-black text-black shadow-lg">
+                            {property.displayStatus === "הושכר" ? "הושכר ✓" : "נמכר ✓"}
+                          </span>
                         </div>
-                      </div>
-                    </article>
-                  ))}
+                        <div className="p-5">
+                          <h3 className="text-xl font-black text-[#1A1A1A]">{property.displayLocation || property.title}</h3>
+                          <p className="mt-5 text-2xl font-black text-[#d9ae4c]">₪{property.price.toLocaleString("he-IL")}</p>
+                          <div className="mt-4 border-t border-[#d9ae4c]/20 pt-4 text-sm font-bold">
+                            <span className="text-[#6B6B6B]">עסקה שנחתמה עם Shay Group</span>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
                 </div>
-              </div>
+
+                <div className="mt-12 md:hidden">
+                  <Carousel
+                    setApi={setSoldCarouselApi}
+                    opts={{ align: "start", direction: "rtl", loop: true }}
+                    className="relative"
+                  >
+                    <CarouselContent className="-ml-3">
+                      {soldProperties.map((property) => (
+                        <CarouselItem key={`mobile-sold-${property.id}`} className="basis-[88%] pl-3">
+                          <article className="overflow-hidden rounded-[28px] border border-[#d9ae4c]/30 bg-white text-right shadow-[0_2px_12px_rgba(0,0,0,0.08)] [direction:rtl]">
+                            <div className="relative h-56 overflow-hidden">
+                              <img src={property.image} alt={property.title} className="h-full w-full object-cover" loading="lazy" />
+                              <span className="absolute right-4 top-4 rounded-full bg-[#d9ae4c] px-4 py-2 text-sm font-black text-black shadow-lg">
+                                {property.displayStatus === "הושכר" ? "הושכר ✓" : "נמכר ✓"}
+                              </span>
+                            </div>
+                            <div className="p-5">
+                              <h3 className="text-xl font-black text-[#1A1A1A]">{property.displayLocation || property.title}</h3>
+                              <p className="mt-5 text-2xl font-black text-[#d9ae4c]">₪{property.price.toLocaleString("he-IL")}</p>
+                              <div className="mt-4 border-t border-[#d9ae4c]/20 pt-4 text-sm font-bold">
+                                <span className="text-[#6B6B6B]">עסקה שנחתמה עם Shay Group</span>
+                              </div>
+                            </div>
+                          </article>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    {soldProperties.length > 1 ? (
+                      <>
+                        <div className="mt-6 flex items-center justify-center gap-4">
+                          <Button type="button" variant="outline" size="icon" className="size-11 rounded-full border-[#d9ae4c] bg-[#d9ae4c] text-black" onClick={() => scrollSoldCarousel("next")} aria-label="עסקה הבאה">
+                            <ArrowRight className="size-5" />
+                          </Button>
+                          <Button type="button" variant="outline" size="icon" className="size-11 rounded-full border-[#d9ae4c] bg-[#d9ae4c] text-black" onClick={() => scrollSoldCarousel("prev")} aria-label="עסקה קודמת">
+                            <ArrowLeft className="size-5" />
+                          </Button>
+                        </div>
+                        <div className="mt-4 flex items-center justify-center gap-2" aria-label="בחירת עסקה">
+                          {soldProperties.map((property, index) => (
+                            <button
+                              key={`sold-dot-${property.id}`}
+                              type="button"
+                              className={`h-2.5 rounded-full transition-all ${selectedSoldSlide === index ? "w-8 bg-[#d9ae4c]" : "w-2.5 bg-slate-300"}`}
+                              onClick={() => soldCarouselApi?.scrollTo(index)}
+                              aria-label={`מעבר לעסקה ${index + 1}`}
+                              aria-current={selectedSoldSlide === index ? "true" : undefined}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    ) : null}
+                  </Carousel>
+                </div>
+              </>
             ) : (
               <div className="mt-12 rounded-[28px] border border-dashed border-[#d9ae4c]/40 bg-white p-8 text-center text-[#6B6B6B]">
                 עסקאות חדשות יופיעו כאן מיד כשהן מתעדכנות במערכת.
@@ -1876,9 +1960,9 @@ export default function Home() {
                         {testimonial.whatsappImageUrl ? (
                           <div className="relative h-52 overflow-hidden bg-[#1A1A1A] md:h-48 xl:h-52" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                             {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
-                              <video src={testimonial.whatsappImageUrl} className="h-full w-full object-cover md:object-contain" muted playsInline preload="metadata" />
+                              <video src={testimonial.whatsappImageUrl} className="testimonial-media h-full w-full object-cover md:object-contain" muted playsInline preload="metadata" />
                             ) : (
-                              <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-cover md:object-contain" loading="lazy" />
+                              <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="testimonial-media h-full w-full object-cover md:object-contain" loading="lazy" />
                             )}
                             <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 transition duration-500 group-hover:opacity-100" />
                             <span className="absolute bottom-4 right-4 inline-flex translate-y-3 items-center gap-2 rounded-full bg-[#d9ae4c] px-5 py-2 text-sm font-black text-[#1A1A1A] opacity-0 shadow-lg transition duration-500 group-hover:translate-y-0 group-hover:opacity-100">
@@ -1927,9 +2011,9 @@ export default function Home() {
                           {testimonial.whatsappImageUrl ? (
                             <div className="relative h-44 overflow-hidden bg-[#1A1A1A] md:h-48 xl:h-52" aria-label={`פתיחת המלצה של ${testimonial.title} בגודל מלא`}>
                               {isVideoMediaUrl(testimonial.whatsappImageUrl) ? (
-                                <video src={testimonial.whatsappImageUrl} className="h-full w-full object-contain" muted playsInline preload="metadata" />
+                                <video src={testimonial.whatsappImageUrl} className="testimonial-media h-full w-full object-contain" muted playsInline preload="metadata" />
                               ) : (
-                                <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="h-full w-full object-contain" loading="lazy" />
+                                <img src={testimonial.whatsappImageUrl} alt={testimonial.title} className="testimonial-media h-full w-full object-contain" loading="lazy" />
                               )}
                             </div>
                           ) : null}
